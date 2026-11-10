@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3.5 (10/11/2026) — FC theo ngày dữ liệu, bỏ "ước đạt"
+
+- **Tháng đã chốt** (đã có thực tế cả tháng): FC khóa bằng thực tế, không nhập.
+- **Tháng đang chạy**: MR chỉ nhập FC từ ngày sau ngày dữ liệu (vd dữ liệu đến 09/11 → nhập từ 10/11). Số nhỏ bên trái ô là đơn đã lên, app cộng sẵn. Database vẫn lưu FC cả tháng (= đã lên + phần còn lại), nên khi nạp raw mới, phần "còn lại" tự giảm theo đơn vừa lên.
+- **Tháng tới**: FC cả tháng.
+- **FC quý** = thực tế tháng đã chốt + đơn đã lên tháng đang chạy + FC phần còn lại. Bỏ hẳn "ước đạt cuối quý" (thẻ, cột, biểu đồ, file Excel) và bảng độ chính xác FC trên Dashboard.
+- Biểu đồ quý / tháng dạng cột chồng: xanh = thực tế / đơn đã lên, cam = FC còn lại.
+- Excel xuất: tháng đã chốt ghi thực tế (xám), tháng đang chạy tách 2 cột "đã lên đến dd/mm" và "FC từ dd/mm" (ô nhập); nạp lại vào app tự cộng phần đã lên.
+- Nạp file FC Sale của team: tháng đã chốt bỏ qua số trong file (giữ khóa theo thực tế).
+
 ## Phiên bản 3.4 (10/11/2026) — đọc file FC Sale của team, xuất Excel theo mẫu
 
 **Nạp FC từ file Excel của team (Admin → Kỳ & nạp dữ liệu → 5)**
