@@ -1,96 +1,106 @@
 # FC Sale CVRM HCM — web app
 
-App nhập FC sale theo quý cho team CVRM HCM, thay cho file Excel dùng chung.
+App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
-- **MR:** đăng nhập bằng email, chỉ thấy và chỉ sửa được FC các account của mình. Nhập box theo tháng (máy tính hoặc điện thoại), tự lưu, bấm **Nộp FC** khi xong.
-- **Dashboard:** performance cá nhân và cả team: Target, FC, %Ach, QTD, so với LYSP và quý trước, theo MR / brand / kênh, ai đã nộp hay chưa.
-- **Admin:**
-  - Đặt kỳ FC, hạn nộp, khóa kỳ.
-  - Nạp raw sales (file export Power BI, tự dò cột theo tên), file FC (sheet FC Input), target.
-  - Phân bổ account cho MR, xử lý account có sales mà chưa có trên FC.
-  - Quản lý thành viên và giá.
-  - Xuất Excel.
+## Phiên bản 2 (10/11/2026)
 
-## Kiến trúc
+**Quy trình forecast**
+- **Theo tháng:** actual từng tháng trong quý, ghi rõ tháng đã chốt / đang chạy / chưa tới, kèm ngày dữ liệu sales mới nhất (ví dụ "Sales đến 09/11").
+- **Ước đạt cuối quý (Latest Estimate) và gap so với target:**
+  - Tháng đã chốt lấy thực tế.
+  - Tháng đang chạy lấy max(MTD, FC).
+  - Tháng còn lại lấy FC.
+- **Gợi ý FC:** trung bình box/tháng của 2 quý gần nhất, hiện mờ trong ô nhập. Nút **Điền theo gợi ý** điền sẵn cho các dòng chưa nhập.
+- **Forecast theo ngoại lệ:**
+  - Dòng có FC lệch quá 50% so với trung bình 2 quý (và từ 20 triệu/quý) bị gắn cờ, MR phải chọn lý do mới nộp được.
+  - Có 9 lý do chuẩn: thầu, tồn kho, BHYT, đối thủ, listing mới, …
+  - Ngưỡng % và ngưỡng giá trị chỉnh được trong Admin.
+- **Quy trình duyệt:**
+  - Trạng thái đi theo thứ tự: Chưa nộp → Đã nộp → Đã duyệt / Bị trả lại (có ghi chú).
+  - RFFM/Admin duyệt hoặc trả lại. Sau khi duyệt, MR không sửa được nữa, trừ khi được mở lại.
+  - App đánh dấu "có sửa sau nộp" nếu MR chỉnh sau khi đã nộp.
+- **Độ chính xác FC:**
+  - Mỗi quý chốt một bản FC, cuối quý so với thực tế.
+  - Công thức: Độ chính xác = 1 − Σ|FC − thực tế| / Σ thực tế, tính ở mức account × SKU; Bias = FC / thực tế − 1.
+  - Dòng có sales mà không FC được tính là FC = 0 (nhu cầu bị bỏ sót).
+- **Đề xuất account/SKU:** MR đề xuất account mới, SKU mới (ví dụ sản phẩm sắp launch) hoặc account chuyển về mình. MR nhập FC được ngay, admin duyệt để thành dòng chính thức.
 
-| Phần | Dùng gì |
+**Dashboard**
+- Các chỉ số chính: Target, FC, Ước đạt, QTD, growth, tiến độ nộp/duyệt.
+- Biểu đồ FC vs Target theo MR, biểu đồ theo quý và theo tháng.
+- Bảng theo MR: kèm nút duyệt / trả lại.
+- Bảng theo account: sắp xếp theo gap, target, mức giảm.
+- Bảng theo brand / kênh.
+- Bảng độ chính xác FC theo MR.
+- Nút **Copy nhắc nộp FC**: tạo sẵn đoạn tin nhắn danh sách chưa nộp / bị trả lại để dán vào Teams/Zalo.
+- **Xuất Excel** (RFFM/Admin), gồm các sheet:
+  - FC Input (đủ cột tháng, ước đạt, lý do, người sửa)
+  - Tổng hợp MR
+  - **Demand plan SKU** (box theo tháng, cho supply chain).
+
+## Vai trò
+
+| Vai trò | Làm được |
 |---|---|
-| Giao diện | 1 file `index.html`, host bằng GitHub Pages |
-| Đăng nhập + database | Supabase (Auth + Postgres), giống app Sổ hợp đồng HCP |
-| Phân quyền | Row Level Security trong `schema.sql`, chặn ở database chứ không chỉ ẩn trên giao diện |
-| Đọc / xuất Excel | SheetJS, chạy trong trình duyệt |
+| MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU. Xem dashboard team. |
+| RFFM | Xem FC mọi MR, duyệt / trả lại / mở lại, xuất Excel. Không sửa số. |
+| ADMIN | Toàn quyền: nạp dữ liệu, đổi kỳ, khóa kỳ, chốt bản FC, phân bổ account, thành viên. |
 
-Không có server riêng. File raw sales được tổng hợp ngay trong trình duyệt (khách × SKU × quý) rồi mới lưu lên, nên database chỉ khoảng vài nghìn dòng.
+Phân quyền chặn ở database (Row Level Security), đã test trên Postgres 16 + PostgREST:
+- MR không tự duyệt được, không ghi được dòng của MR khác, không sửa được sau khi đã duyệt hoặc khi kỳ đã khóa.
+- RFFM không ghi được FC.
+- Người ngoài danh sách team đọc 0 dòng.
+- Mọi thay đổi FC đều được ghi vào `fc_history`.
 
-**Phân quyền** (đã test trên Postgres 16 + PostgREST, cùng thành phần Supabase dùng):
+## Nâng cấp từ bản 1 (đang chạy)
 
-- MR thêm/sửa FC chỉ cho dòng account gán cho mình, đúng kỳ hiện tại, khi kỳ chưa khóa.
-- Email không có trong `team_members` không đọc được gì.
-- Chỉ ADMIN nạp dữ liệu, sửa phân bổ, khóa kỳ.
-- RFFM xem tất cả, không sửa.
-- Mọi thay đổi FC được ghi vào bảng `fc_history` (ai sửa, lúc nào, số cũ → số mới).
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v2.sql` → **Run**. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
+3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales**, vì bản 2 lưu sales theo tháng + số box.
+4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
 
-## Chạy thử (demo)
+## Cài mới
 
-Mở `index.html` khi `SUPABASE_URL` còn trống: app chạy chế độ demo với dữ liệu giả, lưu trong trình duyệt. Đăng nhập bằng vai MR / RFFM / Admin để xem từng màn hình. Ở vai Admin có thể nạp file thật để thử: dữ liệu chỉ nằm trong trình duyệt của máy đó.
+1. Tạo project Supabase (region Singapore).
+2. **SQL Editor:** chạy `schema.sql`, nhớ sửa email + tên admin ở cuối file.
+3. **Authentication → Providers → Email:** tắt *Allow new users to sign up*.
+4. **Authentication → Users → Add user:** tạo tài khoản cho email admin, tick Auto Confirm.
+5. **Project Settings → API:** copy Project URL + publishable (anon) key, dán vào `window.FC_CONFIG` trong `index.html`.
+6. Đẩy `index.html` lên repo, bật **Settings → Pages** (branch `main`, `/ (root)`).
+7. Quay lại Supabase → **Authentication → URL Configuration**, đặt Site URL = link GitHub Pages.
 
-## Triển khai thật (khoảng 30 phút)
+**Lưu ý:**
+- Tuyệt đối không đưa *secret / service_role key* vào code.
+- Email có sẵn của Supabase chỉ gửi được 2 email/giờ, nên admin tạo tài khoản kèm mật khẩu tạm trong Supabase. Lần đầu đăng nhập, người dùng phải đổi mật khẩu.
 
-### A. Supabase
+## Nạp dữ liệu (Admin → Kỳ & nạp dữ liệu)
 
-1. **Tạo project:** vào [supabase.com](https://supabase.com), đăng nhập (dùng chung tài khoản với app HCP được), bấm **New project**:
-   - Tên: `fc-sale-cvrm-hcm`
-   - Region: **Southeast Asia (Singapore)**
-   - Đặt database password và lưu lại.
-2. **Chạy schema:** vào **SQL Editor**, dán toàn bộ `schema.sql`. Sửa dòng cuối thành email và tên của bạn (ADMIN), tên phải trùng REP Name, ví dụ `Nguyen Thanh Kha`. Bấm **Run**.
-3. **Khóa đăng ký:** vào **Authentication → Sign In / Providers → Email**, tắt *Allow new users to sign up*. Chỉ admin mới tạo được tài khoản.
-4. **Tạo tài khoản cho bạn:** vào **Authentication → Users → Add user → Create new user**:
-   - Email của bạn và mật khẩu tạm.
-   - Tick **Auto Confirm User**.
-5. **Lấy key:** vào **Project Settings → API**, copy *Project URL* và *anon public key*.
+Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột theo tên tiêu đề.
 
-### B. GitHub
-
-6. **Điền cấu hình:** mở `index.html`, điền vào `window.FC_CONFIG`:
-   ```js
-   SUPABASE_URL: 'https://xxxx.supabase.co',
-   SUPABASE_ANON_KEY: 'eyJ...',
-   ```
-7. **Đưa lên GitHub Pages:** đẩy `index.html` lên repo `fc-sale-cvrm-hcm`, rồi vào **Settings → Pages**, chọn Source = *Deploy from a branch*, branch `main`, thư mục `/ (root)`. Khoảng 1 phút sau có link `https://<tên-github>.github.io/fc-sale-cvrm-hcm/`.
-8. **Đặt Site URL:** quay lại Supabase, vào **Authentication → URL Configuration**, Site URL = link ở bước 7.
-
-### C. Nạp dữ liệu (trong app, tài khoản ADMIN)
-
-9. **Đăng nhập lần đầu:** app bắt đổi mật khẩu.
-10. **Nạp dữ liệu:** vào Admin → Kỳ & nạp dữ liệu, nạp **theo đúng thứ tự** (mỗi mục có nút *File mẫu*):
-    1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND).
-    2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận cả sheet FC Input của file v2; file có số FC thì nạp luôn.
-    3. **Raw sales:** file export Power BI để nguyên, không cần sửa.
-    4. **Target:** Cust Code · SKU · Target quý FC (VND), hoặc sheet Target của file v2.
-11. **Thêm thành viên:** vào Admin → Thành viên & giá.
-    - Bấm *Thêm MR còn thiếu từ danh sách account*, điền email từng người.
-    - Hoặc mở *Dán cả danh sách từ Excel*, dán 3 cột Email | Tên MR | Vai trò.
-    - Bấm **Lưu**.
-12. **Tạo tài khoản cho MR:** với mỗi MR, vào Supabase → Authentication → Users → **Add user**:
-    - Email và mật khẩu tạm, tick Auto Confirm.
-    - Gửi link app + mật khẩu tạm cho MR. MR đăng nhập lần đầu sẽ bị yêu cầu đổi mật khẩu.
-
-**Vì sao không gửi email mời:** email có sẵn của Supabase chỉ gửi tới thành viên của project Supabase, tối đa 2 email/giờ, nên không dùng để mời 20 người được. Muốn MR tự đăng nhập bằng link email thì cần cấu hình SMTP riêng (Brevo/Resend), sau đó đặt `EMAIL_LINK: true` trong `index.html`.
-
-**MR quên mật khẩu:** admin xóa user đó trong Supabase → Users rồi tạo lại với mật khẩu tạm mới. Dữ liệu FC không mất, vì quyền gắn theo email, không gắn theo user.
-
-**Repo public có an toàn không:** repo chỉ chứa code giao diện và dữ liệu demo giả, không có số thật, không có giá thật. Anon key là key công khai theo thiết kế của Supabase; quyền đọc/ghi do RLS trong database quyết định (đã test: người ngoài đọc 0 dòng, MR không ghi được dòng của người khác, không xóa được dữ liệu). Tuyệt đối **không** đưa *service_role key* vào code.
+1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND)
+2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
+3. **Raw sales:** file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất.
+4. **Target:** Cust Code · SKU · Target quý FC (VND)
+5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
 ## Quy trình mỗi quý
 
-1. **Admin mở kỳ mới:** Admin → Kỳ & nạp dữ liệu → đổi Năm/Quý, đặt hạn nộp → Lưu. FC và target kỳ mới bắt đầu trống, dữ liệu kỳ cũ vẫn giữ.
-2. **Nạp raw sales** mới nhất, sau đó xem tab **Account thiếu** và thêm account mới vào FC.
-3. **Nạp target** quý mới.
-4. **MR nhập FC và bấm Nộp.** Admin theo dõi cột Trạng thái ở Dashboard.
-5. **Hết hạn:** tick **Khóa nhập**, rồi **Xuất Excel** để gửi lên trên.
+1. **Admin mở kỳ:** Admin → Kỳ & nạp dữ liệu → đổi Năm/Quý + hạn nộp → Lưu. App hỏi có chốt bản FC kỳ cũ không, chọn **Đồng ý**.
+2. **Admin nạp dữ liệu:** raw sales mới nhất và target. Xem tab **Account thiếu** và **Phân bổ account → Đề xuất chờ duyệt**.
+3. **MR nhập FC:** dùng *Điền theo gợi ý* rồi chỉnh, chọn lý do cho dòng gắn cờ, rồi **Nộp FC**.
+4. **RFFM duyệt:** duyệt / trả lại ở Dashboard → Theo MR. Dùng **Copy nhắc nộp FC** để nhắc người chưa nộp.
+5. **Trong quý:** nạp raw sales mỗi tuần, theo dõi Ước đạt và gap, cho MR cập nhật FC tháng còn lại.
+6. **Hết hạn:** tick **Khóa nhập** → **Chốt bản FC** → **Xuất Excel** (sheet Demand plan gửi supply chain).
 
-## Giới hạn hiện tại
+## Backlog (đề xuất các bản sau)
 
-- **Đồng bộ Excel một chiều:** app là nơi lưu dữ liệu chính, xuất Excel khi cần. Sửa file Excel không làm thay đổi số trên app.
-- **Supabase gói free tự tạm dừng sau 7 ngày không ai dùng:** mở lại trong dashboard là chạy tiếp. Gói Pro không bị.
-- **MR xem được account của MR khác:** mọi MR đọc được số của cả team, giống file Excel hiện tại. Muốn MR chỉ thấy số tổng của người khác thì cần thêm view tổng hợp ở database.
+| Ưu tiên | Hạng mục | Lý do |
+|---|---|---|
+| Cao | Rolling forecast 2 quý (quý này + quý sau) | Supply chain cần tầm nhìn 3–6 tháng để đặt hàng nhập khẩu |
+| Cao | Theo dõi thầu: số lượng trúng thầu còn lại, ngày hết hạn thầu theo BV × SKU | Dự báo kênh bệnh viện phụ thuộc thầu; FC nên bị chặn trên bởi quota thầu |
+| Cao | Module launch Firialta: danh sách BV mục tiêu, trạng thái listing/HĐT, đường uptake | Sản phẩm mới không có lịch sử nên gợi ý thống kê không dùng được |
+| Trung bình | Tồn kho tại BV / nhà phân phối (sell-in vs sell-out) | Tránh FC cao khi BV còn tồn nhiều |
+| Trung bình | Phạm vi RFFM theo nhóm MR, phân quyền MR chỉ xem tổng của người khác | Khi team lớn hơn hoặc có nhiều RFFM |
+| Trung bình | Lịch sử chỉnh sửa từng dòng ngay trên app (đọc từ fc_history) | Giải trình khi FC thay đổi lớn |
+| Thấp | Đăng nhập Bayer SSO (Entra ID), nhắc nộp qua email/Teams | Cần IT hỗ trợ |
+| Thấp | Tự lấy raw sales từ Power BI thay vì upload tay | Cần quyền API/dataset |
