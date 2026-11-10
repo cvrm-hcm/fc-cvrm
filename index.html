@@ -911,7 +911,7 @@ function viewDash(){
   $('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDash(); };
   $('#d-b').onchange = e => { VIEW.dBrand = e.target.value; viewDash(); };
   $('#d-c').onchange = e => { VIEW.dCh = e.target.value; viewDash(); };
-  $('#d-exp') && ($('#d-exp').onclick = exportExcel);
+  $('#d-exp') && ($('#d-exp').onclick = e => exportExcel(e.currentTarget));
   $('#d-remind') && ($('#d-remind').onclick = () => copyText(reminderText()));
   v.onclick = onReviewClick;
   // MR bars
@@ -960,7 +960,7 @@ function viewDash(){
 /* =========================================================
    8. TAB ADMIN — nạp dữ liệu, FC lịch sử, phân bổ, thành viên, xuất Excel
    ========================================================= */
-function readWorkbook(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = e => { try { res(XLSX.read(new Uint8Array(e.target.result), {type: 'array', cellDates: false})); } catch(err){ rej(err); } }; fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
+function readWorkbook(file, sheets){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = e => { try { res(XLSX.read(new Uint8Array(e.target.result), {type: 'array', cellDates: false, ...(sheets ? {sheets} : {})})); } catch(err){ rej(err); } }; fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
 function sheetRows(ws){ return XLSX.utils.sheet_to_json(ws, {header: 1, raw: true, defval: null, blankrows: false}); }
 function findHeader(rows, mustHave){ for (let i = 0; i < Math.min(rows.length, 30); i++){ const r = (rows[i] || []).map(lc); if (mustHave.every(h => r.includes(lc(h)))) return i; } return -1; }
 function colIdx(hdr, names){ const h = hdr.map(lc); for (const n of names){ const i = h.indexOf(lc(n)); if (i >= 0) return i; } return -1; }
@@ -1017,11 +1017,15 @@ async function importAccounts(file, withFC, delMissing, log){
   if (withFC){ const id = new Map(mapping.map(m => [`${m.rep_name}|${m.cust_code}|${m.sku}`, m.id])); const list = fcv.filter(x => x.m1 !== null || x.m2 !== null || x.m3 !== null || x.note).map(x => ({mapping_id: id.get(x.key), m1: x.m1, m2: x.m2, m3: x.m3, note: x.note, reason: x.reason})).filter(x => x.mapping_id); if (list.length) await STORE.upsertFC(PK, list); nfc = list.length; }
   log(`Account: ${out.length} dòng, ${new Set(out.map(r => r.rep_name)).size} MR, ${new Set(out.map(r => r.cust_code)).size} account.${nPrice ? ` Cập nhật giá ${nPrice} SKU từ sheet Setup.` : ''}${withFC && nfc ? ` Nạp FC cho ${nfc} dòng vào kỳ ${P[4].label}.` : ''}`);
 }
-function repDialog(unknown, known){
+// Đoán MR trong app theo tên: "Hoang Phan" ↔ "Phan Cong Huy Hoang" (mọi từ của tên ngắn nằm trong tên dài)
+function guessRep(name, known){ const t = x => lc(x).split(/\s+/).filter(Boolean); const a = t(name); if (a.length < 2) return '';
+  const hit = known.filter(k => { const b = t(k); const [s1, s2] = a.length <= b.length ? [a, b] : [b, a]; return s1.every(w => s2.includes(w)); }); return hit.length === 1 ? hit[0] : ''; }
+function repDialog(unknown, known, kind = 'target'){
   return new Promise(res => {
     const saved = lsGet('fcapp_rep_alias') || {}; const kws = norm(D.settings.exclude_keywords).split(',');
-    const bg = modal(`<h3>Tên REP chưa khớp MR trong app</h3><div class="sub">Chọn MR nhận target của từng tên. "Không giao" = giữ là target chưa giao MR (vd vị trí trống).</div>
-      <div class="f">${unknown.map((u, i) => { const def = saved[u.name] || (isAssigned(u.name, kws) ? u.name : ''); return `<label class="sub"><b>${esc(u.name)}</b> · ${u.n} dòng · ${big(u.v)}</label><select data-i="${i}"><option value="">Không giao (giữ là MR trống)</option><option value="${esc(u.name)}" ${def === u.name ? 'selected' : ''}>Giữ nguyên tên "${esc(u.name)}"</option>${known.map(k => `<option ${def === k ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select>`; }).join('')}</div>
+    const T = kind === 'fc' ? {sub: 'Chọn MR trong app tương ứng với từng tên trong file FC. App sẽ nhớ lựa chọn cho lần nạp sau.', none: 'Không nạp các dòng này'} : {sub: 'Chọn MR nhận target của từng tên. "Không giao" = giữ là target chưa giao MR (vd vị trí trống).', none: 'Không giao (giữ là MR trống)'};
+    const bg = modal(`<h3>Tên REP chưa khớp MR trong app</h3><div class="sub">${T.sub}</div>
+      <div class="f">${unknown.map((u, i) => { const def = saved[u.name] !== undefined ? saved[u.name] : (guessRep(u.name, known) || (kind !== 'fc' && isAssigned(u.name, kws) ? u.name : '')); return `<label class="sub"><b>${esc(u.name)}</b> · ${u.n} dòng · ${big(u.v)}</label><select data-i="${i}"><option value="">${T.none}</option><option value="${esc(u.name)}" ${def === u.name ? 'selected' : ''}>Giữ nguyên tên "${esc(u.name)}"</option>${known.map(k => `<option ${def === k ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select>`; }).join('')}</div>
       <div class="acts"><button class="btn" data-a="0">Hủy nạp</button><button class="btn pri" data-a="1">Tiếp tục</button></div>`);
     bg.addEventListener('click', e => { const a = e.target.dataset.a; if (a === undefined) return; if (a === '0'){ bg.remove(); return res(null); }
       const map = {}; $$('select', bg).forEach(sel => { const u = unknown[+sel.dataset.i]; map[u.name] = sel.value; saved[u.name] = sel.value; }); lsSet('fcapp_rep_alias', saved); bg.remove(); res(map); });
@@ -1069,6 +1073,83 @@ async function importTargets(file, opts, log){
   log(`Target ${P[4].label}${byRep ? ' theo MR' : ' theo account'}: ${list.length} dòng, tổng ${big(tot)}${other ? ` (bỏ ${other} dòng BU khác)` : ''}.\n`
     + (byRep ? `• Khớp đúng MR × account × SKU: ${big(sumV(match))} (${match.length} dòng)\n• MR có target nhưng chưa có dòng FC: ${big(sumV(miss))} (${miss.length} dòng)${opts.create && made ? ` → đã tạo ${made} dòng` : ''}\n• Chưa giao MR: ${big(sumV(open))} (${open.length} dòng)${synced ? `\n• Cập nhật Sales ratio theo tỷ trọng target: ${synced} dòng` : ''}${noLogin.length ? `\n• MR chưa có tài khoản đăng nhập: ${noLogin.join(', ')}` : ''}` : '• File không có cột REP: target chia cho MR theo Sales ratio.'));
 }
+const PRICE_BRAND = sku => D.prices.find(p => p.sku === sku)?.brand || brandOf(sku);
+const MON = {jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12};
+// Cột FC tháng (box) + kỳ của file (từ tên cột "Target Q4'26" / "FC Q4'26")
+function fcFileCols(hdr){
+  const cols = []; let q = null, rel = false;
+  hdr.forEach((h, i) => { const x = lc(h); let m = x.match(/^fc\s+([a-z]+)\s*\(box\)$/); if (m && MON[m[1]]){ cols.push({i, mo: MON[m[1]]}); return; }
+    if ((m = x.match(/^fc tháng\s*([123])\s*\(box\)$/))){ cols.push({i, mo: +m[1]}); rel = true; } });
+  cols.sort((a, b) => a.mo - b.mo);
+  if (cols.length === 3 && !rel){ q = Math.ceil(cols[0].mo / 3); if (cols.some(c => Math.ceil(c.mo / 3) !== q)) return {cols: [], err: 'Ba cột FC tháng không cùng một quý'}; }
+  let period = null; if (q){ for (const h of hdr){ const m = String(h || '').match(/^(?:target|fc)\s+q([1-4])'(\d{2})/i); if (m && +m[1] === q){ period = pkey(2000 + +m[2], q); break; } } }
+  return {cols: cols.map(c => c.i), q, period};
+}
+async function importFCFile(file, opts, log){
+  log('Đang đọc file…');
+  const wb = await readWorkbook(file, ['FC Input', 'FC Sale']);
+  const f = findSheet(wb, ['FC Input', 'FC Sale'], ['REP Name', 'Cust Code']); if (!f) throw new Error('Không thấy sheet FC Sale / FC Input có cột REP Name, Cust Code');
+  const h = f.hdr; const c = {rep: colIdx(h, ['REP Name']), code: colIdx(h, ['Cust Code']), name: colIdx(h, ['Cust Name']), brand: colIdx(h, ['Brand']), sku: colIdx(h, ['SKUs', 'SKU']), ratio: colIdx(h, ['Sales ratio']), ch: colIdx(h, ['Tender/Self-pay', 'Tender/Sefl-pay', 'Kênh']), reason: colIdx(h, ['Lý do'])};
+  if (c.sku < 0) throw new Error('Thiếu cột SKUs');
+  const fc = fcFileCols(h); if (fc.err) throw new Error(fc.err); if (fc.cols.length !== 3) throw new Error('Không thấy đủ 3 cột FC tháng (box), ví dụ FC Oct (box) · FC Nov (box) · FC Dec (box)');
+  if (fc.q && fc.q !== +D.settings.quarter) throw new Error(`File là FC quý ${fc.q} nhưng kỳ FC đang mở là ${P[4].label}. Đổi kỳ ở mục Kỳ FC trước.`);
+  if (fc.period && fc.period !== PK) throw new Error(`File là FC ${pkLabel(fc.period)} nhưng kỳ FC đang mở là ${P[4].label}. Đổi kỳ ở mục Kỳ FC trước.`);
+  const noteCols = h.map((x, i) => [lc(x), i]).filter(([x]) => x === 'ghi chú' || /^note\s*\d*$/.test(x)).map(([, i]) => i);
+  const rows = [], all = []; let zero = 0, frac = 0, zeroNote = 0;
+  for (let i = f.hi + 1; i < f.rows.length; i++){ const r = f.rows[i]; if (!r || !r[c.rep] || !r[c.code] || !r[c.sku]) continue;
+    const raw = fc.cols.map(ci => r[ci] === null || r[ci] === undefined || r[ci] === '' ? null : num(r[ci]));
+    const note = [...new Set(noteCols.map(ci => norm(String(r[ci] ?? '').replace(/\s+/g, ' '))).filter(Boolean))].join(' · ');
+    const t = {rep: norm(r[c.rep]), code: norm(r[c.code]), name: c.name >= 0 ? norm(r[c.name]) : '', brand: c.brand >= 0 ? norm(r[c.brand]).toUpperCase() : '', sku: norm(r[c.sku]),
+      ratio: c.ratio >= 0 && r[c.ratio] !== null && r[c.ratio] !== '' ? num(r[c.ratio]) : 1, channel: c.ch >= 0 ? norm(r[c.ch]) || null : null,
+      m: raw.map(v => v === null ? (raw.some(x => x) ? null : 0) : Math.round(v)), note, reason: c.reason >= 0 ? norm(r[c.reason]) || null : null};
+    all.push(t);
+    if (raw.every(v => !v)){ if (!note){ zero++; t.zero = true; continue; } zeroNote++; }
+    if (raw.some(v => v && Math.round(v) !== v)) frac++;
+    rows.push(t); }
+  if (!rows.length) throw new Error(`File không có dòng FC nào khác 0 (${zero} dòng trống / toàn 0).`);
+  // Tên REP trong file ↔ MR trong app
+  const known = [...new Set([...D.members.filter(m => m.role === 'MR').map(m => m.rep_name), ...D.mapping.map(m => m.rep_name)])].sort(); const knownLc = new Map(known.map(k => [lc(k), k]));
+  const val = t => t.m.reduce((x, v) => x + num(v), 0) * (PRICE.get(t.sku) || 0);
+  const unk = new Map(); all.forEach(t => { if (!knownLc.has(lc(t.rep))){ const o = unk.get(t.rep) || {name: t.rep, n: 0, v: 0}; o.n++; o.v += val(t); unk.set(t.rep, o); } });
+  let alias = {}; if (unk.size){ const m = await repDialog([...unk.values()], known, 'fc'); if (!m) throw new Error('Đã hủy nạp FC'); alias = m; }
+  const repOf = t => knownLc.get(lc(t.rep)) || (alias[t.rep] === undefined ? t.rep : alias[t.rep]);
+  const K = (rep, code, sku) => `${lc(rep)}|${code}|${sku}`;
+  const idx = new Map(D.mapping.map(m => [K(m.rep_name, m.cust_code, m.sku), m]));
+  // Ghép từng dòng file với dòng trong app
+  const hit = [], miss = [], skip = []; const fcSet = new Set(rows);
+  for (const t of all){ const rep = repOf(t); if (!rep){ if (fcSet.has(t)) skip.push(t); continue; } const m = idx.get(K(rep, t.code, t.sku)); if (m){ if (fcSet.has(t)) hit.push({m, t}); } else miss.push({...t, rep, _fc: fcSet.has(t)}); }
+  // Đồng bộ phân bổ theo file: tạo dòng còn thiếu, Sales ratio theo file, MR khác đang giữ cùng account × SKU về 0%
+  const upd = []; let zeroed = 0; const create = opts.sync ? [...new Map(miss.map(t => [K(t.rep, t.code, t.sku), t])).values()] : [];
+  if (opts.sync){ const seen = new Set(), allow = new Map(), skipKey = new Set();
+    for (const t of all){ const k = `${t.code}|${t.sku}`; const rep = repOf(t); if (!rep){ skipKey.add(k); continue; } (allow.get(k) || allow.set(k, new Set()).get(k)).add(lc(rep));
+      const m = idx.get(K(rep, t.code, t.sku)); if (m && !seen.has(m.id) && Math.abs(num(m.ratio) - t.ratio) > 0.001){ seen.add(m.id); upd.push({...m, ratio: t.ratio}); } }
+    for (const m of D.mapping){ const k = `${m.cust_code}|${m.sku}`; if (m.status === 'proposed' || skipKey.has(k) || !allow.has(k) || allow.get(k).has(lc(m.rep_name)) || seen.has(m.id) || !num(m.ratio)) continue; seen.add(m.id); upd.push({...m, ratio: 0}); zeroed++; } }
+  const missFC = miss.filter(t => t._fc), lostFC = opts.sync ? [] : missFC;
+  // Tùy chọn: file là bản chốt → xóa FC trong app ở các dòng file để trống / toàn 0
+  const clear = []; if (opts.clear){ const done = new Set(); for (const t of all){ if (!t.zero) continue; const rep = repOf(t); const m = rep && idx.get(K(rep, t.code, t.sku)); const cur = m && D.fc[m.id];
+    if (m && !done.has(m.id) && cur && [cur.m1, cur.m2, cur.m3].some(v => v !== null && v !== undefined && v !== '')){ done.add(m.id); clear.push({mapping_id: m.id, m1: null, m2: null, m3: null, note: cur.note || '', reason: cur.reason || null, _v: ROWS.find(r => r.id === m.id)?.fcv || 0}); } } }
+  const sumV = a => a.reduce((x, o) => x + val(o.t || o), 0);
+  const reps = new Set([...hit.map(o => o.m.rep_name), ...(opts.sync ? missFC.map(t => t.rep) : [])]);
+  const locked = [...reps].filter(r => ['submitted', 'approved'].includes(repStatus(r)));
+  const oldV = hit.reduce((x, o) => x + (ROWS.find(r => r.id === o.m.id)?.fcv || 0), 0);
+  const nFC = hit.length + (opts.sync ? missFC.length : 0), vFC = sumV(hit) + (opts.sync ? sumV(missFC) : 0);
+  if (!await confirmBox(`Nạp FC ${P[4].label} từ file <b>${esc(file.name)}</b>?<br><span class="sub">• Ghi FC cho <b>${nFC}</b> dòng của ${reps.size} MR, tổng ${big(vFC)} (số cũ của các dòng này trong app: ${big(oldV)}).`
+    + `${opts.sync && (create.length || upd.length) ? `<br>• Đồng bộ phân bổ account theo file: tạo ${create.length} dòng còn thiếu, cập nhật Sales ratio ${upd.length} dòng${zeroed ? ` (${zeroed} dòng của MR khác về 0%)` : ''}.` : ''}`
+    + `${lostFC.length ? `<br>• ${lostFC.length} dòng có FC nhưng chưa có trong app: bỏ qua (bật đồng bộ phân bổ để tạo).` : ''}${skip.length ? `<br>• Bỏ qua ${skip.length} dòng theo lựa chọn tên REP.` : ''}<br>• ${clear.length ? `Xóa FC trong app ở ${clear.length} dòng file để trống / toàn 0 (${big(clear.reduce((x, o) => x + o._v, 0))}).` : `Không đụng tới ${zero} dòng FC trống / toàn 0.`}`
+    + `${locked.length ? `<br>⚠ ${locked.length} MR đã nộp hoặc đã duyệt: số trong file sẽ thay số họ đã nộp.` : ''}</span>`)) throw new Error('Đã hủy nạp FC');
+  if (upd.length) D.mapping = await STORE.upsertMapping(upd, false);
+  if (create.length){
+    D.mapping = await STORE.upsertMapping(create.map(t => ({rep_name: t.rep, cust_code: t.code, cust_name: t.name || D.mapping.find(m => m.cust_code === t.code)?.cust_name || t.code, brand: t.brand || PRICE_BRAND(t.sku), sku: t.sku, ratio: t.ratio, channel: t.channel || D.mapping.find(m => m.cust_code === t.code)?.channel || null, status: 'active'})), false);
+    const idx2 = new Map(D.mapping.map(m => [K(m.rep_name, m.cust_code, m.sku), m])); missFC.forEach(t => { const m = idx2.get(K(t.rep, t.code, t.sku)); if (m) hit.push({m, t}); }); }
+  let badRatio = 0; if (opts.sync){ const rs = new Map(); D.mapping.filter(m => m.status !== 'proposed').forEach(m => { const k = `${m.cust_code}|${m.sku}`; rs.set(k, (rs.get(k) || 0) + num(m.ratio)); }); badRatio = new Set(all.map(t => `${t.code}|${t.sku}`).filter(k => Math.abs((rs.get(k) || 0) - 1) > 0.001)).size; }
+  const list = hit.map(({m, t}) => { const cur = D.fc[m.id] || {}; return {mapping_id: m.id, m1: t.m[0], m2: t.m[1], m3: t.m[2], note: t.note || cur.note || '', reason: t.reason || cur.reason || null}; });
+  await STORE.upsertFC(PK, [...list, ...clear.map(({_v, ...o}) => o)]);
+  log(`Đã nạp FC ${P[4].label}: ${list.length} dòng, ${reps.size} MR, tổng ${big(sumV(hit))}.`
+    + `${opts.sync && (create.length || upd.length) ? `\n• Đồng bộ phân bổ theo file: tạo ${create.length} dòng còn thiếu, cập nhật Sales ratio ${upd.length} dòng${zeroed ? ` (${zeroed} dòng của MR khác về 0%)` : ''}.` : ''}`
+    + `${lostFC.length ? `\n• Bỏ qua ${lostFC.length} dòng có FC nhưng chưa có trong app.` : ''}${skip.length ? `\n• Bỏ qua ${skip.length} dòng theo lựa chọn tên REP.` : ''}`
+    + `\n• ${clear.length ? `Xóa FC ở ${clear.length} dòng file để trống / toàn 0.` : `Không đụng tới ${zero} dòng FC trống / toàn 0.`}${zeroNote ? ` ${zeroNote} dòng FC = 0 có Note được ghi là FC = 0 kèm ghi chú.` : ''}${frac ? `\n• ${frac} dòng có số box lẻ đã làm tròn.` : ''}`
+    + `${badRatio ? `\n⚠ ${badRatio} account × SKU trong file có tổng Sales ratio khác 100% (theo chính file): kiểm tra ở Admin → Phân bổ.` : ''}${locked.length ? `\n• Đã thay số của MR đã nộp/duyệt: ${locked.join(', ')}.` : ''}`);
+}
 async function importArchive(file, log){
   const wb = await readWorkbook(file); const f = findSheet(wb, ['FC lịch sử'], ['Kỳ', 'REP Name', 'Cust Code']); if (!f) throw new Error('Cần các cột Kỳ, REP Name, Cust Code, SKU, Sales ratio, FC tháng 1-3 (box)');
   const h = f.hdr; const c = {p: colIdx(h, ['Kỳ']), rep: colIdx(h, ['REP Name']), code: colIdx(h, ['Cust Code']), sku: colIdx(h, ['SKU', 'SKUs']), ratio: colIdx(h, ['Sales ratio']), m1: colIdx(h, ['FC tháng 1 (box)']), m2: colIdx(h, ['FC tháng 2 (box)']), m3: colIdx(h, ['FC tháng 3 (box)'])};
@@ -1090,18 +1171,151 @@ function downloadTemplate(kind){
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sh); saveWb(wb, name);
 }
 function saveWb(wb, name){ try { XLSX.writeFile(wb, name); toast('Đã xuất ' + name); } catch(e){ toast('Trình duyệt chặn tải file (bản xem trước). Trên GitHub Pages sẽ tải bình thường.'); } }
-function exportExcel(){
-  const mn = MS.map(m => mlabel(D.settings.year, m));
-  const hdr = ['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'SKU', 'Sales ratio', 'Kênh', 'Trạng thái dòng', ...P.slice(0, 4).map(p => 'Act ' + p.label), 'Act QTD ' + P[4].label, ...mn.map(x => 'Act ' + x), 'Target ' + P[4].label, ...mn.map(x => `FC ${x} (box)`), 'FC quý (box)', 'FC quý (value)', 'Ước đạt cuối quý', 'Gap vs target', '%Ach FC', '%Gr vs LYSP', '%Gr vs Q-1', 'Cảnh báo', 'Lý do', 'Ghi chú', 'Cập nhật lúc', 'Cập nhật bởi'];
-  const data = ROWS.map(r => [r.rep_name, r.cust_code, r.cust_name, r.brand, r.sku, num(r.ratio), r.channel || '', r.status === 'proposed' ? 'Đề xuất' : 'Chính thức', ...r.act, ...r.actM, r.tgt, r.f.m1 ?? null, r.f.m2 ?? null, r.f.m3 ?? null, r.box, r.fcv, r.landing, r.landing - r.tgt, r.filled ? ratio(r.fcv, r.tgt) : null, r.filled ? growth(r.fcv, r.act[0]) : null, r.filled ? growth(r.fcv, r.act[3]) : null, r.flag, r.f.reason || '', r.f.note || '', r.f.updated_at ? new Date(r.f.updated_at) : null, r.f.updated_by || '']);
-  const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet([hdr, ...data]); ws['!autofilter'] = {ref: `A1:${XLSX.utils.encode_col(hdr.length - 1)}${data.length + 1}`}; XLSX.utils.book_append_sheet(wb, ws, 'FC Input');
-  const reps = repList().filter(rep => ROWS.some(r => r.rep_name === rep));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['MR', 'Target', 'FC', '%Ach FC', 'Ước đạt cuối quý', 'Gap', 'QTD', 'Dòng cần lý do', 'Trạng thái', 'Nộp lúc', 'Duyệt / trả lại bởi', 'Ghi chú duyệt'],
-    ...reps.map(rep => { const a = agg(ROWS.filter(r => r.rep_name === rep)); const s = D.subs[rep] || {}; return [rep, a.tgt, a.fcv, a.ach, a.landing, a.gap, a.act[4], a.need, STATUS[repStatus(rep)][0], s.submitted_at ? new Date(s.submitted_at) : null, s.reviewed_by || '', s.review_note || '']; })]), 'Tổng hợp MR');
-  const skus = [...new Set(ROWS.map(r => r.sku))].sort(); const dp = [['Brand', 'SKU', ...mn.map(x => `${x} (box)`), 'Quý (box)', ...mn.map(x => `${x} (VND)`), 'Quý (VND)', `Thực tế ${P[3].label} (box)`]];
-  for (const s of skus){ const rs = ROWS.filter(r => r.sku === s); const b = [0, 1, 2].map(i => rs.reduce((t, r) => t + num(r.f['m' + (i + 1)]), 0)); const v = [0, 1, 2].map(i => rs.reduce((t, r) => t + r.fcvM[i], 0)); dp.push([rs[0].brand, s, ...b, b[0] + b[1] + b[2], ...v, v[0] + v[1] + v[2], Math.round(rs.reduce((t, r) => t + r.qty[3], 0))]); }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dp), 'Demand plan SKU');
-  saveWb(wb, `FC_${P[4].label.replace("'", '')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+/* Xuất Excel theo mẫu FC Sale của team: sheet FC Input + 5 sheet tổng hợp như pivot (RFFM / MR × brand / account).
+   Dùng ExcelJS (tải khi bấm xuất) để có định dạng, cố định tiêu đề, nhóm dòng mở/thu gọn. Số tổng hợp là công thức SUMIFS
+   trỏ về FC Input: sửa FC trong Excel thì các sheet tổng hợp tự tính lại. */
+const EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+function loadScript(src){ return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = () => res(); el.onerror = () => rej(new Error('Không tải được thư viện Excel, kiểm tra mạng rồi thử lại')); document.head.appendChild(el); }); }
+async function getExcelJS(){ if (!window.ExcelJS) await loadScript(EXCELJS_URL); return window.ExcelJS; }
+function downloadBlob(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
+async function exportExcel(btn){
+  btn = btn || $('#d-exp'); const txt = btn ? btn.textContent : ''; if (btn){ btn.disabled = true; btn.textContent = 'Đang tạo file…'; }
+  try {
+    const ExcelJS = await getExcelJS(); const {wb, name} = buildExport(ExcelJS);
+    const buf = await wb.xlsx.writeBuffer(); downloadBlob(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), name); toast('Đã xuất ' + name);
+  } catch(e){ toast('Lỗi xuất Excel: ' + e.message, 5000); }
+  finally { if (btn){ btn.disabled = false; btn.textContent = txt; } }
+}
+function buildExport(ExcelJS){
+  const S = D.settings, Y = +S.year, Q = +S.quarter, yy = y => String(y).slice(-2), ql = (y, q) => `Q${q}'${yy(y)}`;
+  const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const QS = [1, 2, 3, 4].map(q => ({y: Y - 1, q})).concat([1, 2, 3, 4].map(q => ({y: Y, q})));     // 8 quý: năm trước + năm nay
+  const iLY = Q - 1, iPrev = Q > 1 ? 4 + Q - 2 : 3, iCur = 4 + Q - 1;                                   // vị trí cùng kỳ, quý trước, quý này trong QS
+  const CUR = ql(Y, Q), LY = ql(Y - 1, Q), PREV = Q > 1 ? ql(Y, Q - 1) : ql(Y - 1, 4), MN = MS.map(m => MON3[m - 1]);
+  const asof = S.data_as_of ? new Date(String(S.data_as_of).slice(0, 10) + 'T12:00:00').toLocaleDateString('vi-VN') : '';
+  const now = new Date(), stamp = now.toLocaleString('vi-VN', {hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'});
+  const NAVY = 'FF1F3864', INK2 = 'FF52514E', L = n => { let s = ''; for (n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+  const fill = argb => ({type: 'pattern', pattern: 'solid', fgColor: {argb}}), thin = {style: 'thin', color: {argb: 'FFD9DDE3'}};
+  const VND = '#,##0;[Red]-#,##0;"-"', BOX = '#,##0;[Red]-#,##0;"-"', PCT = '0%;[Red]-0%;"-"', RATIO = '0%';
+  const wb = new ExcelJS.Workbook(); wb.creator = 'FC Sale CVRM HCM'; wb.created = now;
+  const pct = (a, b) => (b ? a / b : ''), gr = (a, b) => (b ? a / b - 1 : '');
+  const A8 = new Map(ROWS.map(r => [r.id, QS.map(o => (SQ.get(`${r.cust_code}|${r.sku}|${o.y}|${o.q}`) || [0])[0] * num(r.ratio))])); const qv = r => A8.get(r.id);
+  const crit = v => typeof v === 'number' ? String(v) : `"${String(v).replace(/"/g, '""').replace(/([~*?])/g, '~$1')}"`;
+  const codeVal = c => /^[1-9]\d{0,14}$/.test(String(c)) ? Number(c) : String(c);
+  const header = (row, h = 30) => { row.height = h; row.eachCell(c => { c.font = {bold: true, color: {argb: 'FFFFFFFF'}, size: 10}; c.fill = fill(NAVY); c.alignment = {vertical: 'middle', horizontal: 'center', wrapText: true}; c.border = {bottom: thin}; }); };
+  const achRules = ref => [{ref, rules: [{type: 'cellIs', operator: 'greaterThanOrEqual', formulae: [1], style: {font: {color: {argb: 'FF0D652D'}, bold: true}}}, {type: 'cellIs', operator: 'between', formulae: [0.8, 0.99999], style: {font: {color: {argb: 'FF8A5A00'}, bold: true}}}, {type: 'cellIs', operator: 'between', formulae: [0.00001, 0.79999], style: {font: {color: {argb: 'FFA50E0E'}, bold: true}}}]}];
+  const grRules = ref => [{ref, rules: [{type: 'cellIs', operator: 'greaterThan', formulae: [0.00001], style: {font: {color: {argb: 'FF137333'}}}}, {type: 'cellIs', operator: 'lessThan', formulae: [-0.00001], style: {font: {color: {argb: 'FFC5221F'}}}}]}];
+
+  /* ---------- Sheet FC Input (giống sheet FC Sale của team) ---------- */
+  const rows = [...ROWS].sort((a, b) => a.rep_name.localeCompare(b.rep_name) || a.cust_name.localeCompare(b.cust_name) || a.sku.localeCompare(b.sku));
+  const PAGE = rows => ({paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: rows, margins: {left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2}});
+  const ws = wb.addWorksheet('FC Input', {views: [{state: 'frozen', xSplit: 6, ySplit: 5, zoomScale: 90}], properties: {tabColor: {argb: NAVY}}, pageSetup: PAGE('4:5')});
+  const H = ['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'Sales ratio', 'SKUs', ...QS.map(o => `Actual sales ${ql(o.y, o.q)}`), `Target ${CUR} (value)`,
+    ...MN.map(m => `FC ${m} (box)`), `FC ${CUR} (box)`, ...MN.map(m => `FC ${m} (value)`), `FC ${CUR} (Value)`, `FC Achievement ${CUR}`, `% Growth ${CUR} vs ${LY}`, `% Growth ${CUR} vs ${PREV}`,
+    'Ước đạt cuối quý (value)', 'Note', 'Lý do', 'Tender/Self-pay', 'Trạng thái dòng', 'Cảnh báo', 'Cập nhật lúc', 'Cập nhật bởi'];
+  const C = {act: 6, tgt: 14, box: 15, boxQ: 18, val: 19, valQ: 22, ach: 23, gLY: 24, gPrev: 25, land: 26, note: 27, last: H.length - 1};
+  const R0 = 6, R1 = R0 + rows.length - 1;
+  ws.getCell('A1').value = `FC SALE CVRM HCM · ${CUR}`; ws.getCell('A1').font = {bold: true, size: 14, color: {argb: NAVY}};
+  ws.getCell('A2').value = `Xuất từ app lúc ${stamp}${asof ? ` · Sales đến ${asof}` : ''} · Doanh số, target, FC value: VND · FC tháng: box. Cột vàng là ô nhập FC; sửa xong có thể nạp lại vào app (Admin → 5. FC từ file Excel).`; ws.getCell('A2').font = {size: 9, color: {argb: INK2}};
+  const bands = [[C.act, C.act + 7, `Doanh số thực tế (VND) · ${CUR} tính đến ${asof || 'nay'}`, 'FFE9EEF6'], [C.tgt, C.tgt, 'Target', 'FFF3E9D2'], [C.box, C.boxQ, 'FC (box) · ĐIỀN VÀO ĐÂY', 'FFFFE9A8'], [C.val, C.valQ, 'FC (VND)', 'FFE1EBF8'], [C.ach, C.gPrev, 'Đánh giá', 'FFF3E9D2'], [C.land, C.last, 'Thông tin thêm', 'FFEDEFF2']];
+  for (const [c0, c1, t, color] of bands){ if (c1 > c0) ws.mergeCells(4, c0 + 1, 4, c1 + 1); const cell = ws.getCell(4, c0 + 1); cell.value = t; cell.font = {bold: true, size: 9, color: {argb: 'FF1F2937'}}; cell.alignment = {horizontal: 'center'}; for (let k = c0; k <= c1; k++) ws.getCell(4, k + 1).fill = fill(color); }
+  H.forEach((t, i) => ws.getCell(5, i + 1).value = t); header(ws.getRow(5));
+  [C.box, C.box + 1, C.box + 2].forEach(i => ws.getCell(5, i + 1).fill = fill('FFB8860B'));
+  const price = sku => PRICE.get(sku) || 0;
+  rows.forEach((r, k) => {
+    const n = R0 + k, a8 = qv(r), m = [r.f.m1, r.f.m2, r.f.m3].map(v => v === null || v === undefined || v === '' ? null : num(v));
+    const vm = m.map(v => num(v) * price(r.sku)), vq = vm.reduce((x, v) => x + v, 0), bq = m.reduce((x, v) => x + num(v), 0);
+    const vals = [r.rep_name, codeVal(r.cust_code), r.cust_name, r.brand, num(r.ratio), r.sku, ...a8, r.tgt, ...m,
+      {formula: `SUM(${L(C.box)}${n}:${L(C.box + 2)}${n})`, result: bq},
+      ...m.map((v, i) => ({formula: `IFERROR(${L(C.box + i)}${n}*VLOOKUP($F${n},SKUs!$B:$C,2,0),0)`, result: vm[i]})),
+      {formula: `SUM(${L(C.val)}${n}:${L(C.val + 2)}${n})`, result: vq},
+      {formula: `IFERROR(${L(C.valQ)}${n}/${L(C.tgt)}${n},"")`, result: pct(vq, r.tgt)},
+      {formula: `IFERROR(${L(C.valQ)}${n}/${L(C.act + iLY)}${n}-1,"")`, result: gr(vq, a8[iLY])},
+      {formula: `IFERROR(${L(C.valQ)}${n}/${L(C.act + iPrev)}${n}-1,"")`, result: gr(vq, a8[iPrev])},
+      r.landing, r.f.note || '', r.f.reason || '', r.channel || '', r.status === 'proposed' ? 'Đề xuất' : 'Chính thức', r.flag || '', r.f.updated_at ? new Date(r.f.updated_at) : null, r.f.updated_by || ''];
+    const row = ws.getRow(n); vals.forEach((v, i) => { row.getCell(i + 1).value = v; });
+  });
+  ws.columns.forEach((col, i) => { col.width = [20, 11, 34, 10, 8, 26][i] || (i >= C.act && i <= C.valQ ? 14 : i === C.note ? 34 : i === C.land ? 15 : 12); });
+  for (let i = 0; i <= C.last; i++){ const col = ws.getColumn(i + 1);
+    if (i === 4) col.numFmt = RATIO; else if ((i >= C.act && i <= C.tgt) || (i >= C.val && i <= C.valQ) || i === C.land) col.numFmt = VND; else if (i >= C.box && i <= C.boxQ) col.numFmt = BOX; else if (i >= C.ach && i <= C.gPrev) col.numFmt = PCT; else if (i === C.last - 1) col.numFmt = 'dd/mm/yyyy hh:mm'; }
+  for (let n = R0; n <= R1; n++) for (const i of [C.box, C.box + 1, C.box + 2]){ const cell = ws.getCell(n, i + 1); cell.fill = fill('FFFFF6D5'); cell.border = {left: thin, right: thin, bottom: thin}; }
+  // Dòng tổng (theo bộ lọc) như mẫu
+  ws.getCell(3, 6).value = 'Tổng (theo bộ lọc)'; ws.getCell(3, 6).font = {bold: true}; ws.getCell(3, 6).alignment = {horizontal: 'right'};
+  const tot = i => rows.reduce((x, r, k) => { const v = ws.getCell(R0 + k, i + 1).value; return x + num(v && typeof v === 'object' ? v.result : v); }, 0);
+  for (let i = C.act; i <= C.land; i++){ if (i >= C.ach && i <= C.gPrev) continue; ws.getCell(3, i + 1).value = {formula: `SUBTOTAL(109,${L(i)}${R0}:${L(i)}${R1})`, result: tot(i)}; }
+  const T = i => tot(i);
+  ws.getCell(3, C.ach + 1).value = {formula: `IFERROR(${L(C.valQ)}3/${L(C.tgt)}3,"")`, result: pct(T(C.valQ), T(C.tgt))};
+  ws.getCell(3, C.gLY + 1).value = {formula: `IFERROR(${L(C.valQ)}3/${L(C.act + iLY)}3-1,"")`, result: gr(T(C.valQ), T(C.act + iLY))};
+  ws.getCell(3, C.gPrev + 1).value = {formula: `IFERROR(${L(C.valQ)}3/${L(C.act + iPrev)}3-1,"")`, result: gr(T(C.valQ), T(C.act + iPrev))};
+  for (let i = 5; i <= C.land; i++){ const cell = ws.getCell(3, i + 1); cell.font = {bold: true}; cell.fill = fill('FFEFF3F9'); cell.border = {top: thin, bottom: thin}; }
+  ws.autoFilter = {from: {row: 5, column: 1}, to: {row: Math.max(R1, 5), column: H.length}};
+  if (rows.length){ achRules(`${L(C.ach)}3:${L(C.ach)}${R1}`).forEach(x => ws.addConditionalFormatting(x)); grRules(`${L(C.gLY)}3:${L(C.gPrev)}${R1}`).forEach(x => ws.addConditionalFormatting(x));
+    if (ws.dataValidations) ws.dataValidations.add(`${L(C.box)}${R0}:${L(C.box + 2)}${R1}`, {type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: true, formulae: [0], showErrorMessage: true, errorTitle: 'FC (box)', error: 'Nhập số box ≥ 0'}); }
+
+  /* ---------- 5 sheet tổng hợp như pivot của mẫu ---------- */
+  const rng = i => `'FC Input'!$${L(i)}$${R0}:$${L(i)}$${Math.max(R1, R0)}`;
+  const VCOLS = [...QS.map((o, k) => ({h: `Sum of Actual sales ${ql(o.y, o.q)}`, i: C.act + k, v: r => qv(r)[k]})), {h: `Sum of FC ${CUR} (Value)`, i: C.valQ, v: r => r.fcv}, {h: `Sum of Target ${CUR} (value)`, i: C.tgt, v: r => r.tgt}];
+  const LEV = {rep: {col: 0, key: r => r.rep_name, lab: r => r.rep_name, crit: r => r.rep_name}, brand: {col: 3, key: r => r.brand, lab: r => r.brand, crit: r => r.brand}, acc: {col: 1, key: r => r.cust_code, lab: r => r.cust_name || r.cust_code, crit: r => codeVal(r.cust_code)}};
+  function pivot(name, title, levels, notes){
+    const sh = wb.addWorksheet(name, {views: [{state: 'frozen', xSplit: 1, ySplit: 3, zoomScale: 90}], properties: {outlineProperties: {summaryBelow: false, summaryRight: false}}, pageSetup: PAGE('3:3')});
+    const nv = VCOLS.length, cM = nv + 2;   // B..K giá trị, L trống, M..P chỉ số (cM = vị trí 0-based của cột M)
+    sh.getCell('A1').value = title; sh.getCell('A1').font = {bold: true, size: 13, color: {argb: NAVY}};
+    sh.getCell('A2').value = `Đơn vị: VND · ${CUR} tính đến ${asof || 'nay'} · Số lấy từ sheet FC Input (sửa FC ở đó thì sheet này tự tính lại)${levels.length > 1 ? ' · Bấm dấu +/− bên trái để mở / thu gọn' : ''}`; sh.getCell('A2').font = {size: 9, color: {argb: INK2}};
+    const hdr = ['Row Labels', ...VCOLS.map(x => x.h), '', `%Ach QTD ${CUR}`, `%Ach FC ${CUR}`, `% Growth vs ${LY}`, `% Growth vs ${PREV}`, ...(notes ? ['Ghi chú (từ FC)'] : [])];
+    hdr.forEach((t, i) => sh.getCell(3, i + 1).value = t); header(sh.getRow(3), 42); sh.getCell(3, nv + 2).fill = fill('FFFFFFFF'); sh.getCell(3, nv + 2).border = {};
+    const idxCur = 1 + 4 + Q - 1, idxFC = 1 + 8, idxT = 1 + 9, idxLY = 1 + iLY, idxPrev = 1 + iPrev;   // cột (0-based) trong sheet
+    let n = 4; const outRows = [];
+    const write = (label, depth, sel, critList, isTotal) => {
+      const row = sh.getRow(n); row.getCell(1).value = label;
+      VCOLS.forEach((vc, k) => { const res = sel.reduce((x, r) => x + num(vc.v(r)), 0);
+        const f = isTotal ? `SUM(${rng(vc.i)})` : `SUMIFS(${rng(vc.i)},${critList.map(([col, v]) => `${rng(col)},${crit(v)}`).join(',')})`; row.getCell(k + 2).value = {formula: f, result: res}; });
+      const g = k => num(row.getCell(k + 1).value.result);
+      row.getCell(cM + 1).value = {formula: `IFERROR(${L(idxCur)}${n}/${L(idxT)}${n},"")`, result: pct(g(idxCur), g(idxT))};
+      row.getCell(cM + 2).value = {formula: `IFERROR(${L(idxFC)}${n}/${L(idxT)}${n},"")`, result: pct(g(idxFC), g(idxT))};
+      row.getCell(cM + 3).value = {formula: `IFERROR(${L(idxFC)}${n}/${L(idxLY)}${n}-1,"")`, result: gr(g(idxFC), g(idxLY))};
+      row.getCell(cM + 4).value = {formula: `IFERROR(${L(idxFC)}${n}/${L(idxPrev)}${n}-1,"")`, result: gr(g(idxFC), g(idxPrev))};
+      if (notes && depth === levels.length){ const t = [...new Set(sel.filter(r => r.f.note).map(r => `${r.sku}: ${r.f.note}`))].join(' | '); if (t) row.getCell(cM + 5).value = t; }
+      row.getCell(1).alignment = {indent: Math.max(0, depth - 1) * 2};
+      if (isTotal){ row.eachCell({includeEmpty: true}, (c, i) => { if (i <= cM + 4 && i !== nv + 2){ c.font = {bold: true}; c.fill = fill('FFDCE3EF'); c.border = {top: {style: 'medium', color: {argb: NAVY}}}; } }); }
+      else if (depth === 1 && levels.length > 1){ row.eachCell({includeEmpty: true}, (c, i) => { if (i <= cM + 4 && i !== nv + 2){ c.font = {bold: true}; c.fill = fill('FFEFF3F9'); } }); }
+      else if (depth === 2 && levels.length > 2) row.getCell(1).font = {bold: true, color: {argb: 'FF1F2937'}};
+      if (depth > 1) row.outlineLevel = depth - 1;
+      Object.defineProperty(row, 'collapsed', {get: () => false, configurable: true});   // ExcelJS đánh dấu nhầm 'đã thu gọn' cho dòng con
+      outRows.push(n); n++;
+    };
+    const walk = (sel, d, critList) => {
+      const lv = LEV[levels[d]]; const groups = new Map(); sel.forEach(r => { const k = lv.key(r); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+      let keys = [...groups.keys()];
+      if (levels[d] === 'acc') keys.sort((a, b) => { const A = groups.get(a), B = groups.get(b); const t = x => x.reduce((s, r) => s + r.tgt, 0), fv = x => x.reduce((s, r) => s + r.fcv, 0); return (t(B) - t(A)) || (fv(B) - fv(A)) || String(lv.lab(A[0])).localeCompare(lv.lab(B[0])); });
+      else keys.sort((a, b) => String(a).localeCompare(String(b)));
+      for (const k of keys){ const g = groups.get(k); if (!g.some(r => r.fcv || r.tgt || qv(r).some(Boolean) || (notes && r.f.note))) continue;   // bỏ nhóm toàn 0
+        const cl = [...critList, [lv.col, lv.crit(g[0])]]; write(lv.lab(g[0]), d + 1, g, cl, false); if (d + 1 < levels.length) walk(g, d + 1, cl); }
+    };
+    sh.properties.outlineLevelRow = levels.length - 1;
+    walk(rows, 0, []); write('Grand Total', 1, rows, [], true);
+    sh.getColumn(1).width = levels.includes('acc') ? 44 : 26; for (let i = 2; i <= nv + 1; i++){ sh.getColumn(i).width = 15; sh.getColumn(i).numFmt = VND; } sh.getColumn(nv + 2).width = 2;
+    for (let i = cM + 1; i <= cM + 4; i++){ sh.getColumn(i).width = 12; sh.getColumn(i).numFmt = PCT; } if (notes) sh.getColumn(cM + 5).width = 60;
+    for (let i = cM + 1; i <= cM + 4; i++) sh.getCell(3, i).fill = fill('FF8A6516');
+    const last = n - 1; achRules(`${L(cM)}4:${L(cM + 1)}${last}`).forEach(x => sh.addConditionalFormatting(x)); grRules(`${L(cM + 2)}4:${L(cM + 3)}${last}`).forEach(x => sh.addConditionalFormatting(x));
+  }
+  pivot('RFFM_By Brand', `FC ${CUR} theo brand · cả team`, ['brand']);
+  pivot('RFFM_By Account', `FC ${CUR} theo account · cả team`, ['acc', 'brand'], true);
+  pivot('RFFM_By MR', `FC ${CUR} theo MR`, ['rep']);
+  pivot('MR_By Brand', `FC ${CUR} theo MR × brand`, ['rep', 'brand']);
+  pivot('MR_By Account', `FC ${CUR} theo MR × account × brand`, ['rep', 'acc', 'brand'], true);
+
+  /* ---------- Tiến độ nộp, Demand plan, SKUs ---------- */
+  const st = wb.addWorksheet('Tiến độ nộp', {views: [{state: 'frozen', ySplit: 1}]});
+  st.addRow(['MR', 'Trạng thái', 'Nộp lúc', 'Duyệt / trả lại bởi', 'Ghi chú duyệt', 'Target (VND)', 'FC (VND)', '% đạt FC', 'Ước đạt cuối quý', 'Thiếu / vượt', 'QTD (VND)', 'Dòng cần lý do']); header(st.getRow(1));
+  repList().filter(rep => ROWS.some(r => r.rep_name === rep)).forEach(rep => { const a = agg(ROWS.filter(r => r.rep_name === rep)); const sb = D.subs[rep] || {}; st.addRow([rep, STATUS[repStatus(rep)][0], sb.submitted_at ? new Date(sb.submitted_at) : null, sb.reviewed_by || '', sb.review_note || '', a.tgt, a.fcv, a.ach ?? '', a.landing, a.gap ?? '', a.act[4], a.need]); });
+  [22, 22, 16, 22, 30, 15, 15, 10, 16, 14, 15, 12].forEach((w, i) => st.getColumn(i + 1).width = w); [6, 7, 9, 10, 11].forEach(i => st.getColumn(i).numFmt = VND); st.getColumn(8).numFmt = PCT; st.getColumn(3).numFmt = 'dd/mm/yyyy hh:mm';
+  const dp = wb.addWorksheet('Demand plan SKU', {views: [{state: 'frozen', ySplit: 1}]});
+  dp.addRow(['Brand', 'SKU', ...MN.map(x => `${x} (box)`), 'Quý (box)', ...MN.map(x => `${x} (VND)`), 'Quý (VND)', `Thực tế ${PREV} (box)`]); header(dp.getRow(1));
+  for (const sku of [...new Set(ROWS.map(r => r.sku))].sort()){ const rs = ROWS.filter(r => r.sku === sku); const bx = [0, 1, 2].map(i => rs.reduce((t, r) => t + num(r.f['m' + (i + 1)]), 0)); const v = [0, 1, 2].map(i => rs.reduce((t, r) => t + r.fcvM[i], 0));
+    dp.addRow([rs[0].brand, sku, ...bx, bx[0] + bx[1] + bx[2], ...v, v[0] + v[1] + v[2], Math.round(rs.reduce((t, r) => t + r.qty[3], 0))]); }
+  [10, 28, 11, 11, 11, 12, 15, 15, 15, 16, 16].forEach((w, i) => dp.getColumn(i + 1).width = w); [3, 4, 5, 6, 11].forEach(i => dp.getColumn(i).numFmt = BOX); [7, 8, 9, 10].forEach(i => dp.getColumn(i).numFmt = VND);
+  const sk = wb.addWorksheet('SKUs'); sk.addRow(['Brand', 'SKU', 'Giá']); header(sk.getRow(1), 20); D.prices.forEach(x => sk.addRow([x.brand, x.sku, num(x.price)])); sk.getColumn(1).width = 12; sk.getColumn(2).width = 30; sk.getColumn(3).width = 14; sk.getColumn(3).numFmt = VND;
+  return {wb, name: `FC_Sale_CVRM_HCM_${CUR.replace("'", '')}_${now.toISOString().slice(0, 10)}.xlsx`};
 }
 function missingAccounts(){ const keys = new Set(D.mapping.map(m => `${m.cust_code}|${m.sku}`)); return D.seen.filter(s => !keys.has(`${s.cust_code}|${s.sku}`)).sort((a, b) => b.value - a.value); }
 
@@ -1110,7 +1324,7 @@ function viewAdmin(){
   const t = VIEW.admTab; const subtabs = [['import', 'Kỳ & nạp dữ liệu'], ['history', 'FC lịch sử & chốt kỳ'], ['missing', `Account thiếu (${new Set(miss.map(x => x.cust_code)).size + new Set(TGT_OPEN.map(t => t.cust_code)).size})`], ['mapping', `Phân bổ account${prop.length ? ` · ${prop.length} đề xuất` : ''}${warn.length ? ` · ${warn.length} cảnh báo` : ''}`], ['members', 'Thành viên & giá']];
   v.innerHTML = `<div class="bar">${subtabs.map(([k, l]) => `<button class="btn ${t === k ? 'pri' : ''}" data-at="${k}">${l}</button>`).join('')}<span class="grow"></span><button class="btn" id="exp">⬇ Xuất Excel</button>${MODE === 'demo' ? '<button class="btn danger" id="rst">Reset demo</button>' : ''}</div><div id="adm"></div>`;
   $$('[data-at]').forEach(b => b.onclick = () => { VIEW.admTab = b.dataset.at; viewAdmin(); });
-  $('#exp').onclick = exportExcel;
+  $('#exp').onclick = e => exportExcel(e.currentTarget);
   $('#rst') && ($('#rst').onclick = async () => { if (await confirmBox('Xóa toàn bộ dữ liệu demo và tạo lại?')){ STORE.reset(); await reload(); } });
   const A = $('#adm');
   const hook = (id, lid, fn) => { $(id).onchange = async e => { const f = e.target.files[0]; if (!f) return; const L = $(lid); L.textContent = 'Đang xử lý…'; try { await fn(f, m => L.textContent = m); D = await STORE.loadAll(); build(); L.textContent += '\n✓ Xong.'; } catch(err){ L.textContent = '✗ ' + err.message; } e.target.value = ''; }; };
@@ -1129,6 +1343,10 @@ function viewAdmin(){
       <div class="card"><h3>4. Target ${P[4].label}</h3><div class="drop"><b>File Target Allocation của Bayer</b> (sheet Account: REP · Cus. Code · Product Name · Final Target · Volume Target): target tự gắn theo từng MR. Cũng nhận file chỉ có Cust Code · SKU · Target.<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm"></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-tc" checked> Tự tạo dòng FC cho MR có target nhưng chưa có dòng</label></div>
         <div class="bar"><label><input type="checkbox" id="u-ts"> Cập nhật Sales ratio theo tỷ trọng target (account chia nhiều MR)</label></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((x, y) => x + num(y.value), 0))}${D.targets.some(t => t.rep_name) ? ' (theo MR)' : ''}${TGT_OPEN.length ? `, ${big(TGT_OPEN.reduce((x, t) => x + num(t.value), 0))} chưa có dòng FC/MR` : ''}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>5. FC từ file Excel của team</h3><div class="drop">File FC Sale của team (sheet <b>FC Sale</b>, .xlsm) hoặc file Excel xuất từ app (sheet <b>FC Input</b>). App đọc 3 cột FC tháng (box) và Note, ghép theo MR × Cust Code × SKU rồi ghi vào kỳ ${P[4].label}.<br><input type="file" id="u-fcx" accept=".xlsx,.xls,.xlsm"></div>
+        <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fcs" checked> Đồng bộ phân bổ account theo file: tạo dòng account × SKU còn thiếu, Sales ratio theo file, MR khác đang giữ cùng account × SKU về 0%</label></div>
+        <div class="bar"><label><input type="checkbox" id="u-fcz"> File là bản chốt: dòng nào file để trống / toàn 0 thì xóa FC đang có trong app</label></div>
+        <div class="log" id="l-fcx">Mặc định dòng FC trống / toàn 0 không ghi đè số trong app. Dòng toàn 0 nhưng có Note được ghi là FC = 0 kèm ghi chú. App hỏi xác nhận trước khi ghi.</div></div>
     </div>`;
     $('#s-save').onclick = async () => {
       const ns = {year: num($('#s-y').value), quarter: num($('#s-q').value), deadline: $('#s-d').value || null, locked: $('#s-l').checked, team_filter: $('#s-t').value.trim(), exclude_keywords: $('#s-x').value.trim(), fc_rule_pct: Math.max(5, num($('#s-rp').value)) / 100, fc_rule_min: num($('#s-rm').value) * 1e6};
@@ -1136,7 +1354,7 @@ function viewAdmin(){
       try {
         if ((ns.year !== +s.year || ns.quarter !== +s.quarter) && ROWS.some(r => r.filled) && !D.archive.some(x => x.period === PK) && await confirmBox(`Lưu bản chốt FC ${P[4].label} trước khi chuyển kỳ? (khuyến nghị, để đo độ chính xác FC)`)){ const n = await snapshot(); toast(`Đã chốt ${n} dòng FC ${P[4].label}`); }
         await STORE.saveSettings(ns); toast('Đã lưu'); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
-    hook('#u-p', '#l-p', importPrices); hook('#u-s', '#l-s', importSales); hook('#u-f', '#l-f', (f, log) => importAccounts(f, $('#u-fc').checked, $('#u-del').checked, log)); hook('#u-t', '#l-t', (f, log) => importTargets(f, {create: $('#u-tc').checked, sync: $('#u-ts').checked}, log));
+    hook('#u-p', '#l-p', importPrices); hook('#u-s', '#l-s', importSales); hook('#u-f', '#l-f', (f, log) => importAccounts(f, $('#u-fc').checked, $('#u-del').checked, log)); hook('#u-t', '#l-t', (f, log) => importTargets(f, {create: $('#u-tc').checked, sync: $('#u-ts').checked}, log)); hook('#u-fcx', '#l-fcx', (f, log) => importFCFile(f, {sync: $('#u-fcs').checked, clear: $('#u-fcz').checked}, log));
     $$('[data-tpl]').forEach(b => b.onclick = () => downloadTemplate(b.dataset.tpl));
   }
   if (t === 'history'){

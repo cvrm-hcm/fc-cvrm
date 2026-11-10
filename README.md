@@ -2,6 +2,23 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3.4 (10/11/2026) — đọc file FC Sale của team, xuất Excel theo mẫu
+
+**Nạp FC từ file Excel của team (Admin → Kỳ & nạp dữ liệu → 5)**
+- Nhận file FC Sale của team (`.xlsm`, sheet **FC Sale**) và file xuất từ app (sheet **FC Input**). Đọc 3 cột FC tháng (box) + Note/Note2, ghép theo MR × Cust Code × SKU.
+- Kiểm tra quý của file (theo tên cột `FC Oct (box)`, `Target Q4'26`…): sai quý thì chặn.
+- Tên REP khác tên trong app (vd "Hoang Phan" ↔ "Phan Cong Huy Hoang"): app tự đoán, hỏi lại và nhớ cho lần sau.
+- Dòng FC trống / toàn 0: mặc định không ghi đè. Dòng toàn 0 có Note: ghi FC = 0 kèm ghi chú. Số box lẻ: làm tròn.
+- Tùy chọn *Đồng bộ phân bổ account theo file* (mặc định bật): tạo dòng account × SKU còn thiếu, Sales ratio theo file, MR khác đang giữ cùng account × SKU về 0%.
+- Tùy chọn *File là bản chốt*: dòng file để trống / toàn 0 thì xóa FC đang có trong app.
+- Luôn hỏi xác nhận trước khi ghi (số dòng, tổng FC, MR đã nộp/duyệt bị thay số).
+
+**Xuất Excel theo mẫu của team (Dashboard → Xuất Excel)**
+- Sheet **FC Input**: cột giống sheet FC Sale (8 quý thực tế, target, FC tháng box, FC value, % đạt, % tăng trưởng, Note…), dòng tổng theo bộ lọc, cột nhập FC tô vàng. Sửa FC trong file rồi nạp lại được vào app.
+- 5 sheet tổng hợp như pivot của mẫu: **RFFM_By Brand, RFFM_By Account, RFFM_By MR, MR_By Brand, MR_By Account**, có %Ach QTD, %Ach FC, % tăng trưởng; nhóm dòng mở/thu gọn; số là công thức SUMIFS trỏ về FC Input nên sửa FC trong Excel thì tự tính lại.
+- Thêm sheet Tiến độ nộp, Demand plan SKU, SKUs (bảng giá cho công thức).
+- Thư viện ExcelJS 4.4.0 tải từ jsDelivr khi bấm xuất.
+
 ## Phiên bản 3.3 (10/11/2026) — icon trên màn hình chính
 
 - iPhone: Safari → nút Chia sẻ → **Thêm vào MH chính**. Icon `icons/apple-touch-icon.png`, tên dưới icon "FC CVRM", mở toàn màn hình như app (thanh trạng thái phủ màu navy, nội dung tránh tai thỏ).
