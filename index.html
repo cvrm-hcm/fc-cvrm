@@ -103,7 +103,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .mcards .sku .meta{font-size:12px;color:var(--ink2);display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 6px}
 .mcards .sku .ins{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .mcards .sku .ins label{font-size:11px;color:var(--ink2)}
-.mcards input.box{width:100%;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:7px 8px;font-size:15px}
+.mcards input.box{width:100%;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:7px 8px;font-size:16px}
 .mcards input.note{width:100%;margin-top:6px;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:7px 8px}
 /* charts */
 .grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
@@ -146,13 +146,43 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.35);display:flex;align-items:center;justify-content:center;z-index:90}
 .modal{background:#fff;border-radius:12px;padding:20px;max-width:440px;width:92%}
 .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.grid2>*,.adm>*,.kpis>*,.card{min-width:0}
+.fl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)}
+.t tr.tot td.stick{background:#eef1f6}
 @media (max-width:760px){
-  main{padding:12px 10px 60px}
-  .top{padding:8px 12px;gap:8px}
-  .tabs{order:3;width:100%;margin:0}
-  .tab{flex:1}
+  html,body{overflow-x:hidden}
+  main{padding:12px 10px calc(70px + env(safe-area-inset-bottom))}
+  .top{position:relative;padding:8px 12px;gap:6px 8px}
+  .top .brand{font-size:15px;flex:1}
+  .top .period{font-size:11.5px}
+  .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:12.5px}
+  .top .who .btns{display:flex;gap:6px}
+  .top .btn.sm{padding:3px 8px;font-size:12px}
+  .tabs{order:4;width:100%;margin:0}
+  .tab{flex:1;padding:7px 6px}
+  h2{font-size:16px}
+  .demo-banner{font-size:12px}
+  .kpis{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{padding:8px 11px}
   .kpi .v{font-size:18px}
-  .hb{grid-template-columns:96px 1fr 44px}
+  .filters h2,.filters .grow{width:100%;flex:1 1 100%}
+  .filters .fl{flex:1 1 45%}
+  .filters .fl.wide{flex:1 1 100%}
+  .filters .fl select{flex:1;min-width:0}
+  .bar select,.bar input[type=search],.bar input[type=text]{min-width:0}
+  input,select,textarea{font-size:16px!important}
+  .t input.box{width:60px}
+  .card{padding:12px}
+  .hb{grid-template-columns:1fr auto;grid-template-areas:"nm pc" "tr tr";row-gap:2px;padding:5px 0}
+  .hb .nm{grid-area:nm}.hb .pc{grid-area:pc}.hb .tr{grid-area:tr}
+  .cols{gap:8px;height:190px}
+  .cols .c{width:20px}
+  .cols .c span{font-size:10px}
+  .xl{gap:8px}.xl div{font-size:11px}
+  .legend{gap:10px;font-size:11.5px}
+  .t{font-size:12px}
+  .t td,.t th{padding:5px 6px}
+  .adm{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -199,6 +229,7 @@ const isAssigned = (rep, kws) => { const r = lc(rep); return r && !kws.some(k =>
 /* tooltip */
 const TIP = $('#tip');
 document.addEventListener('mouseover', e => { const t = e.target.closest('[data-tip]'); if (!t){ TIP.style.display = 'none'; return; } TIP.textContent = t.dataset.tip; TIP.style.display = 'block'; });
+addEventListener('scroll', () => { TIP.style.display = 'none'; }, {passive: true});
 document.addEventListener('mousemove', e => { if (TIP.style.display === 'block'){ const x = Math.min(e.clientX + 14, innerWidth - 270); TIP.style.left = x + 'px'; TIP.style.top = (e.clientY + 14) + 'px'; } });
 
 /* =========================================================
@@ -382,7 +413,7 @@ async function start_(){
   try { D = await STORE.loadAll(); } catch(e){ return renderLogin('Không tải được dữ liệu: ' + e.message); }
   ME = D.members.find(m => lc(m.email) === lc(email));
   if (!ME){ await STORE.signOut(); return renderLogin('Email này chưa có trong danh sách team. Liên hệ admin.'); }
-  VIEW.fcRep = VIEW.fcRep || (ME.role === 'MR' ? ME.rep_name : repList()[0]);
+  VIEW.fcRep = VIEW.fcRep || ME.rep_name;
   build(); render();
   if (MODE === 'cloud'){ const u = await STORE.getUser(); if (!u?.user_metadata?.pw_changed) await passwordDialog(true); }
 }
@@ -429,7 +460,7 @@ function render(){
   $('#app').innerHTML = `<header class="top"><div class="brand">${esc(CFG.APP_NAME)}</div>
     <span class="period ${s.locked ? 'lock' : ''}">Kỳ FC ${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHÓA' : ''}</span>
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</nav>
-    <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></div></header>
+    <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns">${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò bằng Đăng xuất. Bản thật kết nối Supabase, mỗi MR một tài khoản.</div>` : ''}<div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
   $('#logout').onclick = async () => { await STORE.signOut(); renderLogin(); };
@@ -445,13 +476,16 @@ let saveTimers = {}; let lastMobile = MOBILE();
 addEventListener('resize', () => { if (ME && VIEW.tab === 'fc' && MOBILE() !== lastMobile){ lastMobile = MOBILE(); viewFC(); } });
 
 function viewFC(){
-  const v = $('#view'); const rep = ME.role === 'MR' ? ME.rep_name : VIEW.fcRep;
+  const v = $('#view');
+  const withRows = [...new Set(D.mapping.map(m => m.rep_name))].sort();
+  if (ME.role !== 'MR' && !withRows.includes(VIEW.fcRep)) VIEW.fcRep = withRows.includes(ME.rep_name) ? ME.rep_name : (withRows[0] || ME.rep_name);
+  const rep = ME.role === 'MR' ? ME.rep_name : VIEW.fcRep;
   const mine = ROWS.filter(r => r.rep_name === rep); const a = agg(mine); const sub = D.subs[rep]; const editable = canEdit(rep);
   const brands = [...new Set(mine.map(r => r.brand))].sort();
   let rows = mine.filter(r => (!VIEW.fcBrand || r.brand === VIEW.fcBrand) && (!VIEW.fcSearch || lc(r.cust_name + ' ' + r.cust_code).includes(lc(VIEW.fcSearch))) && (!VIEW.fcOnly || r.act.some(x => x) || r.tgt || r.box));
   const m = (D.settings.quarter - 1) * 3; const mn = [0, 1, 2].map(i => MONTHS[m + i]);
   v.innerHTML = `
-    <div class="bar">${canSeeAll() ? `<label>MR</label><select id="f-rep">${repList().map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>` : ''}
+    <div class="bar filters">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep">${repList().map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
       <h2 style="margin:0">${ME.role === 'MR' ? 'FC của tôi' : esc(rep)} · ${qlabel(D.settings.year, D.settings.quarter)}</h2>
       <span class="grow"></span>
       ${sub ? `<span class="chip ok">✓ Đã nộp ${fmtTime(sub.submitted_at)}</span>` : `<span class="chip no">Chưa nộp</span>`}
@@ -465,7 +499,7 @@ function viewFC(){
       <div class="kpi"><div class="l">FC vs ${P[0].label} (LYSP)</div><div class="v">${grHtml(a.gLy)}</div><div class="d">Actual ${big(a.act[0])}</div></div>
       <div class="kpi"><div class="l">FC vs ${P[3].label}</div><div class="v">${grHtml(a.gQ)}</div><div class="d">Actual ${big(a.act[3])}</div></div>
     </div>
-    <div class="bar"><input type="search" id="f-q" placeholder="Tìm account / mã KH" value="${esc(VIEW.fcSearch)}">
+    <div class="bar filters"><input type="search" id="f-q" placeholder="Tìm account / mã KH" value="${esc(VIEW.fcSearch)}" style="flex:1 1 200px">
       <select id="f-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.fcBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
       <label><input type="checkbox" id="f-only" ${VIEW.fcOnly ? 'checked' : ''}> Chỉ dòng có sales/target/FC</label>
       <span class="grow"></span><span class="save-ind" id="saveind">${editable ? 'Nhập số BOX theo tháng, tự lưu' : 'Chỉ xem'}</span></div>
@@ -538,10 +572,10 @@ function viewDash(){
   const byRep = reps.map(rep => ({rep, ...agg(base.filter(r => r.rep_name === rep)), sub: D.subs[rep]})).filter(x => x.n);
   const nSub = byRep.filter(x => x.sub).length;
   v.innerHTML = `
-    <div class="bar"><h2 style="margin:0">Dashboard ${P[4].label}</h2><span class="grow"></span>
-      <label>MR</label><select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>
-      <label>Brand</label><select id="d-b"><option value="">Tất cả</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
-      <label>Kênh</label><select id="d-c"><option value="">Tất cả</option>${chs.map(b => `<option ${b === VIEW.dCh ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></div>
+    <div class="bar filters"><h2 style="margin:0">Dashboard ${P[4].label}</h2><span class="grow"></span>
+      <label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+      <label class="fl">Brand <select id="d-b"><option value="">Tất cả</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
+      <label class="fl">Kênh <select id="d-c"><option value="">Tất cả</option>${chs.map(b => `<option ${b === VIEW.dCh ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></label></div>
     <div class="kpis">
       <div class="kpi"><div class="l">Target</div><div class="v">${big(a.tgt)}</div><div class="d">${VIEW.dRep ? esc(VIEW.dRep) : 'Cả team'}</div></div>
       <div class="kpi"><div class="l">FC</div><div class="v">${big(a.fcv)}</div><div class="d">${achHtml(a.ach)} target</div></div>
@@ -555,11 +589,11 @@ function viewDash(){
       <div class="card"><h3>Doanh số theo quý ${VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· cả team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Actual</span><span><i style="background:var(--s2)"></i>FC</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div>
         <div class="sub" style="margin-top:8px">Đơn vị: tỷ VND. Quý ${P[4].label}: actual là QTD.</div></div>
     </div>
-    <div class="card"><h3>Theo MR</h3><div class="tw"><table class="t"><thead><tr><th class="l">MR</th><th>Target</th><th>FC</th><th>%Ach FC</th><th>QTD</th><th>%Ach QTD</th><th>vs ${P[0].label}</th><th>vs ${P[3].label}</th><th>Dòng đã nhập</th><th class="l">Trạng thái</th></tr></thead>
-      <tbody>${byRep.map(x => `<tr><td class="l">${esc(x.rep)}</td><td>${tr(x.tgt)}</td><td>${tr(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${tr(x.act[4])}</td><td>${pct(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${x.filled}/${x.n}</td><td class="l">${x.sub ? `<span class="chip ok">✓ ${fmtTime(x.sub.submitted_at)}</span>` : '<span class="chip no">Chưa nộp</span>'}</td></tr>`).join('')}
-      ${(() => { const t = agg(base); return `<tr class="tot"><td class="l">Tổng team</td><td>${tr(t.tgt)}</td><td>${tr(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${tr(t.act[4])}</td><td>${pct(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${t.filled}/${t.n}</td><td class="l">${nSub}/${byRep.length} đã nộp</td></tr>`; })()}</tbody></table></div><div class="sub" style="margin-top:6px">Đơn vị: triệu VND</div></div>
-    <div class="grid2">${['brand', 'channel'].map(dim => { const keys = [...new Set(sel.map(r => r[dim] || '(chưa gán)'))].sort(); return `<div class="card"><h3>Theo ${dim === 'brand' ? 'brand' : 'kênh'}</h3><div class="tw"><table class="t"><thead><tr><th class="l">${dim === 'brand' ? 'Brand' : 'Kênh'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th>FC</th><th>%Ach FC</th><th>vs ${P[0].label}</th></tr></thead><tbody>
-      ${keys.map(k => { const g = agg(sel.filter(r => (r[dim] || '(chưa gán)') === k)); return `<tr><td class="l">${esc(k)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td><td>${tr(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${grHtml(g.gLy)}</td></tr>`; }).join('')}</tbody></table></div></div>`; }).join('')}</div>`;
+    <div class="card"><h3>Theo MR</h3><div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th>Target</th><th>FC</th><th>%Ach FC</th><th>QTD</th><th>%Ach QTD</th><th>vs ${P[0].label}</th><th>vs ${P[3].label}</th><th>Dòng đã nhập</th><th class="l">Trạng thái</th></tr></thead>
+      <tbody>${byRep.map(x => `<tr><td class="l stick">${esc(x.rep)}</td><td>${tr(x.tgt)}</td><td>${tr(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${tr(x.act[4])}</td><td>${pct(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${x.filled}/${x.n}</td><td class="l">${x.sub ? `<span class="chip ok">✓ ${fmtTime(x.sub.submitted_at)}</span>` : '<span class="chip no">Chưa nộp</span>'}</td></tr>`).join('')}
+      ${(() => { const t = agg(base); return `<tr class="tot"><td class="l stick">Tổng team</td><td>${tr(t.tgt)}</td><td>${tr(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${tr(t.act[4])}</td><td>${pct(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${t.filled}/${t.n}</td><td class="l">${nSub}/${byRep.length} đã nộp</td></tr>`; })()}</tbody></table></div><div class="sub" style="margin-top:6px">Đơn vị: triệu VND</div></div>
+    <div class="grid2">${['brand', 'channel'].map(dim => { const keys = [...new Set(sel.map(r => r[dim] || '(chưa gán)'))].sort(); return `<div class="card"><h3>Theo ${dim === 'brand' ? 'brand' : 'kênh'}</h3><div class="tw"><table class="t"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : 'Kênh'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th>FC</th><th>%Ach FC</th><th>vs ${P[0].label}</th></tr></thead><tbody>
+      ${keys.map(k => { const g = agg(sel.filter(r => (r[dim] || '(chưa gán)') === k)); return `<tr><td class="l stick">${esc(k)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td><td>${tr(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${grHtml(g.gLy)}</td></tr>`; }).join('')}</tbody></table></div></div>`; }).join('')}</div>`;
   $('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDash(); };
   $('#d-b').onchange = e => { VIEW.dBrand = e.target.value; viewDash(); };
   $('#d-c').onchange = e => { VIEW.dCh = e.target.value; viewDash(); };
