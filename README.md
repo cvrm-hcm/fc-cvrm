@@ -2,6 +2,20 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.2 (11/11/2026) — Thuật ngữ & thông số Bayer
+
+Toàn bộ chữ trên app (FC Input, Dashboard MR / RFFM / Admin, Admin, file Excel xuất) dùng cách gọi của team và file Target Allocation / FC Sale:
+- **Số**: thập phân dấu chấm, nghìn dấu phẩy (1.3 · 28.64 tỷ · 1,852 tr). Ngày dd/mm/yyyy, giờ 24h.
+- **Chỉ số**: %Ach FC · %Ach QTD · Gr vs LYSP · Gr vs Q3'26 · Gap vs target · Act. / Act. QTD · FC remain · TB 2Q (box/tháng).
+- **Phasing** thay "mốc mùa vụ": %Ach QTD so với phần sales quý thường đạt tới ngày dữ liệu (vd 32% tới 09/11).
+- **Est. 2Q** thay "Nhịp 2Q": Act. QTD + TB sales quý của 2 quý gần nhất × phần quý còn lại theo phasing. Không gọi là run rate vì run rate dùng cho quota thầu.
+- **Kênh**: Khoa Dược (tender), NTBV (self-pay), Other; xếp theo thứ tự này. Dữ liệu gốc vẫn là Tender / Self-pay / Other.
+- **Trạng thái**: Chưa submit · Đã submit, chờ duyệt · Đã duyệt · Trả lại. Nút Submit FC / Submit lại. Ghi chú → Note.
+- **Lý do điều chỉnh FC**: Thầu mới / first order · Out of quota / gap thầu · MSBS 30% / stock up quota (mới) · Tồn kho BV cao / sell-out chậm · Vượt quỹ BHYT / khoá thuốc · Gx / đối thủ gain share · Listing mới / BS mới kê toa · BS ngưng kê / BS nghỉ · Thay đổi ratio / phân bổ account · Khác (ghi rõ ở Note). Lý do đã chọn ở bản cũ tự đổi sang nhãn mới (database và file Excel cũ).
+- **Dashboard RFFM/Admin**: tab Overview · By MR · By account · Risk & issue; nhóm issue Thầu / quota, Tồn kho, Vượt quỹ BHYT / khoá thuốc, Gx / đối thủ, NTBV / self-pay, HCP / listing; SKU viết gọn Xa20 · Xa15 · Xa10 · Xa2.5 · Adalat LA 30; Sales ratio dạng 0.6. Bridge target → FC ghi rõ phần bù từ account vượt target và từ account không có target.
+- **Excel xuất**: cột theo mẫu team (Act. sales Qn'yy, %Ach QTD, %Ach FC, % Growth, Note); sheet Tracking submit và Risk accounts (thay Tiến độ nộp, BV rủi ro). File xuất từ bản cũ vẫn nạp lại được.
+- Không cần chạy SQL.
+
 ## Phiên bản 4.1 (11/11/2026) — Dashboard RFFM / Admin nhiều góc nhìn
 
 Dashboard của RFFM/Admin chia 4 tab, dùng chung bộ lọc MR / Brand / Kênh:
