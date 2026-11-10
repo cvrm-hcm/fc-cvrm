@@ -2,6 +2,20 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3.1 (10/11/2026) — cách hiển thị số
+
+| Loại số | Cách hiển thị | Màu |
+|---|---|---|
+| % đạt target | Thanh tiến độ + số % (trong bảng: nhãn tròn có thanh nhỏ). Không dùng mũi tên. | Xanh ≥100% · vàng 80–99% · đỏ <80% |
+| % đạt QTD | Như trên, thêm vạch đen = mốc tiến độ thời gian của quý | Màu so với mốc tiến độ, không so với 100% |
+| Tăng trưởng (vs LYSP, vs quý trước) | Mũi tên + dấu: ↑ +14% / ↓ −22% | Xanh tăng · đỏ giảm |
+| Thiếu / vượt target | −2.047 / +164 (triệu VND), thẻ ghi "còn thiếu… / vượt…" | Đỏ thiếu · xanh vượt |
+| Độ chính xác FC | Nhãn viền | Xanh ≥85% · vàng 70–84% · đỏ <70% |
+| Bias (FC lệch) | Số có dấu, màu trung tính | Cam khi lệch >10% |
+
+- Thẻ KPI chia 2 nhóm: **So với target** (nền vàng nhạt) và **Tăng trưởng FC** (nền xanh nhạt). Cột trong bảng tô cùng màu nhóm.
+- Thẻ KPI ở tab FC cập nhật ngay khi MR gõ số.
+
 ## Phiên bản 3 (10/11/2026)
 
 **Target theo MR từ file Target Allocation của Bayer**
