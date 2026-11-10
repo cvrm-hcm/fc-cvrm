@@ -10,6 +10,7 @@ App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay 
 - Đề xuất account: vẫn gợi ý mã + tên khách hàng (không kèm doanh số).
 - Cảnh báo "Ratio≠100%" chỉ hiện với RFFM/Admin (MR không thấy phần của MR khác nên không tự kiểm được).
 - Bảng Theo brand / kênh bỏ dòng toàn số 0.
+- Siết quyền gọi hàm theo Security Advisor của Supabase: người chưa đăng nhập không gọi được hàm nào, hàm trigger chỉ chạy qua trigger.
 - **Cần làm 1 lần:** Supabase → SQL Editor → dán toàn bộ `migration_v4.sql` → Run. Chưa chạy thì Admin thấy dòng nhắc màu vàng; giao diện MR vẫn ẩn số team nhưng MR còn đọc được qua API.
 
 ## Phiên bản 3.5 (10/11/2026) — FC theo ngày dữ liệu, bỏ "ước đạt"

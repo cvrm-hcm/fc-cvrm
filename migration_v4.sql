@@ -11,7 +11,7 @@
 -- 1. Hàm hỗ trợ
 -- App đọc số này để biết database đã ở bản 4 chưa
 create or replace function public.app_db_version() returns int
-  language sql immutable as $$ select 4 $$;
+  language sql immutable set search_path = '' as $$ select 4 $$;
 
 -- Account × SKU này có target giao thẳng cho MR chưa (đọc cả team, không lộ số ra ngoài)
 create or replace function public.target_has_rep(p text, c text, s text) returns boolean
@@ -25,10 +25,6 @@ create or replace function public.customer_names() returns table (cust_code text
     select a.cust_code, a.cust_name from accounts_seen a union all select m.cust_code, m.cust_name from mapping m) x
   where public.is_member() and coalesce(x.cust_name, '') <> ''
   group by x.cust_code order by x.cust_code $$;
-
-grant execute on function public.app_db_version() to authenticated;
-grant execute on function public.target_has_rep(text, text, text) to authenticated;
-grant execute on function public.customer_names() to authenticated;
 
 -- 2. Quyền đọc theo người dùng (thay cho "member read" = ai trong team cũng đọc được)
 do $$
@@ -76,6 +72,23 @@ create policy "scoped read" on public.accounts_seen for select to authenticated
   using ((select public.is_reviewer()));
 
 -- Giữ nguyên: team_members, settings, prices — ai trong team cũng đọc được (tên, vai trò, kỳ FC, bảng giá)
+
+-- 3. Siết quyền gọi hàm (theo Security Advisor của Supabase):
+--    người chưa đăng nhập không gọi được hàm nào; hàm trigger chỉ chạy qua trigger.
+create or replace function public.my_email() returns text
+  language sql stable set search_path = '' as $$ select lower(coalesce(auth.jwt() ->> 'email', '')) $$;
+do $$
+declare f text;
+begin
+  foreach f in array array['my_email()', 'is_member()', 'is_admin()', 'is_reviewer()', 'my_rep()', 'current_period()', 'period_open()', 'rep_approved(text)',
+                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()'] loop
+    execute format('revoke execute on function public.%s from public, anon', f);
+    execute format('grant execute on function public.%s to authenticated', f);
+  end loop;
+  foreach f in array array['log_fc()', 'stamp_fc()', 'stamp_mapping()', 'stamp_submission()'] loop
+    execute format('revoke execute on function public.%s from public, anon, authenticated', f);
+  end loop;
+end $$;
 
 notify pgrst, 'reload schema';
 

@@ -18,7 +18,7 @@ create table if not exists public.team_members (
 );
 
 create or replace function public.my_email() returns text
-  language sql stable as $$ select lower(coalesce(auth.jwt() ->> 'email', '')) $$;
+  language sql stable set search_path = '' as $$ select lower(coalesce(auth.jwt() ->> 'email', '')) $$;
 create or replace function public.is_member() returns boolean
   language sql stable security definer set search_path = public as
   $$ select exists (select 1 from team_members where lower(email) = my_email()) $$;
@@ -218,7 +218,7 @@ end $$;
 -- Hàm hỗ trợ quyền đọc
 -- App đọc số này để biết database đã ở bản 4 chưa
 create or replace function public.app_db_version() returns int
-  language sql immutable as $$ select 4 $$;
+  language sql immutable set search_path = '' as $$ select 4 $$;
 
 -- Account × SKU này có target giao thẳng cho MR chưa (đọc cả team, không lộ số ra ngoài)
 create or replace function public.target_has_rep(p text, c text, s text) returns boolean
@@ -233,9 +233,6 @@ create or replace function public.customer_names() returns table (cust_code text
   where public.is_member() and coalesce(x.cust_name, '') <> ''
   group by x.cust_code order by x.cust_code $$;
 
-grant execute on function public.app_db_version() to authenticated;
-grant execute on function public.target_has_rep(text, text, text) to authenticated;
-grant execute on function public.customer_names() to authenticated;
 
 -- Quyền đọc theo người dùng: RFFM / admin xem cả team, MR chỉ xem số của mình
 -- Danh sách account × SKU: dòng của mình
@@ -301,6 +298,20 @@ create policy "reviewer review" on public.submissions for update to authenticate
 drop policy if exists "mr propose mapping" on public.mapping;
 create policy "mr propose mapping" on public.mapping for insert to authenticated
   with check (rep_name = public.my_rep() and status = 'proposed' and public.period_open());
+
+-- Quyền gọi hàm: người chưa đăng nhập không gọi được hàm nào; hàm trigger chỉ chạy qua trigger.
+do $$
+declare f text;
+begin
+  foreach f in array array['my_email()', 'is_member()', 'is_admin()', 'is_reviewer()', 'my_rep()', 'current_period()', 'period_open()', 'rep_approved(text)',
+                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()'] loop
+    execute format('revoke execute on function public.%s from public, anon', f);
+    execute format('grant execute on function public.%s to authenticated', f);
+  end loop;
+  foreach f in array array['log_fc()', 'stamp_fc()', 'stamp_mapping()', 'stamp_submission()'] loop
+    execute format('revoke execute on function public.%s from public, anon, authenticated', f);
+  end loop;
+end $$;
 
 -- =====================================================================
 -- KHỞI TẠO — sửa email + tên của bạn rồi chạy
