@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3.2 (10/11/2026) — nút Làm mới
+
+- Nút **↻ Làm mới** trên thanh đầu trang (kèm giờ tải dữ liệu gần nhất): lưu nốt ô đang gõ rồi tải số mới nhất. Giữ nguyên tab, bộ lọc, vị trí cuộn.
+- Quay lại tab app sau từ 1 phút trở lên: app tự làm mới (trừ tab Admin, khi đang mở hộp thoại, hoặc khi có ô lưu lỗi).
+- Có ô lưu lỗi (mất mạng) mà bấm Làm mới: app hỏi lại trước để không mất số.
+
 ## Phiên bản 3.1 (10/11/2026) — cách hiển thị số
 
 | Loại số | Cách hiển thị | Màu |

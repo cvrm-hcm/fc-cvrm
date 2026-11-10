@@ -45,6 +45,11 @@ a{color:var(--s1)}
 .top .who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
 .top .who b{font-weight:600}
 .top .who .btns{display:flex;gap:6px}
+.top .btn.rf{display:inline-flex;align-items:center;gap:5px}
+.top .btn.rf .t{opacity:.75;font-weight:500;font-variant-numeric:tabular-nums}
+.top .btn.rf .ic{display:inline-block;line-height:1}
+.top .btn.rf.spin .ic{animation:rfspin .8s linear infinite}
+@keyframes rfspin{to{transform:rotate(360deg)}}
 .pill{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.18)}
 .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-weight:500;white-space:nowrap}
 .btn:hover{border-color:#c9ccd3}
@@ -211,6 +216,7 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
   .top .period{font-size:11.5px}
   .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:12.5px}
   .top .btn.sm{padding:3px 8px;font-size:12px}
+  .top .btn.rf .lb{display:none}
   .tabs{order:4;width:100%;margin:0}
   .tab{flex:1;padding:7px 6px}
   h2{font-size:16px}
@@ -585,7 +591,7 @@ function start(){ if (!START_P) START_P = start_().finally(() => { START_P = nul
 async function start_(){
   const email = await STORE.currentEmail();
   if (!email) return renderLogin();
-  try { D = await STORE.loadAll(); }
+  try { D = await STORE.loadAll(); LOADED_AT = new Date(); }
   catch(e){ if (e.message === 'DB_MIGRATION') return renderMigration(e.detail); return renderLogin('Không tải được dữ liệu: ' + e.message); }
   ME = D.members.find(m => lc(m.email) === lc(email));
   if (!ME){ await STORE.signOut(); return renderLogin('Email này chưa có trong danh sách team. Liên hệ admin.'); }
@@ -593,7 +599,33 @@ async function start_(){
   build(); render();
   if (MODE === 'cloud'){ const u = await STORE.getUser(); if (!u?.user_metadata?.pw_changed) await passwordDialog(true); }
 }
-async function reload(){ D = await STORE.loadAll(); build(); render(); }
+async function reload(){ D = await STORE.loadAll(); LOADED_AT = new Date(); build(); render(); }
+/* Làm mới: lưu nốt ô đang gõ → tải lại toàn bộ dữ liệu → vẽ lại, giữ nguyên tab, bộ lọc, vị trí cuộn và ô đang nhập */
+let LOADED_AT = null, REFRESHING = false, HIDDEN_AT = 0; const AUTO_REFRESH_MS = 60000;
+const hhmm = d => d ? d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}) : '';
+async function refreshData(auto = false){
+  if (REFRESHING || !ME) return; REFRESHING = true;
+  const btn = $('#refresh'); if (btn){ btn.disabled = true; btn.classList.add('spin'); }
+  const ae = document.activeElement, focus = ae && ae !== document.body ? {id: ae.id, did: ae.dataset?.id, f: ae.dataset?.f} : null; const y = scrollY;
+  try {
+    await flushSaves();
+    if (SAVE_ERR && !auto && !await confirmBox('Có ô FC chưa lưu được (lỗi mạng). Làm mới bây giờ sẽ mất các số đó.<br><span class="sub">Bấm Hủy để nhập lại ô bị lỗi trước.</span>')) return;
+    const nd = await STORE.loadAll(); D = nd; LOADED_AT = new Date(); SAVE_ERR = false;
+    const me = D.members.find(m => lc(m.email) === lc(ME.email));
+    if (!me){ await STORE.signOut(); return renderLogin('Email này không còn trong danh sách team. Liên hệ admin.'); }
+    ME = me; build(); render(); scrollTo(0, y);
+    if (focus){ const el = focus.id ? document.getElementById(focus.id) : (focus.did ? $(`[data-id="${focus.did}"][data-f="${focus.f}"]`) : null); if (el && el.focus) el.focus({preventScroll: true}); }
+    toast(auto ? `Đã tự cập nhật số mới nhất (${hhmm(LOADED_AT)})` : `Đã cập nhật số mới nhất (${hhmm(LOADED_AT)})`);
+  } catch(e){ toast('Không tải được dữ liệu: ' + e.message, 4500); }
+  finally { REFRESHING = false; const b = $('#refresh'); if (b){ b.disabled = false; b.classList.remove('spin'); } }
+}
+// Quay lại tab app sau ≥ 1 phút: tự làm mới (trừ khi đang ở Admin, đang mở hộp thoại hoặc có ô lưu lỗi)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden'){ HIDDEN_AT = Date.now(); return; }
+  const away = HIDDEN_AT ? Date.now() - HIDDEN_AT : 0; HIDDEN_AT = 0;
+  if (away < AUTO_REFRESH_MS || !ME || !D || VIEW.tab === 'admin' || $('.modal-bg') || SAVE_ERR) return;
+  refreshData(true);
+});
 function renderMigration(detail){
   $('#app').innerHTML = `<div class="login"><h1>Cần nâng cấp database</h1><div class="sub" style="margin-top:6px">App đã lên phiên bản mới nhưng database Supabase chưa được nâng cấp.</div>
     <ol class="sub" style="padding-left:18px;margin-top:12px"><li>Admin mở Supabase → <b>SQL Editor</b>.</li><li>Dán toàn bộ file <b>migration_v3.sql</b> (trong repo GitHub) → <b>Run</b>.</li><li>Quay lại đây bấm <b>Tải lại</b>, rồi nạp lại raw sales và target ở Admin.</li></ol>
@@ -638,11 +670,12 @@ function render(){
   $('#app').innerHTML = `<header class="top"><div class="brand">${esc(CFG.APP_NAME)}</div>
     <span class="period ${s.locked ? 'lock' : ''}">Kỳ FC ${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHÓA' : ''}</span>${s.data_as_of ? `<span class="period" data-tip="Ngày hóa đơn mới nhất trong raw sales đã nạp">Sales đến ${ddmm(s.data_as_of)}</span>` : ''}
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</nav>
-    <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns">${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
+    <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns"><button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái nộp / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">↻</span><span class="lb">Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin) bằng Đăng xuất.</div>` : ''}<div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
   $('#logout').onclick = async () => { await flushSaves(); await STORE.signOut(); renderLogin(); };
   $('#chpw') && ($('#chpw').onclick = () => passwordDialog(false));
+  $('#refresh').onclick = () => refreshData(false);
   ({fc: viewFC, dash: viewDash, admin: viewAdmin})[VIEW.tab]();
 }
 
@@ -765,13 +798,13 @@ function onFCInput(e){
   const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
   clearTimeout(saveTimers[id]); saveTimers[id] = setTimeout(() => doSave(id), 700);
 }
-const pending = new Set();
+const pending = new Set(); let SAVE_ERR = false;
 async function doSave(id){
   delete saveTimers[id]; const r = ROWS.find(x => x.id === id); if (!r) return;
   const p = STORE.saveFC(PK, id, {m1: r.f.m1 ?? null, m2: r.f.m2 ?? null, m3: r.f.m3 ?? null, note: r.f.note ?? '', reason: r.f.reason ?? null}); pending.add(p);
   const ind = $('#saveind');
-  try { await p; if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đã lưu ' + new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}); } }
-  catch(e){ if (ind){ ind.className = 'save-ind err'; ind.textContent = 'Lỗi lưu: ' + e.message; } }
+  try { await p; SAVE_ERR = false; if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đã lưu ' + new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}); } }
+  catch(e){ SAVE_ERR = true; if (ind){ ind.className = 'save-ind err'; ind.textContent = 'Lỗi lưu: ' + e.message; } }
   finally { pending.delete(p); }
 }
 async function flushSaves(){ for (const id of Object.keys(saveTimers)){ clearTimeout(saveTimers[id]); await doSave(Number(id)); } await Promise.all([...pending]); }
