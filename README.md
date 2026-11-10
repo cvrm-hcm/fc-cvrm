@@ -2,6 +2,18 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.1 (11/11/2026) — Dashboard RFFM / Admin nhiều góc nhìn
+
+Dashboard của RFFM/Admin chia 4 tab, dùng chung bộ lọc MR / Brand / Kênh:
+- **Tổng quan**: KPI; 4 thẻ cần chú ý (BV rủi ro cao, MR thiếu target, FC cần kiểm tra, vấn đề MR ghi nhận); cầu nối Target → FC (vượt ở BV nào, thiếu ở BV nào, FC ở BV không có target); FC vs target theo MR; theo quý, theo tháng, brand, kênh.
+- **Theo MR**: bảng MR thêm % đạt QTD theo mốc mùa vụ, FC so với nhịp bán, số BV rủi ro, phần thiếu ở các BV (không bù trừ BV vượt); duyệt / trả lại tại đây; heatmap % đạt target MR × SKU.
+- **Theo bệnh viện**: ma trận quy mô × % đạt (tô vùng BV trọng điểm dưới target), mức độ tập trung (bao nhiêu BV tạo 80% target), bảng BV có nhịp 2Q, FC vs nhịp, mức rủi ro, ghi chú; bấm BV để xem chi tiết từng SKU, xu hướng 5 quý, ghi chú của MR.
+- **Rủi ro & vấn đề**: danh sách BV theo mức Cao / Trung bình / Theo dõi kèm tín hiệu (thiếu target, FC cao hơn nhịp, chưa có đơn, ngưng đơn, chưa nhập FC, giảm vs cùng kỳ) và ghi chú MR; nhóm vấn đề tự gom từ lý do + từ khóa trong ghi chú (thầu/quota, tồn kho, BHYT, đối thủ/generic, đặt hàng/công nợ, BS/listing); nút copy tóm tắt cho họp.
+- **Mốc mùa vụ**: đơn BV dồn cuối quý (TB các quý gần nhất: tháng 1 ≈ 22%, tháng 2 ≈ 33%, tháng 3 ≈ 45% doanh số quý), nên % đạt QTD so với phần doanh số thường đạt tới ngày dữ liệu, không so với % thời gian đã qua.
+- **Nhịp 2Q** = thực tế tới ngày dữ liệu + TB doanh số quý của 2 quý gần nhất × phần quý còn lại theo mùa vụ: mức BV sẽ đạt nếu mua như 2 quý gần nhất, dùng để kiểm tra FC.
+- File Excel xuất thêm sheet **BV rủi ro** (mức, tín hiệu, nhóm vấn đề, ghi chú MR).
+- MR vẫn chỉ thấy dashboard của mình. Không cần chạy SQL.
+
 ## Phiên bản 4.0 (10/11/2026) — MR chỉ xem số của mình
 
 - **MR**: Dashboard chỉ còn số của mình ("Dashboard của tôi"): bỏ ô chọn MR, biểu đồ và bảng theo MR, tiến độ nộp cả team; thêm ô Trạng thái FC của mình.
