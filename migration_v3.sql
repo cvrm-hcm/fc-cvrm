@@ -1,8 +1,9 @@
 -- =====================================================================
--- FC Sale CVRM HCM — NÂNG CẤP DATABASE LÊN BẢN 2 (chạy 1 lần)
+-- FC Sale CVRM HCM — NÂNG CẤP DATABASE LÊN BẢN 3 (gồm cả bản 2). Chạy 1 lần.
 -- Supabase → SQL Editor → dán toàn bộ file này → Run.
 -- Giữ nguyên: thành viên, giá, danh sách account, target, FC đã nhập, trạng thái nộp.
--- Làm lại sau khi chạy: nạp lại RAW SALES (bản 2 lưu sales theo tháng + số box).
+-- Làm lại sau khi chạy: nạp lại RAW SALES nếu đang ở bản 1 (bản 2+ lưu sales theo tháng + số box).
+-- Bản 3: target giao theo MR (file Target Allocation của Bayer) — nạp lại target sau khi chạy.
 -- Chạy lại nhiều lần không sao.
 -- =====================================================================
 
@@ -53,6 +54,16 @@ create table if not exists public.fc_archive (
   primary key (period, rep_name, cust_code, sku)
 );
 
+
+-- 2b. Target theo MR (bản 3)
+alter table public.targets add column if not exists rep_name text not null default '';
+alter table public.targets add column if not exists qty numeric;
+do $$ begin
+  if (select count(*) from information_schema.key_column_usage where table_schema = 'public' and table_name = 'targets' and constraint_name = 'targets_pkey') = 3 then
+    alter table public.targets drop constraint targets_pkey;
+    alter table public.targets add primary key (period, rep_name, cust_code, sku);
+  end if;
+end $$;
 
 -- 3. Hàm, trigger, phân quyền
 create or replace function public.is_reviewer() returns boolean

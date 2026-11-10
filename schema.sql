@@ -1,7 +1,7 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v2 + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v3 + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN 1: dùng migration_v2.sql thay cho file này.
+-- ĐANG CHẠY BẢN 1 HOẶC 2: dùng migration_v3.sql thay cho file này.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
 --   * MR: nhập/sửa FC dòng của mình, đúng kỳ hiện tại, khi kỳ chưa khóa và FC chưa được duyệt;
@@ -93,12 +93,15 @@ create table if not exists public.accounts_seen (
   primary key (cust_code, sku)
 );
 
+-- Target theo kỳ: rep_name = '' là target cấp account (chia theo Sales ratio); có rep_name = target giao thẳng cho MR (file Target Allocation)
 create table if not exists public.targets (
   period    text not null,
+  rep_name  text not null default '',
   cust_code text not null,
   sku       text not null,
   value     numeric not null,
-  primary key (period, cust_code, sku)
+  qty       numeric,
+  primary key (period, rep_name, cust_code, sku)
 );
 
 create table if not exists public.fc_entries (

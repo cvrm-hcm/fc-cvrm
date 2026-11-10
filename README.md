@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3 (10/11/2026)
+
+**Target theo MR từ file Target Allocation của Bayer**
+- Nạp nguyên file (ví dụ `2026Q4_Hospital_HCM_Target_Allocation_Send_Back_-_v2.xlsx`). App đọc sheet **Account**: REP · Cus. Code · Account · Product Name · Final Target · Volume Target. Các BU khác tự bỏ qua theo bảng giá SKU.
+- Target gắn thẳng vào dòng MR × account × SKU, không chia theo Sales ratio. Account chia nhiều MR thì mỗi MR nhận đúng phần của mình.
+- Tên REP trong file không khớp MR trong app (ví dụ `HCM Vacant 1`): app hỏi giao cho MR nào hoặc để "chưa giao MR". Lựa chọn được nhớ cho lần nạp sau.
+- Tự tạo dòng FC cho MR có target nhưng chưa có dòng. Tùy chọn cập nhật Sales ratio theo tỷ trọng target.
+- Kiểm tra kỳ theo tên file: nạp nhầm file của quý khác thì app chặn lại.
+- Dashboard ghi rõ phần target chưa giao MR. Tab Account thiếu liệt kê target chưa có dòng FC.
+
 ## Phiên bản 2 (10/11/2026)
 
 **Quy trình forecast**
@@ -52,11 +62,11 @@ Phân quyền chặn ở database (Row Level Security), đã test trên Postgres
 - Người ngoài danh sách team đọc 0 dòng.
 - Mọi thay đổi FC đều được ghi vào `fc_history`.
 
-## Nâng cấp từ bản 1 (đang chạy)
+## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v2.sql` → **Run**. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
-3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales**, vì bản 2 lưu sales theo tháng + số box.
+3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
 
 ## Cài mới
@@ -80,7 +90,7 @@ Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột
 1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND)
 2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
 3. **Raw sales:** file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất.
-4. **Target:** Cust Code · SKU · Target quý FC (VND)
+4. **Target:** file Target Allocation của Bayer (sheet Account, có cột REP: target theo MR), hoặc file đơn giản Cust Code · SKU · Target quý FC (VND) (chia theo Sales ratio)
 5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
 ## Quy trình mỗi quý
