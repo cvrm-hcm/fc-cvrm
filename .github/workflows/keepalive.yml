@@ -1,0 +1,40 @@
+# Giữ project Supabase (gói Free) không bị tạm dừng: gói Free tự dừng sau 1 tuần không hoạt động.
+# Cứ 3 ngày gọi database 1 lần bằng publishable key (key công khai, đã có sẵn trong index.html).
+name: Giữ database hoạt động
+on:
+  schedule:
+    - cron: '17 1 */3 * *'   # 08:17 giờ Việt Nam, 3 ngày/lần
+  workflow_dispatch:          # bấm chạy tay ở tab Actions
+permissions:
+  contents: write
+  actions: write
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gọi database Supabase
+        env:
+          SB_URL: https://qngmdcpkqwtvlroxsnim.supabase.co
+          SB_KEY: sb_publishable_cWHEyoPM9kOM2FUNqBWMVw_cwi710R0
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$SB_URL/rest/v1/settings?select=id&limit=1" -H "apikey: $SB_KEY")
+            echo "Lần $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 20
+          done
+          echo "::error::Không gọi được database (HTTP $code). Nếu project đã bị tạm dừng: vào supabase.com → project → Restore."
+          exit 1
+
+      # GitHub tắt lịch chạy của repo public sau 60 ngày repo không có hoạt động.
+      # Bật lại workflow + mỗi 30 ngày ghi 1 commit rỗng vào nhánh "keepalive" (không ảnh hưởng app ở nhánh main).
+      - name: Giữ lịch chạy không bị GitHub tắt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PUT "repos/${{ github.repository }}/actions/workflows/keepalive.yml/enable" || true
+          git init -q k && cd k
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch -q --depth 1 origin keepalive 2>/dev/null; then last=$(git log -1 --format=%ct FETCH_HEAD); git checkout -q -B keepalive FETCH_HEAD; else last=0; git checkout -q --orphan keepalive; fi
+          if [ $(( $(date +%s) - last )) -gt 2592000 ]; then git commit -q --allow-empty -m "keepalive $(date -u +%F)" && git push -q origin keepalive && echo "Đã ghi commit giữ hoạt động"; else echo "Chưa tới 30 ngày, bỏ qua"; fi
