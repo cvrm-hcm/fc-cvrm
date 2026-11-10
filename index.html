@@ -590,7 +590,7 @@ async function importSales(file, log){
   if (hi < 0) throw new Error('Không tìm thấy dòng tiêu đề có Customer Code, Net Sales Value, Year, Quarter');
   const hdr = rows[hi]; const c = {code: colIdx(hdr, ['Customer Code']), name: colIdx(hdr, ['Customer Name']), sku: colIdx(hdr, ['SKU_Name', 'SKU']), val: colIdx(hdr, ['Net Sales Value']), y: colIdx(hdr, ['Year']), q: colIdx(hdr, ['Quarter']), rep: colIdx(hdr, ['REP Name']), team: colIdx(hdr, ['REP Group'])};
   if (c.sku < 0) throw new Error('Thiếu cột SKU_Name');
-  const skus = new Set([...D.prices.map(p => p.sku), ...D.mapping.map(m => m.sku)]); if (!skus.size) throw new Error('Chưa có danh sách SKU: nạp file FC ở bước 1 (hoặc nhập giá) trước.'); const kws = norm(D.settings.exclude_keywords).split(','); const team = lc(D.settings.team_filter || 'CVRM');
+  const skus = new Set([...D.prices.map(p => p.sku), ...D.mapping.map(m => m.sku)]); if (!skus.size) throw new Error('Chưa có danh sách SKU: nạp Bảng giá (bước 1) hoặc danh sách account (bước 2) trước.'); const kws = norm(D.settings.exclude_keywords).split(','); const team = lc(D.settings.team_filter || 'CVRM');
   const agg = new Map(); const seen = new Map(); const qt = new Map(); let n = 0, skip = 0;
   for (let i = hi + 1; i < rows.length; i++){
     const r = rows[i]; const y = num(r[c.y]), q = num(r[c.q]); const sku = norm(r[c.sku]);
@@ -609,7 +609,7 @@ async function importSales(file, log){
 }
 async function importFCTemplate(file, withFC, delMissing, log){
   const wb = await readWorkbook(file); let rows, hi = -1;
-  for (const n of ['FC Input', 'FC Sale', ...wb.SheetNames]){ if (!wb.Sheets[n]) continue; rows = sheetRows(wb.Sheets[n]); hi = findHeader(rows, ['REP Name', 'Cust Code']); if (hi >= 0) break; }
+  for (const n of ['Account', 'FC Input', 'FC Sale', ...wb.SheetNames]){ if (!wb.Sheets[n]) continue; rows = sheetRows(wb.Sheets[n]); hi = findHeader(rows, ['REP Name', 'Cust Code']); if (hi >= 0) break; }
   if (hi < 0) throw new Error('Không thấy sheet có cột REP Name, Cust Code');
   const h = rows[hi]; const c = {rep: colIdx(h, ['REP Name']), code: colIdx(h, ['Cust Code']), name: colIdx(h, ['Cust Name']), brand: colIdx(h, ['Brand']), sku: colIdx(h, ['SKU', 'SKUs']), ratio: colIdx(h, ['Sales ratio']), ch: colIdx(h, ['Kênh', 'Tender/Sefl-pay', 'Tender/Self-pay']),
     m1: colIdx(h, ['FC tháng 1 (box)', 'FC Oct (box)', 'FC Jan (box)', 'FC Apr (box)', 'FC Jul (box)']), m2: colIdx(h, ['FC tháng 2 (box)', 'FC Nov (box)', 'FC Feb (box)', 'FC May (box)', 'FC Aug (box)']), m3: colIdx(h, ['FC tháng 3 (box)', 'FC Dec (Box)', 'FC Dec (box)', 'FC Mar (box)', 'FC Jun (box)', 'FC Sep (box)']), note: colIdx(h, ['Ghi chú', 'Note2'])};
@@ -638,6 +638,22 @@ async function importTargets(file, log){
   const list = [...m].map(([k, value]) => { const [cust_code, sku] = k.split('|'); return {cust_code, sku, value}; });
   await STORE.replaceTargets(PK, list); log(`Target ${P[4].label}: ${list.length} dòng, tổng ${big(list.reduce((s, x) => s + x.value, 0))}.`);
 }
+async function importPrices(file, log){
+  const wb = await readWorkbook(file); let rows, hi = -1, c;
+  for (const n of ['Bảng giá', 'Setup', ...wb.SheetNames]){ if (!wb.Sheets[n]) continue; rows = sheetRows(wb.Sheets[n]); hi = findHeader(rows, ['SKU']); if (hi >= 0){ const h = rows[hi]; c = {b: colIdx(h, ['Brand']), s: colIdx(h, ['SKU']), p: colIdx(h, ['Giá/box (VND)', 'Giá/box', 'Giá', 'Price'])}; if (c.p >= 0) break; hi = -1; } }
+  if (hi < 0) throw new Error('Không thấy cột SKU và Giá/box (VND)');
+  const prices = new Map(D.prices.map(x => [x.sku, x])); let n = 0;
+  for (let i = hi + 1; i < rows.length; i++){ const r = rows[i] || []; const sku = norm(r[c.s]); if (!sku) break; const pr = num(r[c.p]); if (!pr) continue; prices.set(sku, {sku, brand: (c.b >= 0 ? norm(r[c.b]).toUpperCase() : '') || brandOf(sku), price: pr}); n++; }
+  if (!n) throw new Error('File không có dòng giá nào');
+  await STORE.savePrices([...prices.values()]); log(`Cập nhật ${n} SKU. Bảng giá hiện có ${prices.size} SKU.`);
+}
+function downloadTemplate(kind){
+  const wb = XLSX.utils.book_new(); let rows, name;
+  if (kind === 'price'){ rows = [['Brand', 'SKU', 'Giá/box (VND)'], ...D.prices.map(p => [p.brand, p.sku, num(p.price)])]; name = 'Mau_Bang_gia_SKU.xlsx'; XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Bảng giá'); }
+  if (kind === 'account'){ rows = [['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'SKU', 'Sales ratio', 'Kênh'], ...D.mapping.slice(0, 2000).map(m => [m.rep_name, m.cust_code, m.cust_name, m.brand, m.sku, num(m.ratio), m.channel || ''])]; if (rows.length === 1) rows.push(['Nguyen Van A', '30190000', 'Benh Vien Mau', 'XARELTO', "XARELTO TAB 20MG 14'S", 1, 'Tender']); name = 'Mau_Danh_sach_account.xlsx'; XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Account'); }
+  if (kind === 'target'){ rows = [['Cust Code', 'SKU', 'Target quý FC (VND)'], ...D.targets.map(t => [t.cust_code, t.sku, num(t.value)])]; if (rows.length === 1) rows.push(['30190000', "XARELTO TAB 20MG 14'S", 100000000]); name = 'Mau_Target.xlsx'; XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Target'); }
+  try { XLSX.writeFile(wb, name); } catch(e){ toast('Trình duyệt chặn tải file (bản xem trước). Trên GitHub Pages sẽ tải bình thường.'); }
+}
 function exportExcel(){
   const m = (D.settings.quarter - 1) * 3; const hdr = ['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'SKU', 'Sales ratio', 'Kênh', ...P.slice(0, 4).map(p => 'Act. ' + p.label), 'Act. QTD ' + P[4].label, 'Target ' + P[4].label, `FC ${MONTHS[m]} (box)`, `FC ${MONTHS[m + 1]} (box)`, `FC ${MONTHS[m + 2]} (box)`, 'FC quý (box)', 'FC quý (value)', '%Ach FC', '%Gr vs LYSP', '%Gr vs Q-1', 'Ghi chú', 'Cập nhật lúc'];
   const data = ROWS.map(r => [r.rep_name, r.cust_code, r.cust_name, r.brand, r.sku, num(r.ratio), r.channel || '', ...r.act, r.tgt, r.f.m1 ?? null, r.f.m2 ?? null, r.f.m3 ?? null, r.box, r.fcv, ratio(r.fcv, r.tgt), growth(r.fcv, r.act[0]), growth(r.fcv, r.act[3]), r.f.note || '', r.f.updated_at ? new Date(r.f.updated_at) : null]);
@@ -664,15 +680,17 @@ function viewAdmin(){
         <div class="bar"><label>Team trong raw data (REP Group)</label><input type="text" id="s-t" value="${esc(s.team_filter || 'CVRM')}" style="width:90px"></div>
         <div class="bar"><label>MR chưa gán nếu tên chứa</label><input type="text" id="s-x" value="${esc(s.exclude_keywords || '')}" style="min-width:220px"></div>
         <button class="btn pri" id="s-save">Lưu</button><div class="sub" style="margin-top:8px">Đổi sang quý mới: FC và target bắt đầu trống cho kỳ mới, dữ liệu kỳ cũ vẫn giữ.</div></div>
-      <div class="card"><h3>1. Danh sách account, giá & FC (file Excel FC)</h3><div class="drop">Sheet FC Input (file v2) hoặc FC Sale (file cũ). Có sheet Setup thì lấy luôn bảng giá.<br><input type="file" id="u-f" accept=".xlsx,.xls,.xlsm"></div>
-        <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fc" checked> Nạp luôn số FC box + ghi chú vào kỳ ${P[4].label}</label></div>
-        <div class="bar"><label><input type="checkbox" id="u-del"> Xóa dòng không có trong file (xóa cả FC của dòng đó)</label></div><div class="log" id="l-f">Đang có ${D.mapping.length} dòng account × SKU.</div></div>
-      <div class="card"><h3>2. Raw sales (export Power BI)</h3><div class="drop">File .xlsx export. Tự dò cột theo tên, bỏ dòng Total.<br><input type="file" id="u-s" accept=".xlsx,.xls,.xlsm"></div><div class="log" id="l-s">${D.sales.length ? `Đang có ${nf0.format(D.sales.length)} dòng tổng hợp.` : 'Chưa có dữ liệu.'}</div></div>
-      <div class="card"><h3>3. Target ${P[4].label}</h3><div class="drop">Sheet Target (file v2) hoặc Target by account (file cũ).<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm"></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((a, x) => a + num(x.value), 0))}.</div></div>
+      <div class="card"><h3>1. Bảng giá & SKU</h3><div class="drop">Cột Brand · SKU · Giá/box (VND). Tên SKU phải trùng tên trong raw.<br><input type="file" id="u-p" accept=".xlsx,.xls,.xlsm"></div><div class="log" id="l-p">Đang có ${D.prices.length} SKU.</div><button class="btn sm" data-tpl="price" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>2. Danh sách account × SKU × MR</h3><div class="drop">Cột REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận cả sheet FC Input (file v2), có số FC thì nạp luôn.<br><input type="file" id="u-f" accept=".xlsx,.xls,.xlsm"></div>
+        <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fc" checked> Nạp luôn số FC box + ghi chú (nếu file có) vào kỳ ${P[4].label}</label></div>
+        <div class="bar"><label><input type="checkbox" id="u-del"> Thay toàn bộ: xóa dòng không có trong file (xóa cả FC đã nhập của dòng đó)</label></div><div class="log" id="l-f">Đang có ${D.mapping.length} dòng account × SKU.</div><button class="btn sm" data-tpl="account" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>3. Raw sales (export Power BI)</h3><div class="drop">File .xlsx export nguyên bản. Tự dò cột theo tên, bỏ dòng Total.<br><input type="file" id="u-s" accept=".xlsx,.xls,.xlsm"></div><div class="log" id="l-s">${D.sales.length ? `Đang có ${nf0.format(D.sales.length)} dòng tổng hợp.` : 'Chưa có dữ liệu.'}</div></div>
+      <div class="card"><h3>4. Target ${P[4].label}</h3><div class="drop">Cột Cust Code · SKU · Target quý FC (VND). Nhận cả sheet Target (file v2) hoặc Target by account (file cũ).<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm"></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((a, x) => a + num(x.value), 0))}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">⬇ File mẫu</button></div>
     </div>`;
     $('#s-save').onclick = async () => { const ns = {year: num($('#s-y').value), quarter: num($('#s-q').value), deadline: $('#s-d').value || null, locked: $('#s-l').checked, team_filter: $('#s-t').value.trim(), exclude_keywords: $('#s-x').value.trim()}; if (ns.quarter < 1 || ns.quarter > 4 || ns.year < 2020) return toast('Năm/quý không hợp lệ'); try { await STORE.saveSettings(ns); toast('Đã lưu kỳ FC'); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
     const hook = (id, lid, fn) => { $(id).onchange = async e => { const f = e.target.files[0]; if (!f) return; const L = $(lid); L.textContent = 'Đang xử lý…'; try { await fn(f, m => L.textContent = m); D = await STORE.loadAll(); build(); L.textContent += '\n✓ Xong.'; } catch(err){ L.textContent = '✗ ' + err.message; } e.target.value = ''; }; };
-    hook('#u-s', '#l-s', importSales); hook('#u-f', '#l-f', (f, log) => importFCTemplate(f, $('#u-fc').checked, $('#u-del').checked, log)); hook('#u-t', '#l-t', importTargets);
+    hook('#u-p', '#l-p', importPrices); hook('#u-s', '#l-s', importSales);
+    $$('[data-tpl]').forEach(b => b.onclick = () => downloadTemplate(b.dataset.tpl)); hook('#u-f', '#l-f', (f, log) => importFCTemplate(f, $('#u-fc').checked, $('#u-del').checked, log)); hook('#u-t', '#l-t', importTargets);
   }
   if (t === 'missing'){
     A.innerHTML = `<div class="card"><h3>Account có sales, đã gán MR nhưng chưa có trong danh sách FC</h3><div class="sub" style="margin-bottom:10px">Lấy từ raw sales gần nhất (team ${esc(s.team_filter)}). Bấm Thêm để tạo dòng FC cho MR, đủ các SKU của brand đó.</div>

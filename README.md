@@ -62,10 +62,11 @@ Mở `index.html` khi `SUPABASE_URL` còn trống: app chạy chế độ demo v
 ### C. Nạp dữ liệu (trong app, tài khoản ADMIN)
 
 9. **Đăng nhập lần đầu:** app bắt đổi mật khẩu.
-10. **Nạp dữ liệu:** vào Admin → Kỳ & nạp dữ liệu, nạp **theo đúng thứ tự**:
-    1. File `FC_Sale_CVRM_HCM_v2.xlsx`: lấy danh sách account, giá SKU (sheet Setup) và số FC đã nhập.
-    2. Raw sales (file export Power BI).
-    3. Target (lại chọn file v2, app đọc sheet Target).
+10. **Nạp dữ liệu:** vào Admin → Kỳ & nạp dữ liệu, nạp **theo đúng thứ tự** (mỗi mục có nút *File mẫu*):
+    1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND).
+    2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận cả sheet FC Input của file v2; file có số FC thì nạp luôn.
+    3. **Raw sales:** file export Power BI để nguyên, không cần sửa.
+    4. **Target:** Cust Code · SKU · Target quý FC (VND), hoặc sheet Target của file v2.
 11. **Thêm thành viên:** vào Admin → Thành viên & giá.
     - Bấm *Thêm MR còn thiếu từ danh sách account*, điền email từng người.
     - Hoặc mở *Dán cả danh sách từ Excel*, dán 3 cột Email | Tên MR | Vai trò.
