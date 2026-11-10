@@ -2,6 +2,13 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 3.3 (10/11/2026) — icon trên màn hình chính
+
+- iPhone: Safari → nút Chia sẻ → **Thêm vào MH chính**. Icon `icons/apple-touch-icon.png`, tên dưới icon "FC CVRM", mở toàn màn hình như app (thanh trạng thái phủ màu navy, nội dung tránh tai thỏ).
+- Android: Chrome → menu ⋮ → **Thêm vào màn hình chính / Cài đặt ứng dụng** (dùng `manifest.webmanifest`, icon 192/512 + bản maskable).
+- Icon tab trình duyệt: `icons/favicon-32.png`.
+- Mở từ màn hình chính là phiên riêng: lần đầu cần đăng nhập lại.
+
 ## Phiên bản 3.2 (10/11/2026) — nút Làm mới
 
 - Nút **↻ Làm mới** trên thanh đầu trang (kèm giờ tải dữ liệu gần nhất): lưu nốt ô đang gõ rồi tải số mới nhất. Giữ nguyên tab, bộ lọc, vị trí cuộn.

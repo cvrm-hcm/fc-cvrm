@@ -2,8 +2,17 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FC Sale CVRM HCM</title>
+<!-- Icon khi "Thêm vào MH chính" (iPhone) / cài app (Android) và icon tab trình duyệt -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="FC CVRM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f3864">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -60,7 +69,9 @@ a{color:var(--s1)}
 .btn.danger{color:var(--critical);border-color:#f0c5c5}
 .btn.ok{color:#0a6e0a;border-color:#bfe3bf}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-main{max-width:1480px;margin:0 auto;padding:18px 20px 60px}
+main{max-width:1480px;margin:0 auto;padding:18px max(20px, env(safe-area-inset-right)) 60px max(20px, env(safe-area-inset-left))}
+body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--navy);z-index:100;pointer-events:none}
+.top{padding-top:calc(10px + env(safe-area-inset-top));padding-left:max(20px, env(safe-area-inset-left));padding-right:max(20px, env(safe-area-inset-right))}
 .demo-banner{background:#fff4e5;border:1px solid #f5d3a8;color:#7a4b0f;border-radius:var(--r);padding:8px 12px;font-size:13px;margin-bottom:14px}
 h2{font-size:18px;margin:4px 0 12px}
 h3{font-size:15px;margin:0 0 10px}
@@ -202,7 +213,7 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .chip.lk{background:#eceef2;color:#555}
 .chip.sb{background:#e3eefc;color:#1c5cab}
 .chip.pp{background:#f3e8fd;color:#6a2fa8}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#0b0b0b;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;max-width:92vw}
+.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0b0b0b;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;max-width:92vw}
 .modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.35);display:flex;align-items:center;justify-content:center;z-index:90}
 .modal{background:#fff;border-radius:12px;padding:20px;max-width:460px;width:92%;max-height:90vh;overflow:auto}
 .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
@@ -210,8 +221,8 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .modal input,.modal select,.modal textarea,textarea.inp{border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 @media (max-width:760px){
   html,body{overflow-x:hidden}
-  main{padding:12px 10px calc(70px + env(safe-area-inset-bottom))}
-  .top{position:relative;padding:8px 12px;gap:6px 8px}
+  main{padding:12px max(10px, env(safe-area-inset-right)) calc(70px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))}
+  .top{position:relative;padding:calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));gap:6px 8px}
   .top .brand{font-size:15px;flex:1}
   .top .period{font-size:11.5px}
   .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:12.5px}
