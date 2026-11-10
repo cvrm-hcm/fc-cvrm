@@ -446,8 +446,9 @@ class DemoStore {
   async loadAll(){
     const d = this.db; const pk = pkey(d.settings.year, d.settings.quarter);
     return {settings: {...d.settings}, members: d.members, prices: d.prices, mapping: d.mapping, sales: d.sales, seen: d.seen, archive: d.archive || [],
-      targets: d.targets[pk] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}};
+      targets: d.targets[pk] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}, dbv: 4};
   }
+  async customerNames(){ const m = new Map(); [...this.db.mapping, ...(this.db.seen || [])].forEach(x => { if (x.cust_name && !m.has(x.cust_code)) m.set(x.cust_code, x.cust_name); }); return [...m]; }
   async saveFC(period, mid, rec){ (this.db.fc[period] ||= {})[mid] = {...rec, updated_at: nowIso(), updated_by: this.user}; this.persist(); }
   async upsertFC(period, list){ const t = (this.db.fc[period] ||= {}); list.forEach(r => t[r.mapping_id] = {m1: r.m1, m2: r.m2, m3: r.m3, note: r.note, reason: r.reason || null, updated_at: nowIso(), updated_by: this.user}); this.persist(); }
   async submit(period, rep){ (this.db.subs[period] ||= {})[rep] = {status: 'submitted', submitted_at: nowIso(), submitted_by: this.user, reviewed_by: null, reviewed_at: null, review_note: null}; this.persist(); }
@@ -488,12 +489,15 @@ class CloudStore {
     await this.checkSchema();
     const st = await this.all('settings'); const settings = st[0] || {year: new Date().getFullYear(), quarter: Math.floor(new Date().getMonth() / 3) + 1, locked: false, team_filter: 'CVRM', exclude_keywords: 'Vacant,New MR,Uncovered'};
     const pk = pkey(settings.year, settings.quarter);
-    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows] = await Promise.all([
+    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows, dbv] = await Promise.all([
       this.all('team_members'), this.all('prices'), this.all('mapping', '*', q => q.order('id')), this.all('sales_agg'), this.all('accounts_seen'), this.all('fc_archive'),
-      this.all('targets', '*', q => q.eq('period', pk)), this.all('fc_entries', '*', q => q.eq('period', pk)), this.all('submissions', '*', q => q.eq('period', pk))]);
+      this.all('targets', '*', q => q.eq('period', pk)), this.all('fc_entries', '*', q => q.eq('period', pk)), this.all('submissions', '*', q => q.eq('period', pk)), this.dbVersion()]);
     const fc = {}; fcRows.forEach(r => fc[r.mapping_id] = r); const subs = {}; subRows.forEach(r => subs[r.rep_name] = r);
-    return {settings, members, prices, mapping, sales, seen, archive, targets, fc, subs};
+    return {settings, members, prices, mapping, sales, seen, archive, targets, fc, subs, dbv};
   }
+  // Bản 4 (migration_v4.sql): MR chỉ đọc được số của mình. 0 = database chưa nâng cấp.
+  async dbVersion(){ const {data, error} = await this.sb.rpc('app_db_version'); return error ? 0 : num(data); }
+  async customerNames(){ const out = []; for (let from = 0; ; from += 1000){ const {data, error} = await this.sb.rpc('customer_names').range(from, from + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out.map(r => [r.cust_code, r.cust_name]); }
   async chunked(table, rows, opts){ for (let i = 0; i < rows.length; i += 500){ const {error} = await this.sb.from(table).upsert(rows.slice(i, i + 500), opts); if (error) throw error; } }
   async saveFC(period, mid, rec){ const {error} = await this.sb.from('fc_entries').upsert({period, mapping_id: mid, m1: rec.m1, m2: rec.m2, m3: rec.m3, note: rec.note, reason: rec.reason || null}); if (error) throw error; }
   async upsertFC(period, list){ await this.chunked('fc_entries', list.map(r => ({period, mapping_id: r.mapping_id, m1: r.m1, m2: r.m2, m3: r.m3, note: r.note || '', reason: r.reason || null}))); }
@@ -545,7 +549,21 @@ function derive(r){
   r.unfilledHist = !r.filled && (r.baseV >= RULE.min || r.tgt >= RULE.min);
   return r;
 }
+// MR chỉ thấy số của mình: lọc dữ liệu đã tải theo đúng quy tắc quyền đọc trên database (bản 4).
+// DB đã chạy migration_v4 thì server chỉ trả về đúng phần này; ở demo hoặc DB chưa nâng cấp thì lọc tại đây.
+function scopeData(){
+  if (!ME || canSeeAll()) return;
+  const me = ME.rep_name, key = x => `${x.cust_code}|${x.sku}`;
+  D.mapping = D.mapping.filter(m => m.rep_name === me);
+  const mine = new Set(D.mapping.map(key)), ids = new Set(D.mapping.map(m => String(m.id))), hasRep = new Set(D.targets.filter(t => t.rep_name).map(key));
+  D.sales = D.sales.filter(r => mine.has(key(r)));
+  D.targets = D.targets.filter(t => t.rep_name ? t.rep_name === me : mine.has(key(t)) && !hasRep.has(key(t)));
+  D.fc = Object.fromEntries(Object.entries(D.fc).filter(([id]) => ids.has(id)));
+  D.subs = D.subs[me] ? {[me]: D.subs[me]} : {};
+  D.archive = D.archive.filter(a => a.rep_name === me); D.seen = [];
+}
 function build(){
+  scopeData();
   const s = D.settings; P = periodsOf(s.year, s.quarter); PK = pkey(s.year, s.quarter);
   MS = [1, 2, 3].map(i => (s.quarter - 1) * 3 + i);
   const asOf = s.data_as_of ? new Date(String(s.data_as_of).slice(0, 10) + 'T12:00:00') : new Date();
@@ -571,7 +589,7 @@ function build(){
     if (tHasRep.has(k)){ const x = tRep.get(`${lc(m.rep_name)}|${k}`) || [0, 0]; r.tgt = x[0]; r.tgtQ = x[1]; } else { const x = tAcc.get(k) || [0, 0]; r.tgt = x[0] * rt; r.tgtQ = x[1] * rt; }
     r.base = Math.round((r.qty[2] + r.qty[3]) / 6); r.baseV = (r.act[2] + r.act[3]) / 2;
     r.sugM = MST.map((st, i) => st === 'closed' ? Math.round(r.qtyM[i]) : st === 'current' ? Math.max(Math.round(r.qtyM[i]), r.base) : r.base);
-    const rs = ratioSum.get(k);
+    const rs = canSeeAll() ? ratioSum.get(k) : 1; // MR chỉ thấy phần của mình nên không tự kiểm được tổng ratio
     r.warn = m.status === 'proposed' ? '' : Math.abs(rs - 1) > 0.001 ? 'Ratio≠100%' : (r.price === undefined ? 'SKU thiếu giá' : '');
     return derive(r);
   });
@@ -670,7 +688,7 @@ function renderLogin(err){
     app.innerHTML = `<div class="login"><h1>${esc(CFG.APP_NAME)}</h1><div class="sub">Chế độ demo · dữ liệu giả lập, chỉ lưu trong trình duyệt này</div>
       <div class="f"><label class="sub">Đăng nhập với vai trò</label><select id="lg-u">${mem.map(m => `<option value="${esc(m.email)}">${esc(m.rep_name)} — ${m.role}</option>`).join('')}</select>
       <button class="btn pri" id="lg-go">Vào app</button></div>${err ? `<div class="msg err">${esc(err)}</div>` : ''}
-      <div class="sub" style="margin-top:14px">Bản thật: mỗi MR đăng nhập bằng email công việc, chỉ sửa được FC của mình.</div></div>`;
+      <div class="sub" style="margin-top:14px">Bản thật: mỗi MR đăng nhập bằng email công việc, chỉ xem và sửa được số của mình.</div></div>`;
     $('#lg-go').onclick = async () => { await STORE.signInDemo($('#lg-u').value); start(); };
   } else {
     app.innerHTML = `<div class="login"><h1>${esc(CFG.APP_NAME)}</h1><div class="sub">Đăng nhập bằng email đã được admin thêm vào team</div>
@@ -702,7 +720,7 @@ function render(){
     <span class="period ${s.locked ? 'lock' : ''}">Kỳ FC ${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHÓA' : ''}</span>${s.data_as_of ? `<span class="period" data-tip="Ngày hóa đơn mới nhất trong raw sales đã nạp">Sales đến ${ddmm(s.data_as_of)}</span>` : ''}
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</nav>
     <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns"><button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái nộp / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">↻</span><span class="lb">Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
-    <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin) bằng Đăng xuất.</div>` : ''}<div id="view"></div></main>`;
+    <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin) bằng Đăng xuất.</div>` : ''}${MODE === 'cloud' && isAdmin() && D.dbv < 4 ? `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 4.</b> Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API. Mở Supabase → SQL Editor → chạy file <b>migration_v4.sql</b> trong repo, rồi bấm Làm mới.</div>` : ''}<div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
   $('#logout').onclick = async () => { await flushSaves(); await STORE.signOut(); renderLogin(); };
   $('#chpw') && ($('#chpw').onclick = () => passwordDialog(false));
@@ -876,13 +894,15 @@ function onReviewClick(e){
 }
 function proposeDialog(rep){
   const known = new Map(); D.mapping.forEach(m => known.set(m.cust_code, m.cust_name)); D.seen.forEach(s => { if (!known.has(s.cust_code)) known.set(s.cust_code, s.cust_name); });
+  const codeList = () => [...known].slice(0, 3000).map(([c, n]) => `<option value="${esc(c)}">${esc(n)}</option>`).join('');
   const bg = modal(`<h3>Đề xuất account / SKU cho ${esc(rep)}</h3><div class="sub">Dùng cho account mới, SKU mới (vd sản phẩm sắp launch) hoặc account chuyển về mình. ${isAdmin() ? 'Admin: dòng được thêm ngay.' : 'Bạn nhập FC được ngay; admin duyệt để thành dòng chính thức.'}</div>
-    <div class="f"><input id="pp-code" list="pp-codes" placeholder="Mã khách hàng (Cust Code)"><datalist id="pp-codes">${[...known].slice(0, 3000).map(([c, n]) => `<option value="${esc(c)}">${esc(n)}</option>`).join('')}</datalist>
+    <div class="f"><input id="pp-code" list="pp-codes" placeholder="Mã khách hàng (Cust Code)"><datalist id="pp-codes">${codeList()}</datalist>
     <input id="pp-name" placeholder="Tên khách hàng"><select id="pp-sku">${D.prices.map(p => `<option>${esc(p.sku)}</option>`).join('')}</select>
     <input id="pp-ratio" type="number" min="1" max="100" value="100" placeholder="Tỷ lệ % của bạn">
     <textarea id="pp-note" rows="2" placeholder="Lý do đề xuất (bắt buộc), vd: BV trúng thầu tháng 10"></textarea></div>
     <div class="msg err" id="pp-m"></div><div class="acts"><button class="btn" data-a="0">Hủy</button><button class="btn pri" data-a="1">${isAdmin() ? 'Thêm' : 'Gửi đề xuất'}</button></div>`);
   $('#pp-code', bg).oninput = e => { const n = known.get(norm(e.target.value)); if (n) $('#pp-name', bg).value = n; };
+  STORE.customerNames().then(list => { list.forEach(([c, n]) => { if (!known.has(c)) known.set(c, n); }); const dl = $('#pp-codes', bg); if (dl) dl.innerHTML = codeList(); }).catch(() => {});
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === undefined) return; if (a === '0') return bg.remove();
     const code = norm($('#pp-code', bg).value), name = norm($('#pp-name', bg).value), sku = $('#pp-sku', bg).value, rt = num($('#pp-ratio', bg).value) / 100, note = norm($('#pp-note', bg).value); const m = $('#pp-m', bg);
     if (!code || !name || !sku) return m.textContent = 'Cần mã KH, tên KH và SKU.'; if (!note) return m.textContent = 'Cần ghi lý do đề xuất.'; if (!(rt > 0 && rt <= 1)) return m.textContent = 'Tỷ lệ từ 1 đến 100%.';
@@ -901,42 +921,48 @@ function reminderText(){
     g.submitted.length ? `• Đã nộp, chờ duyệt (${g.submitted.length}): ${g.submitted.join(', ')}` : '', `• Đã duyệt: ${g.approved.length}/${reps.length} MR`, link.startsWith('http') ? `Link: ${link}` : ''].filter(Boolean).join('\n');
 }
 function viewDash(){
-  const v = $('#view'); const reps = repList(); const brands = [...new Set(D.mapping.map(r => r.brand))].sort();
-  const dimTable = dim => { const keys = [...new Set(sel.map(r => r[dim] || '(chưa gán)'))].sort(); return `<div class="card"><h3>Theo ${dim === 'brand' ? 'brand' : 'kênh'}</h3><div class="tw"><table class="t"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : 'Kênh'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th>FC</th><th class="h-ach">% đạt FC</th><th class="h-gr">Tăng vs ${P[0].label}</th></tr></thead><tbody>
-      ${keys.map(k => { const g = agg(sel.filter(r => (r[dim] || '(chưa gán)') === k)); return `<tr><td class="l stick">${esc(k)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td><td>${tr(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${grHtml(g.gLy)}</td></tr>`; }).join('')}</tbody></table></div></div>`; }; const chs = [...new Set(D.mapping.map(r => r.channel || '(chưa gán)'))].sort();
+  const team = canSeeAll(); if (!team) VIEW.dRep = ''; // MR: chỉ dashboard của mình
+  const v = $('#view'); const reps = team ? repList() : [ME.rep_name]; const brands = [...new Set(D.mapping.map(r => r.brand))].sort();
+  const dimTable = dim => { const keys = [...new Set(sel.map(r => r[dim] || '(chưa gán)'))].sort().map(k => [k, agg(sel.filter(r => (r[dim] || '(chưa gán)') === k))]).filter(([k, g]) => g.tgt || g.fcv || g.act.some(x => x)); return `<div class="card"><h3>Theo ${dim === 'brand' ? 'brand' : 'kênh'}</h3><div class="tw"><table class="t"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : 'Kênh'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th>FC</th><th class="h-ach">% đạt FC</th><th class="h-gr">Tăng vs ${P[0].label}</th></tr></thead><tbody>
+      ${keys.map(([k, g]) => { return `<tr><td class="l stick">${esc(k)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td><td>${tr(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${grHtml(g.gLy)}</td></tr>`; }).join('')}</tbody></table></div></div>`; }; const chs = [...new Set(D.mapping.map(r => r.channel || '(chưa gán)'))].sort();
   const fil = r => (!VIEW.dBrand || r.brand === VIEW.dBrand) && (!VIEW.dCh || (r.channel || '(chưa gán)') === VIEW.dCh);
   const base = ROWS.filter(fil); const sel = base.filter(r => !VIEW.dRep || r.rep_name === VIEW.dRep); const a = agg(sel);
   const byRep = reps.map(rep => ({rep, ...agg(base.filter(r => r.rep_name === rep)), st: repStatus(rep)})).filter(x => x.n);
   const cnt = k => byRep.filter(x => x.st === k).length; const nSub = cnt('submitted') + cnt('approved');
   const asof = ddmm(D.settings.data_as_of) || 'nay';
   v.innerHTML = `
-    <div class="bar filters"><h2 style="margin:0">Dashboard ${P[4].label}</h2><span class="grow"></span>
-      <label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+    <div class="bar filters"><h2 style="margin:0">${team ? 'Dashboard' : 'Dashboard của tôi ·'} ${P[4].label}</h2><span class="grow"></span>
+      ${team ? `<label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
       <label class="fl">Brand <select id="d-b"><option value="">Tất cả</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
       <label class="fl">Kênh <select id="d-c"><option value="">Tất cả</option>${chs.map(b => `<option ${b === VIEW.dCh ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></label>
       ${isReviewer() ? '<button class="btn" id="d-exp">⬇ Xuất Excel</button>' : ''}</div>
     ${(() => { const open = TGT_OPEN.filter(t => !VIEW.dBrand || brandOf(t.sku) === VIEW.dBrand).reduce((x, t) => x + num(t.value), 0);
       const n = byRep.length || 1; const seg = (k, col) => cnt(k) ? `<i style="width:${cnt(k) / n * 100}%;background:${col}" data-tip="${STATUS[k][0]}: ${cnt(k)} MR"></i>` : '';
+      if (!team){ const me = agg(ROWS.filter(r => r.rep_name === ME.rep_name));
+        const mine = `<div class="kpi"><div class="l">Trạng thái FC</div><div class="v" style="font-size:15px">${statusChip(ME.rep_name)}</div><div class="d">đã nhập ${me.filled}/${me.n} dòng${me.need ? ` · <span class="warn">${me.need} dòng cần lý do</span>` : ''} · <a href="#" id="d-gofc">Mở FC của tôi</a></div></div>`;
+        return kpiBlocks(a, {tgtNote: `${a.n} dòng account × SKU`, third: mine}); }
       const third = `<div class="kpi"><div class="l">Tiến độ nộp FC</div><div class="v">${nSub}/${byRep.length} <span class="sub" style="font-size:13px;font-weight:500">MR đã nộp</span></div><div class="segbar">${seg('approved', 'var(--ok)')}${seg('submitted', 'var(--s1)')}${seg('returned', 'var(--bad)')}</div><div class="d">duyệt ${cnt('approved')} · chờ duyệt ${cnt('submitted')} · trả lại ${cnt('returned')} · chưa nộp ${cnt('draft')}</div></div>`;
       return kpiBlocks(a, {tgtNote: VIEW.dRep ? esc(VIEW.dRep) : (open ? `<span data-tip="Target trong file có REP nhưng chưa có dòng FC (vd MR trống/Vacant). Xem Admin → Account thiếu.">+ ${big(open)} chưa giao MR</span>` : 'Cả team'), third}); })()}
     <div class="grid2">
-      <div class="card"><h3>FC so với Target theo MR</h3><div class="legend"><span><i style="background:var(--s1)"></i>FC</span><span><i class="tick"></i>Target</span><span>Cột phải: % đạt target</span></div><div id="ch-rep"></div></div>
-      <div class="card"><h3>Doanh số theo quý ${VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· cả team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Thực tế</span><span><i style="background:var(--s2)"></i>FC còn lại</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND. Quý ${P[4].label}: thực tế đến ${ASOF_DM} + FC còn lại = FC quý.</div></div>
-    </div>
-    <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">Theo MR</h3><span class="grow"></span>${isReviewer() ? '<button class="btn sm" id="d-remind">📋 Copy nhắc nộp FC</button>' : ''}</div>
+      ${team ? `<div class="card"><h3>FC so với Target theo MR</h3><div class="legend"><span><i style="background:var(--s1)"></i>FC</span><span><i class="tick"></i>Target</span><span>Cột phải: % đạt target</span></div><div id="ch-rep"></div></div>` : ''}
+      <div class="card"><h3>Doanh số theo quý ${!team ? '' : VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· cả team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Thực tế</span><span><i style="background:var(--s2)"></i>FC còn lại</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND. Quý ${P[4].label}: thực tế đến ${ASOF_DM} + FC còn lại = FC quý.</div></div>
+    ${team ? '</div>' : ''}
+    ${!team ? '' : `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">Theo MR</h3><span class="grow"></span>${isReviewer() ? '<button class="btn sm" id="d-remind">📋 Copy nhắc nộp FC</button>' : ''}</div>
       <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th>Target</th><th>FC</th><th class="h-ach">% đạt FC</th><th class="h-ach">Thiếu / vượt</th><th>QTD</th><th class="h-ach" data-tip="Màu so với mốc tiến độ thời gian của quý, không so với 100%">% đạt QTD</th><th class="h-gr">Tăng vs ${P[0].label}</th><th class="h-gr">Tăng vs ${P[3].label}</th><th>Đã nhập</th><th data-tip="Dòng FC lệch nhiều chưa có lý do">Cần lý do</th><th class="l">Trạng thái</th>${isReviewer() ? '<th class="l">Duyệt</th>' : ''}</tr></thead>
       <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}">${esc(x.rep)}</a></td><td>${tr(x.tgt)}</td><td>${tr(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${gapHtml(x.gap)}</td><td>${tr(x.act[4])}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${x.filled}/${x.n}</td><td>${x.need ? `<span class="warn">${x.need}</span>` : '–'}</td><td class="l">${statusChip(x.rep)}</td>
         ${isReviewer() ? `<td class="l">${x.st === 'submitted' ? `<button class="btn sm ok" data-rv="approved" data-rep="${esc(x.rep)}">Duyệt</button> <button class="btn sm danger" data-rv="returned" data-rep="${esc(x.rep)}">Trả lại</button>` : x.st === 'approved' ? `<button class="btn sm" data-rv="returned" data-rep="${esc(x.rep)}">Mở lại</button>` : ''}</td>` : ''}</tr>`).join('')}
       ${(() => { const t = agg(base); return `<tr class="tot"><td class="l stick">Tổng team</td><td>${tr(t.tgt)}</td><td>${tr(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${gapHtml(t.gap)}</td><td>${tr(t.act[4])}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${t.filled}/${t.n}</td><td>${t.need || '–'}</td><td class="l">${nSub}/${byRep.length} đã nộp</td>${isReviewer() ? '<td></td>' : ''}</tr>`; })()}</tbody></table></div>
-      <div class="sub" style="margin-top:6px">Đơn vị: triệu VND. FC = thực tế tháng đã chốt + đơn đã lên đến ${ASOF_DM} + FC còn lại. Bấm tên MR để xem chi tiết.</div></div>
-    <div class="grid2">
+      <div class="sub" style="margin-top:6px">Đơn vị: triệu VND. FC = thực tế tháng đã chốt + đơn đã lên đến ${ASOF_DM} + FC còn lại. Bấm tên MR để xem chi tiết.</div></div>`}
+    ${team ? '<div class="grid2">' : ''}
       <div class="card"><h3>Theo tháng ${P[4].label}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Thực tế / đơn đã lên</span><span><i style="background:var(--s2)"></i>FC còn lại</span></div><div id="ch-m"></div></div>
+    ${team ? '' : '</div>'}
       ${dimTable('brand')}
-    </div>
+    ${team ? '</div>' : ''}
     <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">Theo account</h3><span class="grow"></span><input type="search" id="a-q" placeholder="Tìm account" value="${esc(VIEW.accQ)}">
       <select id="a-s">${[['gap', 'FC thiếu target nhiều nhất'], ['tgt', 'Target lớn nhất'], ['drop', 'FC giảm mạnh nhất vs quý trước'], ['qtd', 'QTD thấp nhất so với target']].map(([k, l]) => `<option value="${k}" ${k === VIEW.accSort ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div id="acc-tbl"></div></div>
     ${dimTable('channel')}`;
-  $('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDash(); };
+  $('#d-rep') && ($('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDash(); });
+  $('#d-gofc') && ($('#d-gofc').onclick = e => { e.preventDefault(); VIEW.tab = 'fc'; render(); });
   $('#d-b').onchange = e => { VIEW.dBrand = e.target.value; viewDash(); };
   $('#d-c').onchange = e => { VIEW.dCh = e.target.value; viewDash(); };
   $('#d-exp') && ($('#d-exp').onclick = e => exportExcel(e.currentTarget));
@@ -944,7 +970,7 @@ function viewDash(){
   v.onclick = onReviewClick;
   // MR bars
   const list = [...byRep].sort((x, y) => (y.ach ?? -1) - (x.ach ?? -1)); const mx = Math.max(1, ...list.map(x => Math.max(x.fcv, x.tgt)));
-  $('#ch-rep').innerHTML = list.map(x => `<div class="hb" data-tip="${esc(x.rep)}\nFC: ${big(x.fcv)}\nTarget: ${big(x.tgt)}\n% đạt target: ${pct(x.ach)}" style="${VIEW.dRep && VIEW.dRep !== x.rep ? 'opacity:.45' : ''}">
+  if ($('#ch-rep')) $('#ch-rep').innerHTML = list.map(x => `<div class="hb" data-tip="${esc(x.rep)}\nFC: ${big(x.fcv)}\nTarget: ${big(x.tgt)}\n% đạt target: ${pct(x.ach)}" style="${VIEW.dRep && VIEW.dRep !== x.rep ? 'opacity:.45' : ''}">
     <div class="nm">${esc(x.rep)}</div><div class="tr"><div class="b" style="width:${x.fcv / mx * 100}%"></div>${x.tgt ? `<div class="tk" style="left:calc(${x.tgt / mx * 100}% - 1px)"></div>` : ''}</div><div class="pc">${achHtml(x.ach)}</div></div>`).join('') || '<div class="sub">Không có dữ liệu</div>';
   // quarterly
   const vals = [...a.act, a.fcv, a.tgt]; const my = Math.max(1, ...vals); const h = v2 => Math.max(0, v2 / my * 100); const lab = v2 => v2 ? nf1.format(v2 / 1e9) : '';
@@ -964,8 +990,8 @@ function viewDash(){
     if (VIEW.accQ) accs = accs.filter(o => lc(o.name + ' ' + o.code).includes(lc(VIEW.accQ)));
     const S = {gap: (x, y) => (x.gap ?? 1e15) - (y.gap ?? 1e15), tgt: (x, y) => y.tgt - x.tgt, drop: (x, y) => (x.gQ ?? 9) - (y.gQ ?? 9), qtd: (x, y) => (x.achQ ?? 9) - (y.achQ ?? 9)}[VIEW.accSort];
     accs.sort(S); const shown = accs.slice(0, VIEW.accN);
-    $('#acc-tbl').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">Account</th><th class="l">MR</th><th>${P[3].label}</th><th>QTD</th><th>Target</th><th>FC</th><th class="h-ach">% đạt FC</th><th class="h-ach">Thiếu / vượt</th><th class="h-gr">Tăng vs ${P[3].label}</th></tr></thead><tbody>
-      ${shown.map(o => `<tr><td class="l stick">${esc(o.name)} <span class="sub">${esc(o.code)}</span></td><td class="l sub">${esc([...o.reps].join(', '))}</td><td>${tr(o.act[3])}</td><td>${tr(o.act[4])}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${grHtml(o.gQ)}</td></tr>`).join('')}</tbody></table></div>
+    $('#acc-tbl').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">Account</th>${team ? '<th class="l">MR</th>' : ''}<th>${P[3].label}</th><th>QTD</th><th>Target</th><th>FC</th><th class="h-ach">% đạt FC</th><th class="h-ach">Thiếu / vượt</th><th class="h-gr">Tăng vs ${P[3].label}</th></tr></thead><tbody>
+      ${shown.map(o => `<tr><td class="l stick">${esc(o.name)} <span class="sub">${esc(o.code)}</span></td>${team ? `<td class="l sub">${esc([...o.reps].join(', '))}</td>` : ''}<td>${tr(o.act[3])}</td><td>${tr(o.act[4])}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${grHtml(o.gQ)}</td></tr>`).join('')}</tbody></table></div>
       <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${accs.length} account</span>${accs.length > shown.length ? '<button class="btn sm" id="a-more">Xem thêm</button>' : ''}</div>`;
     $('#a-more') && ($('#a-more').onclick = () => { VIEW.accN += 30; drawAcc(); });
   };

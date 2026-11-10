@@ -1,12 +1,13 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v3 + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v4 + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN 1 HOẶC 2: dùng migration_v3.sql thay cho file này.
+-- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql rồi migration_v4.sql; bản 3 chỉ chạy migration_v4.sql.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
---   * MR: nhập/sửa FC dòng của mình, đúng kỳ hiện tại, khi kỳ chưa khóa và FC chưa được duyệt;
+--   * MR: chỉ xem số của mình (account, sales, target, FC, trạng thái nộp);
+--         nhập/sửa FC dòng của mình, đúng kỳ hiện tại, khi kỳ chưa khóa và FC chưa được duyệt;
 --         nộp FC; đề xuất account/SKU mới cho chính mình.
---   * RFFM: xem tất cả, duyệt / trả lại FC.
+--   * RFFM: xem cả team, duyệt / trả lại FC.
 --   * ADMIN: toàn quyền.
 -- =====================================================================
 
@@ -204,11 +205,73 @@ begin
   foreach t in array array['team_members','settings','prices','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "member read" on public.%I', t);
-    execute format('create policy "member read" on public.%I for select to authenticated using (public.is_member())', t);
+    execute format('drop policy if exists "scoped read" on public.%I', t);
     execute format('drop policy if exists "admin write" on public.%I', t);
     execute format('create policy "admin write" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
+  -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá
+  foreach t in array array['team_members','settings','prices'] loop
+    execute format('create policy "member read" on public.%I for select to authenticated using (public.is_member())', t);
+  end loop;
 end $$;
+
+-- Hàm hỗ trợ quyền đọc
+-- App đọc số này để biết database đã ở bản 4 chưa
+create or replace function public.app_db_version() returns int
+  language sql immutable as $$ select 4 $$;
+
+-- Account × SKU này có target giao thẳng cho MR chưa (đọc cả team, không lộ số ra ngoài)
+create or replace function public.target_has_rep(p text, c text, s text) returns boolean
+  language sql stable security definer set search_path = public as
+  $$ select exists (select 1 from targets where period = p and cust_code = c and sku = s and rep_name <> '') $$;
+
+-- Mã + tên khách hàng (không kèm doanh số) cho form "Đề xuất account"
+create or replace function public.customer_names() returns table (cust_code text, cust_name text)
+  language sql stable security definer set search_path = public as $$
+  select x.cust_code, max(x.cust_name) from (
+    select a.cust_code, a.cust_name from accounts_seen a union all select m.cust_code, m.cust_name from mapping m) x
+  where public.is_member() and coalesce(x.cust_name, '') <> ''
+  group by x.cust_code order by x.cust_code $$;
+
+grant execute on function public.app_db_version() to authenticated;
+grant execute on function public.target_has_rep(text, text, text) to authenticated;
+grant execute on function public.customer_names() to authenticated;
+
+-- Quyền đọc theo người dùng: RFFM / admin xem cả team, MR chỉ xem số của mình
+-- Danh sách account × SKU: dòng của mình
+create policy "scoped read" on public.mapping for select to authenticated
+  using ((select public.is_reviewer()) or rep_name = (select public.my_rep()));
+
+-- FC: dòng của mình
+create policy "scoped read" on public.fc_entries for select to authenticated
+  using ((select public.is_reviewer())
+    or exists (select 1 from public.mapping m where m.id = fc_entries.mapping_id and m.rep_name = (select public.my_rep())));
+
+create policy "scoped read" on public.fc_history for select to authenticated
+  using ((select public.is_reviewer())
+    or exists (select 1 from public.mapping m where m.id = fc_history.mapping_id and m.rep_name = (select public.my_rep())));
+
+-- Sales: chỉ account × SKU có trong danh sách của mình
+create policy "scoped read" on public.sales_agg for select to authenticated
+  using ((select public.is_reviewer())
+    or exists (select 1 from public.mapping m where m.rep_name = (select public.my_rep()) and m.cust_code = sales_agg.cust_code and m.sku = sales_agg.sku));
+
+-- Target: target giao cho mình; target cấp account (chia theo Sales ratio) chỉ khi account × SKU đó chưa giao thẳng cho MR nào
+create policy "scoped read" on public.targets for select to authenticated
+  using ((select public.is_reviewer()) or rep_name = (select public.my_rep())
+    or (rep_name = ''
+        and exists (select 1 from public.mapping m where m.rep_name = (select public.my_rep()) and m.cust_code = targets.cust_code and m.sku = targets.sku)
+        and not public.target_has_rep(targets.period, targets.cust_code, targets.sku)));
+
+-- Trạng thái nộp, bản FC đã chốt: của mình
+create policy "scoped read" on public.submissions for select to authenticated
+  using ((select public.is_reviewer()) or rep_name = (select public.my_rep()));
+create policy "scoped read" on public.fc_archive for select to authenticated
+  using ((select public.is_reviewer()) or rep_name = (select public.my_rep()));
+
+-- Sales mới nhất theo account (dùng để tìm account thiếu): chỉ RFFM / admin
+create policy "scoped read" on public.accounts_seen for select to authenticated
+  using ((select public.is_reviewer()));
 
 drop policy if exists "mr insert own fc" on public.fc_entries;
 create policy "mr insert own fc" on public.fc_entries for insert to authenticated

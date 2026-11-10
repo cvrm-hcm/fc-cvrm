@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.0 (10/11/2026) — MR chỉ xem số của mình
+
+- **MR**: Dashboard chỉ còn số của mình ("Dashboard của tôi"): bỏ ô chọn MR, biểu đồ và bảng theo MR, tiến độ nộp cả team; thêm ô Trạng thái FC của mình.
+- **RFFM, Admin**: xem cả team như cũ.
+- Chặn ở database (`migration_v4.sql`): MR chỉ đọc được account, sales, target, FC, trạng thái nộp, bản chốt của chính mình. Bảng giá, kỳ FC, danh sách thành viên vẫn đọc chung.
+- Đề xuất account: vẫn gợi ý mã + tên khách hàng (không kèm doanh số).
+- Cảnh báo "Ratio≠100%" chỉ hiện với RFFM/Admin (MR không thấy phần của MR khác nên không tự kiểm được).
+- Bảng Theo brand / kênh bỏ dòng toàn số 0.
+- **Cần làm 1 lần:** Supabase → SQL Editor → dán toàn bộ `migration_v4.sql` → Run. Chưa chạy thì Admin thấy dòng nhắc màu vàng; giao diện MR vẫn ẩn số team nhưng MR còn đọc được qua API.
+
 ## Phiên bản 3.5 (10/11/2026) — FC theo ngày dữ liệu, bỏ "ước đạt"
 
 - **Tháng đã chốt** (đã có thực tế cả tháng): FC khóa bằng thực tế, không nhập.
@@ -106,19 +116,24 @@ App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay 
 
 | Vai trò | Làm được |
 |---|---|
-| MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU. Xem dashboard team. |
-| RFFM | Xem FC mọi MR, duyệt / trả lại / mở lại, xuất Excel. Không sửa số. |
+| MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU. Chỉ xem dashboard và số của mình. |
+| RFFM | Xem FC và dashboard cả team, duyệt / trả lại / mở lại, xuất Excel. Không sửa số. |
 | ADMIN | Toàn quyền: nạp dữ liệu, đổi kỳ, khóa kỳ, chốt bản FC, phân bổ account, thành viên. |
 
 Phân quyền chặn ở database (Row Level Security), đã test trên Postgres 16 + PostgREST:
+- MR chỉ đọc được số của mình (bản 4): account, sales, target, FC, trạng thái nộp.
 - MR không tự duyệt được, không ghi được dòng của MR khác, không sửa được sau khi đã duyệt hoặc khi kỳ đã khóa.
 - RFFM không ghi được FC.
 - Người ngoài danh sách team đọc 0 dòng.
 - Mọi thay đổi FC đều được ghi vào `fc_history`.
 
+## Nâng cấp từ bản 3 (đang chạy)
+
+Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run**. Không đổi dữ liệu, không cần nạp lại gì. Kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`.
+
 ## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
 3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
