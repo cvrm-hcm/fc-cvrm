@@ -2,6 +2,13 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.3 (11/11/2026) — FC Input: Cả team, Subtotal; sửa header mờ trên iPhone
+
+- **Cả team** (RFFM / Admin): ô MR ở tab FC Input thêm lựa chọn "Cả team". Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Dòng nhiều MR hiện tên MR + ratio; bấm tên để mở FC của MR đó. Chỉ xem; nhập, submit, duyệt vẫn ở từng MR.
+- **Địa bàn**: ở Cả team, ô "Địa bàn" chọn 1 MR → các account × SKU MR đó giữ, số đủ của mọi MR (full sale địa bàn). Ô tìm kiếm nhận tên account, mã KH, SKU, tên MR. Chọn từng MR ở ô trên thì số vẫn theo ratio của MR đó.
+- **Subtotal** ở đầu bảng, theo bộ lọc đang chọn: Act. 4 quý, QTD, Target, FC từng tháng (tr), FC quý, %Ach, Gr vs LYSP, Gr vs quý trước, số dòng cần lý do. Dính ngay dưới tiêu đề khi cuộn; trên điện thoại là thanh dính đầu danh sách. Gõ FC là Subtotal và dòng account tự cập nhật.
+- **Header mờ trên iPhone (iOS 26)**: iOS 26 bỏ `theme-color`, lấy màu status bar từ phần tử fixed ở mép trên trang, không có thì phủ lớp mờ theo màu nền xám. Thêm dải navy cố định sau status bar để status bar lấy màu navy.
+
 ## Phiên bản 4.2 (11/11/2026) — Thuật ngữ & thông số Bayer
 
 Toàn bộ chữ trên app (FC Input, Dashboard MR / RFFM / Admin, Admin, file Excel xuất) dùng cách gọi của team và file Target Allocation / FC Sale:

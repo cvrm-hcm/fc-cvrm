@@ -70,8 +70,11 @@ a{color:var(--s1)}
 .btn.ok{color:#0a6e0a;border-color:#bfe3bf}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 main{max-width:1480px;margin:0 auto;padding:18px max(20px, env(safe-area-inset-right)) 60px max(20px, env(safe-area-inset-left))}
-body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--navy);z-index:100;pointer-events:none}
-.top{padding-top:calc(10px + env(safe-area-inset-top));padding-left:max(20px, env(safe-area-inset-left));padding-right:max(20px, env(safe-area-inset-right))}
+/* Dải navy cố định sau status bar. iOS 26 lấy màu status bar từ phần tử fixed ở mép trên trang; không có thì phủ lớp mờ theo màu nền xám của trang (header bị mờ).
+   Dải phải là phần tử thật, nhận chạm, và dài hơn vùng status bar vài px. Không có tai thỏ (inset = 0) thì dải cao 0. */
+:root{--sbh:calc(env(safe-area-inset-top) + min(8px, env(safe-area-inset-top)))}
+#sbar{position:fixed;left:0;right:0;top:0;height:var(--sbh);background:var(--navy);z-index:100}
+.top{padding-top:max(10px, calc(env(safe-area-inset-top) + min(10px, env(safe-area-inset-top))));padding-left:max(20px, env(safe-area-inset-left));padding-right:max(20px, env(safe-area-inset-right))}
 .demo-banner{background:#fff4e5;border:1px solid #f5d3a8;color:#7a4b0f;border-radius:var(--r);padding:8px 12px;font-size:13px;margin-bottom:14px}
 h2{font-size:18px;margin:4px 0 12px}
 h3{font-size:15px;margin:0 0 10px}
@@ -151,6 +154,16 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .t tr td.stick{background:#fff}
 .t tr.acc td.stick{background:#f3f6fb}
 .t tr.tot td.stick{background:#eef1f6}
+/* FC Input: Subtotal dính dưới tiêu đề bảng (desktop), thanh Subtotal dính đầu danh sách (mobile), chế độ Cả team */
+.t thead tr.stot td{position:sticky;top:var(--hh,44px);z-index:2;background:#eaf1fb;font-weight:700;border-bottom:2px solid #c6d5ec;padding:6px 8px}
+.t thead tr.stot td.stick{left:0;z-index:3;background:#eaf1fb}
+.t tr.stot .u{font-size:10.5px;font-weight:500;color:var(--ink3);margin-left:2px}
+.mstot{position:sticky;top:var(--sbh);z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;background:#eaf1fb;border:1px solid #c6d5ec;border-radius:10px;padding:7px 10px;margin-bottom:10px;font-size:12.5px;box-shadow:0 2px 6px rgba(15,30,60,.08)}
+.t td .mrs,.mcards .mrs{white-space:normal;max-width:260px;font-size:11px;line-height:1.35;margin-top:1px}
+.mcards .mrs{max-width:none;margin:1px 0 2px}
+.rov{display:inline-block;min-width:56px;text-align:right;padding:4px 6px;border-radius:6px;background:#f7f8fa;color:var(--ink);font-variant-numeric:tabular-nums}
+.mcards .ins .rov{display:block;width:100%}.mcards .ins .cur .rov{flex:1;min-width:0}
+.t td.rsn{white-space:normal;min-width:140px;max-width:240px;font-size:12px;line-height:1.4}
 .t tr.hl td.stick{background:#fffbe8}
 .t td.act{color:var(--ink2)}
 .t td.in{padding:2px 3px}
@@ -236,9 +249,9 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .modal .f{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .modal input,.modal select,.modal textarea,textarea.inp{border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 @media (max-width:760px){
-  html,body{overflow-x:hidden}
+  html,body{overflow-x:hidden;overflow-x:clip}   /* clip: không tạo khung cuộn riêng, để thanh Subtotal dính được */
   main{padding:12px max(10px, env(safe-area-inset-right)) calc(70px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))}
-  .top{position:relative;padding:calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));gap:6px 8px}
+  .top{position:relative;padding:max(8px, calc(env(safe-area-inset-top) + min(10px, env(safe-area-inset-top)))) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));gap:6px 8px}
   .top .brand{font-size:15px;flex:1}
   .top .period{font-size:11.5px}
   .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:12.5px}
@@ -373,6 +386,7 @@ a.nolk{text-decoration:none}
 </style>
 </head>
 <body>
+<div id="sbar" aria-hidden="true"></div>
 <div id="tip"></div>
 <div id="app"></div>
 
@@ -851,11 +865,14 @@ function reasonCell(r, editable, mobile){
   if (!r.flag && !r.f.reason) return mobile ? '' : '<span class="muted">–</span>';
   return `<select class="rs ${r.needReason ? 'need' : ''}" data-id="${r.id}" data-f="reason" ${editable ? '' : 'disabled'} data-tip="${esc(r.flag || 'Lý do điều chỉnh FC')}"><option value="">${r.flag ? '⚠ Chọn lý do' : '–'}</option>${REASONS.map(x => `<option ${x === r.f.reason ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
 }
+const TEAM = '*';   // ô MR ở tab FC Input: "Cả team" (RFFM / Admin)
+const fcScope = rep => rep === TEAM ? ROWS : ROWS.filter(r => r.rep_name === rep);
 function fcKpiHtml(rep){
-  const mine = ROWS.filter(r => r.rep_name === rep), a = agg(mine);
+  const team = rep === TEAM, mine = fcScope(rep), a = agg(mine);
   const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length;
   const todo = `<div class="kpi"><div class="l">Việc cần xử lý</div><div class="v">${nNeed + nEmpty ? `<span ${nNeed ? 'style="color:var(--critical)"' : ''}>${nNeed + nEmpty}</span> <span class="sub" style="font-size:13px;font-weight:500">dòng</span>` : '<span style="color:var(--up)">✓</span>'}</div><div class="d">${nNeed ? `<span class="warn">${nNeed} dòng cần chọn lý do</span>` : 'Không có dòng cần lý do'}${nEmpty ? ` · ${nEmpty} dòng có lịch sử chưa nhập` : ''}</div></div>`;
-  return kpiBlocks(a, {tgtNote: `${a.n} dòng account × SKU`, fcNote: `đã nhập ${a.filled}/${a.n} dòng`, third: todo}) + monthStrip(a);
+  const tgtNote = team ? `${new Set(mine.map(r => r.cust_code + '|' + r.sku)).size} account × SKU · ${new Set(mine.map(r => r.rep_name)).size} MR` : `${a.n} dòng account × SKU`;
+  return kpiBlocks(a, {tgtNote, fcNote: `đã nhập ${a.filled}/${a.n} dòng`, third: todo}) + monthStrip(a);
 }
 let kpiTimer;
 function monthStrip(a){
@@ -865,42 +882,80 @@ function monthStrip(a){
     if (st === 'current'){ const p = fc ? Math.min(1, act / fc) : 0; return `<div class="mon">${h}<div class="v">${big(fc)}</div><div class="bar2 two"><i style="width:${p * 100}%"></i></div><div class="sub">Act. ${big(act)} (đến ${ASOF_DM}) + FC từ ${NEXT_DM} ${big(rem)}</div></div>`; }
     return `<div class="mon">${h}<div class="v">${big(fc)}</div><div class="sub">FC cả tháng</div></div>`; }).join('')}</div>`;
 }
+/* Subtotal theo bộ lọc ở đầu bảng: desktop là dòng dính ngay dưới tiêu đề, mobile là thanh dính đầu danh sách. Gõ FC là số tự cập nhật. */
+let FC_VIEW = {rows: [], nAcc: 0};
+function stotRow(a, nAcc){ const mn = MS.map(m => mlabel(D.settings.year, m));
+  return `<td class="l stick">Subtotal <span class="sub">· ${nAcc} account</span></td>${a.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(a.act[4])}</td><td>${tr(a.tgt)}</td><td class="grp"></td>`
+    + a.fcvM.map((x, i) => `<td data-tip="${esc(`${mn[i]}: ${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? `Act. + FC từ ${NEXT_DM}` : 'FC'} (tr VND)`)}">${tr(x)}<span class="u">tr</span></td>`).join('')
+    + `<td>${tr(a.fcv)}</td><td>${achHtml(a.ach)}</td><td>${grHtml(a.gLy)}</td><td>${grHtml(a.gQ)}</td><td class="l">${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}</td><td class="l sub">đã nhập ${a.filled}/${a.n} dòng</td>`; }
+function stotBar(a, nAcc){ return `<b>Subtotal</b><span class="sub">${nAcc} account</span><span>Target <b>${big(a.tgt)}</b></span><span>FC <b>${big(a.fcv)}</b></span>${achHtml(a.ach)}<span>Gr LYSP ${grHtml(a.gLy)}</span>${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}`; }
+function fixStot(tb){ if (tb && tb.tHead && tb.tHead.rows[0]) tb.style.setProperty('--hh', tb.tHead.rows[0].getBoundingClientRect().height + 'px'); }
+addEventListener('resize', () => { const tb = $('#fc-body table.t'); if (tb) fixStot(tb); });
+function fcRefreshTotals(r){
+  const a = agg(FC_VIEW.rows), st = $('#fc-body tr.stot'), sb = $('#fc-body .mstot');
+  if (st) st.innerHTML = stotRow(a, FC_VIEW.nAcc); if (sb) sb.innerHTML = stotBar(a, FC_VIEW.nAcc);
+  if (!r) return; const k = r.cust_code + '|' + r.cust_name, el = $$('#fc-body [data-agk]').find(x => x.dataset.agk === k); if (!el) return;
+  const g = agg(FC_VIEW.rows.filter(x => x.cust_code + '|' + x.cust_name === k)), set = (f, h) => { const c = $(`[data-ag="${f}"]`, el); if (c) c.innerHTML = h; };
+  set('fcv', el.tagName === 'TR' ? tr(g.fcv) : tr(g.fcv) + ' tr'); set('ach', achHtml(g.ach)); set('gly', grHtml(g.gLy)); set('gq', grHtml(g.gQ));
+}
+// Cả team: gộp dòng của các MR theo account × SKU → full sale account (không chia ratio)
+function teamLines(rows){
+  const m = new Map(), has = (r, i) => { const x = r.f['m' + (i + 1)]; return x !== null && x !== undefined && x !== ''; };
+  for (const r of rows){ const k = r.cust_code + '|' + r.sku; let o = m.get(k); if (!o){ o = {cust_code: r.cust_code, cust_name: r.cust_name, sku: r.sku, brand: r.brand, channel: r.channel, rows: []}; m.set(k, o); } o.rows.push(r); if (!o.channel && r.channel) o.channel = r.channel; }
+  for (const o of m.values()){ Object.assign(o, agg(o.rows)); const sum = f => o.rows.reduce((t, r) => t + num(f(r)), 0);
+    o.base = sum(r => r.base); o.tgtQ = sum(r => r.tgtQ); o.mtd = [0, 1, 2].map(i => sum(r => r.mtdBox[i])); o.remB = [0, 1, 2].map(i => sum(r => r.rem[i]));
+    o.fcB = [0, 1, 2].map(i => sum(r => has(r, i) ? r.f['m' + (i + 1)] : 0)); o.hasM = [0, 1, 2].map(i => o.rows.some(r => has(r, i))); }
+  return [...m.values()];
+}
 function viewFC(){
   const v = $('#view');
   const withRows = [...new Set(D.mapping.map(m => m.rep_name))].sort();
-  if (ME.role !== 'MR' && !withRows.includes(VIEW.fcRep)) VIEW.fcRep = withRows.includes(ME.rep_name) ? ME.rep_name : (withRows[0] || ME.rep_name);
-  const rep = ME.role === 'MR' ? ME.rep_name : VIEW.fcRep; const isOwner = ME.rep_name === rep;
-  const mine = ROWS.filter(r => r.rep_name === rep); const a = agg(mine); const st = repStatus(rep); const sub = D.subs[rep] || {}; const editable = canEdit(rep);
+  if (ME.role !== 'MR' && VIEW.fcRep !== TEAM && !withRows.includes(VIEW.fcRep)) VIEW.fcRep = withRows.includes(ME.rep_name) ? ME.rep_name : (withRows[0] || ME.rep_name);
+  if (!withRows.includes(VIEW.fcTerr)) VIEW.fcTerr = '';
+  const rep = ME.role === 'MR' ? ME.rep_name : VIEW.fcRep, team = rep === TEAM, isOwner = !team && ME.rep_name === rep;
+  const mine = fcScope(rep), st = team ? '' : repStatus(rep), sub = team ? {} : (D.subs[rep] || {}), editable = !team && canEdit(rep);
   const brands = [...new Set(mine.map(r => r.brand))].sort(); const F = VIEW.fcFlt;
   const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length, nFlag = mine.filter(r => r.flag).length;
-  const rows = mine.filter(r => (!VIEW.fcBrand || r.brand === VIEW.fcBrand) && (!VIEW.fcSearch || lc(`${r.cust_name} ${r.cust_code} ${r.sku}`).includes(lc(VIEW.fcSearch)))
-    && (F === 'all' ? true : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : (r.act.some(x => x) || r.tgt || r.filled || r.status === 'proposed')));
-  const ea = editedAfter(rep); let notes = '';
-  if (st === 'returned') notes += `<div class="note bad"><b>Trả lại</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}: ${esc(sub.review_note || '')}${isOwner ? '. Sửa lại rồi bấm Submit lại.' : ''}</div>`;
-  if (st === 'approved') notes += `<div class="note good"><b>Đã duyệt</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}. FC đã khoá${isAdmin() ? ' (admin vẫn sửa được)' : ''}.</div>`;
-  if (st === 'submitted' && ea) notes += `<div class="note warn">Có chỉnh sửa sau lần submit lúc ${fmtTime(sub.submitted_at)}. ${isOwner ? 'Bấm <b>Submit lại</b> để gửi bản mới.' : 'Chờ MR submit lại.'}</div>`;
-  if (D.settings.locked && !isAdmin()) notes += `<div class="note">FC ${P[4].label} đã khoá nhập.</div>`;
-  if (nNeed && editable) notes += `<div class="note warn"><b>${nNeed} dòng</b> có FC lệch nhiều so với TB 2Q cần chọn <b>lý do</b> trước khi submit. <a href="#" id="go-need">Xem các dòng này</a></div>`;
-  const acts = [];
-  if (editable && (isOwner || isAdmin()) && mine.length) acts.push(`<button class="btn pri" id="submit">${st === 'draft' ? 'Submit FC' : 'Submit lại'}</button>`);
-  if (isReviewer() && st === 'submitted') acts.push(`<button class="btn ok" data-rv="approved" data-rep="${esc(rep)}">✓ Duyệt</button><button class="btn danger" data-rv="returned" data-rep="${esc(rep)}">Trả lại</button>`);
-  if (isReviewer() && st === 'approved') acts.push(`<button class="btn" data-rv="returned" data-rep="${esc(rep)}">Mở lại</button>`);
+  const key = r => r.cust_code + '|' + r.sku, q = lc(VIEW.fcSearch);
+  const passF = r => F === 'all' ? true : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : (r.act.some(x => x) || r.tgt || r.filled || r.status === 'proposed');
+  const passQ = r => !q || lc(`${r.cust_name} ${r.cust_code} ${r.sku}${team ? ' ' + r.rep_name : ''}`).includes(q);
+  let base = mine.filter(r => !VIEW.fcBrand || r.brand === VIEW.fcBrand), rows;
+  if (team && VIEW.fcTerr){ const ks = new Set(base.filter(r => r.rep_name === VIEW.fcTerr).map(key)); base = base.filter(r => ks.has(key(r))); }   // địa bàn 1 MR: các account × SKU MR đó giữ, số của mọi MR
+  if (team){ const ks = new Set(base.filter(r => passF(r) && passQ(r)).map(key)); rows = base.filter(r => ks.has(key(r))); }
+  else rows = base.filter(r => passF(r) && passQ(r));
+  FC_VIEW = {rows, nAcc: new Set(rows.map(r => r.cust_code)).size};
+  let notes = ''; const acts = [];
+  if (team) notes = `<div class="note">Cả team: số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn <b>Địa bàn</b> để xem full sale các account của 1 MR. Chỉ xem; nhập, submit, duyệt ở từng MR.</div>`;
+  else {
+    const ea = editedAfter(rep);
+    if (st === 'returned') notes += `<div class="note bad"><b>Trả lại</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}: ${esc(sub.review_note || '')}${isOwner ? '. Sửa lại rồi bấm Submit lại.' : ''}</div>`;
+    if (st === 'approved') notes += `<div class="note good"><b>Đã duyệt</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}. FC đã khoá${isAdmin() ? ' (admin vẫn sửa được)' : ''}.</div>`;
+    if (st === 'submitted' && ea) notes += `<div class="note warn">Có chỉnh sửa sau lần submit lúc ${fmtTime(sub.submitted_at)}. ${isOwner ? 'Bấm <b>Submit lại</b> để gửi bản mới.' : 'Chờ MR submit lại.'}</div>`;
+    if (D.settings.locked && !isAdmin()) notes += `<div class="note">FC ${P[4].label} đã khoá nhập.</div>`;
+    if (nNeed && editable) notes += `<div class="note warn"><b>${nNeed} dòng</b> có FC lệch nhiều so với TB 2Q cần chọn <b>lý do</b> trước khi submit. <a href="#" id="go-need">Xem các dòng này</a></div>`;
+    if (editable && (isOwner || isAdmin()) && mine.length) acts.push(`<button class="btn pri" id="submit">${st === 'draft' ? 'Submit FC' : 'Submit lại'}</button>`);
+    if (isReviewer() && st === 'submitted') acts.push(`<button class="btn ok" data-rv="approved" data-rep="${esc(rep)}">✓ Duyệt</button><button class="btn danger" data-rv="returned" data-rep="${esc(rep)}">Trả lại</button>`);
+    if (isReviewer() && st === 'approved') acts.push(`<button class="btn" data-rv="returned" data-rep="${esc(rep)}">Mở lại</button>`);
+  }
+  const cntSt = k => withRows.filter(x => repStatus(x) === k).length;
+  const teamChip = `<span class="chip sb" data-tip="${esc(`Đã submit: ${cntSt('submitted')} · Đã duyệt: ${cntSt('approved')} · Trả lại: ${cntSt('returned')} · Chưa submit: ${cntSt('draft')}`)}">${cntSt('submitted') + cntSt('approved')}/${withRows.length} MR đã submit · ${cntSt('approved')} đã duyệt</span>`;
   const mn = MS.map(m => mlabel(D.settings.year, m));
   v.innerHTML = `
-    <div class="bar filters">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep">${withRows.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
-      <h2 style="margin:0">${isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2><span class="grow"></span>${statusChip(rep)} ${acts.join(' ')}</div>
+    <div class="bar filters">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep"><option value="${TEAM}" ${team ? 'selected' : ''}>Cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
+      <h2 style="margin:0">${team ? 'Cả team' : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2><span class="grow"></span>${team ? teamChip : statusChip(rep)} ${acts.join(' ')}</div>
     ${notes}
     <div id="fc-kpi">${fcKpiHtml(rep)}</div>
-    <div class="bar filters"><input type="search" id="f-q" placeholder="Tìm account / mã KH / SKU" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
+    <div class="bar filters"><input type="search" id="f-q" placeholder="${team ? 'Tìm account / mã KH / SKU / MR' : 'Tìm account / mã KH / SKU'}" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
+      ${team ? `<select id="f-terr"><option value="">Địa bàn: cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === VIEW.fcTerr ? 'selected' : ''}>Địa bàn ${esc(r)}</option>`).join('')}</select>` : ''}
       <select id="f-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.fcBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
       <select id="f-flt">${[['active', 'Dòng có sales / target / FC'], ['all', 'Tất cả dòng'], ['need', `Cần chọn lý do (${nNeed})`], ['empty', `Chưa nhập, có lịch sử (${nEmpty})`], ['flag', `FC lệch TB 2Q (${nFlag})`]].map(([k, l]) => `<option value="${k}" ${k === F ? 'selected' : ''}>${l}</option>`).join('')}</select>
       ${editable ? '<button class="btn" id="fill" data-tip="Điền TB 2Q vào các dòng CHƯA nhập: TB box/tháng 2 quý gần nhất; tháng đang chạy chỉ điền phần còn thiếu so với TB">Điền theo TB 2Q</button>' : ''}
-      ${(isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin() ? '<button class="btn" id="propose">＋ Đề xuất account/SKU</button>' : ''}
-      <span class="grow"></span><span class="save-ind" id="saveind">${editable ? 'Nhập box · tự lưu' : 'Chỉ xem'}</span></div>
+      ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất account/SKU</button>' : ''}
+      <span class="grow"></span><span class="save-ind" id="saveind">${team ? 'Chỉ xem · cộng cả team' : editable ? 'Nhập box · tự lưu' : 'Chỉ xem'}</span></div>
     <div id="fc-body"></div>
-    <div class="sub" style="margin-top:8px">Đơn vị: tr VND, ô nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Số mờ = TB 2Q (box/tháng). Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.</div>`;
+    <div class="sub" style="margin-top:8px">${team ? `Đơn vị: tr VND, cột tháng theo box. Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. Bấm tên MR để mở FC của MR đó.`
+      : `Đơn vị: tr VND, ô nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Số mờ = TB 2Q (box/tháng). Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
   const body = $('#fc-body');
-  const groups = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
   const LOCK = '<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   const inp = (r, i) => {
     if (MST[i] === 'closed') return `<span class="lockv" data-tip="${esc(`${mn[i]} đã có Act.: FC khoá = ${nf0.format(r.mtdBox[i])} box`)}">${r.mtdBox[i] ? nf0.format(r.mtdBox[i]) : '–'}</span>`;
@@ -909,40 +964,72 @@ function viewFC(){
       return `<span class="cur"><span class="pre" data-tip="${esc(`Đơn đã lên đến ${ASOF_DM}: ${nf0.format(r.mtdBox[i])} box, đã cộng sẵn vào FC`)}">${r.mtdBox[i] ? nf0.format(r.mtdBox[i]) + '+' : ''}</span>${box(r.rem[i], sug, `${mn[i]}: chỉ nhập FC từ ${NEXT_DM} đến hết tháng · TB 2Q còn ${sug} box`, `data-mtd="${r.mtdBox[i]}"`)}</span>`; }
     return box(r.f['m' + (i + 1)], r.sugM[i], `${mn[i]}: FC cả tháng · TB 2Q ${r.sugM[i] || 0} box`);
   };
+  // Cả team: ô tháng chỉ xem (box cộng mọi MR)
+  const tBox = (o, i) => MST[i] === 'closed' ? `<span class="lockv" data-tip="${esc(`${mn[i]}: Act. ${nf0.format(o.mtd[i])} box`)}">${o.mtd[i] ? nf0.format(o.mtd[i]) : '–'}</span>`
+    : MST[i] === 'current' ? `<span class="cur"><span class="pre" data-tip="${esc(`Act. đến ${ASOF_DM}: ${nf0.format(o.mtd[i])} box`)}">${o.mtd[i] ? nf0.format(o.mtd[i]) + '+' : ''}</span><span class="rov" data-tip="${esc(`FC từ ${NEXT_DM}, cộng các MR đã nhập`)}">${o.hasM[i] ? nf0.format(o.remB[i]) : '–'}</span></span>`
+    : `<span class="rov" data-tip="${esc(`${mn[i]}: FC cả tháng, cộng các MR đã nhập`)}">${o.hasM[i] ? nf0.format(o.fcB[i]) : '–'}</span>`;
+  const mrList = o => o.rows.map(r => `<a href="#" data-open="${esc(r.rep_name)}" data-tip="Mở FC của ${esc(r.rep_name)}">${esc(r.rep_name)}</a>${num(r.ratio) !== 1 ? ' ' + rto(r.ratio) : ''}`).join(' · ');
+  const multi = o => o.rows.length > 1;
+  const rsTxt = o => { const nd = o.rows.filter(r => r.needReason).length, l = o.rows.filter(r => r.f.reason).map(r => `${multi(o) ? esc(r.rep_name) + ': ' : ''}${esc(r.f.reason)}`);
+    return (nd ? `<span class="warn">⚠ ${nd} MR cần lý do</span>${l.length ? '<br>' : ''}` : '') + l.join('<br>'); };
+  const ntTxt = o => o.rows.filter(r => norm(r.f.note)).map(r => `${multi(o) ? `<b>${esc(r.rep_name)}</b>: ` : ''}${esc(norm(r.f.note))}`).join('<br>');
+  const tFlag = o => { const fl = o.rows.filter(r => r.flag); if (!fl.length) return '';
+    return `<div class="flag" data-tip="${esc(fl.map(r => `${r.rep_name}: ${r.flag}`).join('\n'))}">⚠ ${fl.length === 1 ? esc((multi(o) ? fl[0].rep_name + ': ' : '') + fl[0].flag) : `${fl.length} MR có FC lệch TB 2Q`}</div>`; };
   const mHead = i => MST[i] === 'closed' ? `${mn[i]} ${LOCK}<br><span class="hs">Act.</span>` : MST[i] === 'current' ? `${mn[i]}<br><span class="hs">từ ${NEXT_DM}</span>` : `${mn[i]}<br><span class="hs">cả tháng</span>`;
   const mTip = i => MST[i] === 'closed' ? 'Tháng đã có Act.: FC khoá = Act. (box)' : MST[i] === 'current' ? `Chỉ nhập FC từ ${NEXT_DM} đến hết tháng. Số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM}, đã cộng sẵn vào FC.` : 'FC cả tháng (box)';
   const noteInp = r => `<input class="note" data-id="${r.id}" data-f="note" value="${esc(r.f.note ?? '')}" placeholder="Note (quota, tồn kho, BS…)" ${editable ? '' : 'disabled'}>`;
   const skuLbl = r => `${esc(r.sku)}${num(r.ratio) !== 1 ? ` <span class="sub">(ratio ${rto(r.ratio)})</span>` : ''}${r.status === 'proposed' ? ' <span class="chip pp">đề xuất</span>' : ''}${r.warn ? ` <span class="warn">${r.warn}</span>` : ''}`;
   const chChip = c => c ? `<span class="chip lk">${esc(c)}</span>` : '';
-  if (!rows.length) body.innerHTML = `<div class="card sub">Không có dòng nào${F !== 'all' ? ' theo bộ lọc này' : ''}.</div>`;
-  else if (MOBILE()){
-    body.innerHTML = `<div class="mcards">${[...groups].map(([k, rs]) => { const g = agg(rs); return `<div class="acc"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right">${tr(g.fcv)} tr<br>${achHtml(g.ach)}</span></div>
+  const a0 = agg(rows), stot = `<tr class="stot">${stotRow(a0, FC_VIEW.nAcc)}</tr>`, sbar = `<div class="mstot">${stotBar(a0, FC_VIEW.nAcc)}</div>`;
+  const head = `<tr><th class="l stick">Account / SKU</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
+      ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
+      <th>FC (tr)</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
+  const accCells = g => `<td data-ag="fcv">${tr(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
+  if (!rows.length) body.innerHTML = `<div class="card sub">Không có dòng nào${F !== 'all' || q || VIEW.fcBrand || (team && VIEW.fcTerr) ? ' theo bộ lọc này' : ''}.</div>`;
+  else if (team){
+    const byAcc = new Map(); for (const o of teamLines(rows)){ if (!byAcc.has(o.cust_code)) byAcc.set(o.cust_code, []); byAcc.get(o.cust_code).push(o); }
+    const accs = [...byAcc.values()].map(ls => ({ls: ls.sort((p, x) => p.brand.localeCompare(x.brand) || x.tgt - p.tgt || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
+      .sort((x, y) => y.g.tgt - x.g.tgt || y.g.fcv - x.g.fcv || x.ls[0].cust_name.localeCompare(y.ls[0].cust_name));
+    const accLbl = x => `${esc(x.ls[0].cust_name)} <span class="sub">${esc(x.ls[0].cust_code)} · ${x.nMR} MR</span> ${chChip(x.ls.find(o => o.channel)?.channel)}`;
+    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${accs.map(x => `<div class="acc"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right">${tr(x.g.fcv)} tr<br>${achHtml(x.g.ach)}</span></div>
+      ${x.ls.map(o => `<div class="sku"><div class="n">${esc(o.sku)}</div><div class="mrs sub">${mrList(o)}</div>
+        <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span><span>Target: ${tr(o.tgt)}</span><span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b>${tr(o.fcv)}</b> ${achHtml(o.ach)}</span></div>
+        <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'từ ' + NEXT_DM : 'cả tháng'}</span></label>${tBox(o, i)}</div>`).join('')}</div>
+        ${tFlag(o)}${rsTxt(o) || ntTxt(o) ? `<div class="nt" style="margin-top:6px">${[rsTxt(o), ntTxt(o)].filter(Boolean).join('<br>')}</div>` : ''}</div>`).join('')}</div>`).join('')}</div>`;
+    else { let html = '';
+      for (const x of accs){
+        html += `<tr class="acc"><td class="l stick">${accLbl(x)}</td>${x.g.act.slice(0, 4).map(v2 => `<td>${tr(v2)}</td>`).join('')}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`;
+        for (const o of x.ls) html += `<tr><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${mrList(o)}</div>${tFlag(o)}</td>${o.act.slice(0, 4).map(v2 => `<td class="act">${tr(v2)}</td>`).join('')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
+          ${[0, 1, 2].map(i => `<td class="in">${tBox(o, i)}</td>`).join('')}<td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${grHtml(o.gLy)}</td><td>${grHtml(o.gQ)}</td><td class="l rsn">${rsTxt(o)}</td><td class="l nt">${ntTxt(o)}</td></tr>`;
+      }
+      body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
+  } else {
+    const groups = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${[...groups].map(([k, rs]) => { const g = agg(rs); return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
       ${rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}</div>
         <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span><span>Target: ${tr(r.tgt)}</span><span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'từ ' + NEXT_DM : 'cả tháng'}</span></label>${inp(r, i)}</div>`).join('')}</div>
         <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div><div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`).join('')}</div>`; }).join('')}</div>`;
-  } else {
-    const head = `<tr><th class="l stick">Account / SKU</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
-      ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
-      <th>FC (tr)</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
-    let html = '';
-    for (const [k, rs] of groups){
-      const g = agg(rs);
-      html += `<tr class="acc"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
-        <td class="grp"></td><td colspan="3"></td><td>${tr(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${grHtml(g.gLy)}</td><td>${grHtml(g.gQ)}</td><td></td><td></td></tr>`;
-      for (const r of rs){
-        html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div></td>${r.act.slice(0, 4).map(x => `<td class="act">${tr(x)}</td>`).join('')}<td class="act">${tr(r.act[4])}</td><td data-tip="${r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : ''}">${tr(r.tgt)}</td><td class="grp muted">${r.base || '–'}</td>
-          ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</td><td data-gly="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[0]) : null)}</td><td data-gq="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[3]) : null)}</td>
-          <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
+    else { let html = '';
+      for (const [k, rs] of groups){
+        const g = agg(rs);
+        html += `<tr class="acc" data-agk="${esc(k)}"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
+          <td class="grp"></td><td colspan="3"></td>${accCells(g)}<td></td><td></td></tr>`;
+        for (const r of rs){
+          html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div></td>${r.act.slice(0, 4).map(x => `<td class="act">${tr(x)}</td>`).join('')}<td class="act">${tr(r.act[4])}</td><td data-tip="${r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : ''}">${tr(r.tgt)}</td><td class="grp muted">${r.base || '–'}</td>
+            ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</td><td data-gly="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[0]) : null)}</td><td data-gq="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[3]) : null)}</td>
+            <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
+        }
       }
-    }
-    body.innerHTML = `<div class="tw"><table class="t"><thead>${head}</thead><tbody>${html}</tbody></table></div>`;
+      body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
   }
+  fixStot($('table.t', body));
   $('#f-rep') && ($('#f-rep').onchange = e => { VIEW.fcRep = e.target.value; viewFC(); });
+  $('#f-terr') && ($('#f-terr').onchange = e => { VIEW.fcTerr = e.target.value; viewFC(); });
   $('#f-b').onchange = e => { VIEW.fcBrand = e.target.value; viewFC(); };
   $('#f-flt').onchange = e => { VIEW.fcFlt = e.target.value; viewFC(); };
   $('#go-need') && ($('#go-need').onclick = e => { e.preventDefault(); VIEW.fcFlt = 'need'; viewFC(); });
-  let qt; $('#f-q').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { VIEW.fcSearch = e.target.value; viewFC(); const q = $('#f-q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }, 350); };
+  let qt; $('#f-q').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { VIEW.fcSearch = e.target.value; viewFC(); const q2 = $('#f-q'); q2.focus(); q2.setSelectionRange(q2.value.length, q2.value.length); }, 350); };
   $('#submit') && ($('#submit').onclick = () => submitFlow(rep));
   $('#fill') && ($('#fill').onclick = () => fillSuggest(rep));
   $('#propose') && ($('#propose').onclick = () => proposeDialog(rep));
@@ -961,7 +1048,7 @@ function onFCInput(e){
   const gly = $(`[data-gly="${id}"]`); if (gly) gly.innerHTML = grHtml(r.filled ? growth(r.fcv, r.act[0]) : null);
   const gq = $(`[data-gq="${id}"]`); if (gq) gq.innerHTML = grHtml(r.filled ? growth(r.fcv, r.act[3]) : null);
   $$(`[data-flag="${id}"]`).forEach(x => x.textContent = r.flag ? '⚠ ' + r.flag : '');
-  clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { const el = $('#fc-kpi'); if (el) el.innerHTML = fcKpiHtml(r.rep_name); }, 250);
+  clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { const el = $('#fc-kpi'); if (el) el.innerHTML = fcKpiHtml(r.rep_name); fcRefreshTotals(r); }, 250);
   const rs = $(`[data-rs="${id}"]`);
   if (rs){ const sel = $('select', rs); if (sel && (f === 'reason' || f === 'note') && (r.flag || r.f.reason)) sel.classList.toggle('need', r.needReason); else rs.innerHTML = reasonCell(r, true, MOBILE()); }
   const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
