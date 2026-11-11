@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.7.1 (11/11/2026) — FC Input xếp account từ lớn đến bé
+
+- FC Input (từng MR và Cả team, máy tính và điện thoại): account xếp từ lớn đến bé, SKU trong account cũng vậy. Quy mô = số lớn hơn giữa target quý FC và TB sales 2 quý gần nhất, nên thứ tự đứng yên trong quý, không nhảy khi MR nhập FC. Account mới chưa có target, chưa có sales nằm cuối.
+
 ## Phiên bản 4.7 (11/11/2026) — 2 team: CVRM và WHC
 
 - **Ô Team ở header** (CVRM / WHC / Cả 2 team) cho người xem được cả 2 team (ADMIN, RFFM để Team = Cả 2 team). Áp cho FC Input, Dashboard, Admin; app nhớ lựa chọn trên từng máy. MR chỉ thấy team của mình, không có ô Team.

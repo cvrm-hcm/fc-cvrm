@@ -1076,6 +1076,8 @@ function viewFC(){
   const brands = [...new Set(mine.map(r => r.brand))].sort(); const F = VIEW.fcFlt;
   const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length, nFlag = mine.filter(r => r.flag).length, nAuto = mine.filter(r => r.f.auto_note).length;
   const key = r => r.cust_code + '|' + r.sku, q = lc(VIEW.fcSearch);
+  // Xếp từ lớn đến bé: quy mô = số lớn hơn giữa target quý FC và TB sales 2 quý gần nhất (ổn định trong quý, không nhảy khi MR nhập FC)
+  const sz = x => Math.max(x.tgt || 0, ((x.act[2] || 0) + (x.act[3] || 0)) / 2), SZ_TIP = 'Xếp từ lớn đến bé theo target hoặc TB sales 2 quý gần nhất (lấy số lớn hơn)';
   const passF = r => F === 'all' ? true : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : F === 'auto' ? !!r.f.auto_note : (r.act.some(x => x) || r.tgt || r.filled || r.status === 'proposed');
   const passQ = r => !q || lc(`${r.cust_name} ${r.cust_code} ${r.sku}${team ? ' ' + r.rep_name : ''}`).includes(q);
   let base = mine.filter(r => !VIEW.fcBrand || r.brand === VIEW.fcBrand), rows;
@@ -1140,7 +1142,7 @@ function viewFC(){
   const skuLbl = r => `${esc(r.sku)}${num(r.ratio) !== 1 ? ` <span class="sub">(ratio ${rto(r.ratio)})</span>` : ''}${r.status === 'proposed' ? ' <span class="chip pp">đề xuất</span>' : ''}${r.warn ? ` <span class="warn">${r.warn}</span>` : ''}`;
   const chChip = c => c ? `<span class="chip lk">${esc(c)}</span>` : '';
   const a0 = agg(rows), stot = `<tr class="stot">${stotRow(a0, FC_VIEW.nAcc)}</tr>`, sbar = `<div class="mstot">${stotBar(a0, FC_VIEW.nAcc)}</div>`;
-  const head = `<tr><th class="l stick">Account / SKU</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
+  const head = `<tr><th class="l stick" data-tip="${SZ_TIP}">Account / SKU ↓</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
       ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
       <th>FC (tr)</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
   const accCells = g => `<td data-ag="fcv">${tr(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
@@ -1148,8 +1150,8 @@ function viewFC(){
   else if (team){
     const lines = teamLines(rows); FC_VIEW.lines = new Map(lines.map(o => [o.key, o]));
     const byAcc = new Map(); for (const o of lines){ if (!byAcc.has(o.cust_code)) byAcc.set(o.cust_code, []); byAcc.get(o.cust_code).push(o); }
-    const accs = [...byAcc.values()].map(ls => ({ls: ls.sort((p, x) => p.brand.localeCompare(x.brand) || x.tgt - p.tgt || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
-      .sort((x, y) => y.g.tgt - x.g.tgt || y.g.fcv - x.g.fcv || x.ls[0].cust_name.localeCompare(y.ls[0].cust_name));
+    const accs = [...byAcc.values()].map(ls => ({ls: ls.sort((p, x) => sz(x) - sz(p) || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
+      .sort((x, y) => sz(y.g) - sz(x.g) || y.g.act[4] - x.g.act[4] || x.ls[0].cust_name.localeCompare(y.ls[0].cust_name));
     const accLbl = x => `${esc(x.ls[0].cust_name)} <span class="sub">${esc(x.ls[0].cust_code)} · ${x.nMR} MR</span> ${chChip(x.ls.find(o => o.channel)?.channel)}`;
     // Thẻ mobile / dòng bảng của 1 account (các SKU, cộng mọi MR)
     const cardHtml = x => `<div class="acc" data-agk="${esc(x.ls[0].cust_code)}"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.g.ach)}</span></span></div>
@@ -1163,7 +1165,7 @@ function viewFC(){
     // Vẽ trước TEAM_N account lớn nhất (theo target); "Xem thêm" nối tiếp vào bảng, không vẽ lại, không mất vị trí cuộn. Subtotal vẫn tính mọi dòng theo bộ lọc.
     const sig = [VIEW.fcTerr, VIEW.fcBrand, VIEW.fcFlt, VIEW.fcSearch].join('|'); if (VIEW.fcTeamSig !== sig){ VIEW.fcTeamSig = sig; VIEW.fcTeamN = TEAM_N; }
     const mob = MOBILE(), n0 = Math.min(accs.length, VIEW.fcTeamN);
-    const moreHtml = n => n < accs.length ? `<div class="bar more" id="fc-more-bar"><span class="sub">Đang hiện ${n}/${accs.length} account, xếp theo target</span><button class="btn" id="fc-more">Xem thêm ${Math.min(TEAM_N, accs.length - n)} account</button><button class="btn ghost" id="fc-all">Hiện tất cả</button></div>` : '';
+    const moreHtml = n => n < accs.length ? `<div class="bar more" id="fc-more-bar"><span class="sub">Đang hiện ${n}/${accs.length} account, xếp từ lớn đến bé</span><button class="btn" id="fc-more">Xem thêm ${Math.min(TEAM_N, accs.length - n)} account</button><button class="btn ghost" id="fc-all">Hiện tất cả</button></div>` : '';
     if (mob) body.innerHTML = sbar + `<div class="mcards">${accs.slice(0, n0).map(cardHtml).join('')}</div>` + moreHtml(n0);
     else body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${accs.slice(0, n0).map(accHtml).join('')}</tbody></table></div>` + moreHtml(n0);
     const showMore = all => { const from = Math.min(accs.length, VIEW.fcTeamN), to = all ? accs.length : Math.min(accs.length, from + TEAM_N); VIEW.fcTeamN = to;
@@ -1172,15 +1174,16 @@ function viewFC(){
     const bindMore = () => { $('#fc-more') && ($('#fc-more').onclick = () => showMore(false)); $('#fc-all') && ($('#fc-all').onclick = () => showMore(true)); };
     bindMore();
   } else {
-    const groups = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
-    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${[...groups].map(([k, rs]) => { const g = agg(rs); return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
+    const gm = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!gm.has(k)) gm.set(k, []); gm.get(k).push(r); });
+    const groups = [...gm].map(([k, rs]) => [k, rs.sort((a, b) => sz(b) - sz(a) || a.sku.localeCompare(b.sku)), agg(rs)])
+      .sort((x, y) => sz(y[2]) - sz(x[2]) || y[2].act[4] - x[2].act[4] || x[1][0].cust_name.localeCompare(y[1][0].cust_name));
+    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(([k, rs, g]) => { return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
       ${rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}</div>
         <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span><span>Target: ${tr(r.tgt)}</span><span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
         <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`).join('')}</div>`; }).join('')}</div>`;
     else { let html = '';
-      for (const [k, rs] of groups){
-        const g = agg(rs);
+      for (const [k, rs, g] of groups){
         html += `<tr class="acc" data-agk="${esc(k)}"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
           <td class="grp"></td><td colspan="3"></td>${accCells(g)}<td></td><td></td></tr>`;
         for (const r of rs){
