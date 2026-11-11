@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.4 (11/11/2026) — Admin sửa số ở Cả team; sửa xoay ngang trên iPhone
+
+- **Cả team, admin sửa số tổng**: ô tháng (tháng đang chạy: FC từ ngày sau ngày dữ liệu; tháng tới: FC cả tháng) cho admin nhập số box tổng của account × SKU. App chia cho từng MR theo tỷ trọng ratio, làm tròn box mà tổng vẫn đúng số nhập (vd 1000 box, ratio 0.2 / 0.5 / 0.3 → 200 / 500 / 300; 3 MR × 0.33 → 334 / 333 / 333), ghi đè số tháng đó của từng MR và tự lưu. Tháng đang chạy: phần đã lên của từng MR giữ nguyên, chỉ chia phần FC còn lại. RFFM xem Cả team vẫn chỉ xem.
+- Sửa ở Cả team là sửa FC của từng MR: MR đã submit sẽ hiện "có sửa sau submit".
+- **iPhone xoay ngang**: Safari không tự phóng to chữ nữa (text-size-adjust); cột Account / SKU xuống dòng, trên màn hình nhỏ rộng 180–220px; màn hình thấp (≤ 520px) thì header không dính, bảng cao gần hết màn hình.
+
 ## Phiên bản 4.3 (11/11/2026) — FC Input: Cả team, Subtotal; sửa header mờ trên iPhone
 
 - **Cả team** (RFFM / Admin): ô MR ở tab FC Input thêm lựa chọn "Cả team". Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Dòng nhiều MR hiện tên MR + ratio; bấm tên để mở FC của MR đó. Chỉ xem; nhập, submit, duyệt vẫn ở từng MR.
