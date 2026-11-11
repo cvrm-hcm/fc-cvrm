@@ -488,6 +488,46 @@ input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-all
   .mcards .acc-h{padding:9px 12px}
 
 }
+
+/* ===== Giao diện 4.8.1 ===== */
+/* laptop 1280–1400: bảng FC vừa màn hình, không cuộn ngang */
+@media (max-width:1400px) and (min-width:761px){
+  #fc-body .t td,#fc-body .t th{padding-left:6px;padding-right:6px}
+  #fc-body .t input.note{width:128px}
+  #fc-body select.rs{max-width:150px}
+  #fc-body .t td.stick{max-width:250px;min-width:170px}
+  #fc-body .t input.box{width:58px}
+}
+.abar .dnav{margin:0}
+.abar{margin-bottom:14px}
+/* ô nhập trong bảng Admin (phân bổ, thành viên, giá): cùng kiểu với app; :where giữ độ ưu tiên thấp để không đè ô FC / lý do */
+.t :where(select, input[type=text], input[type=number], input[type=email], input[type=date], input:not([type]):not(.box):not(.note)){border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:#fff;color:var(--ink);font-size:12.5px}
+.t :where(select, input[type=text], input[type=number], input[type=email], input:not([type]):not(.box):not(.note)):focus{outline:2px solid var(--s1);outline-offset:-1px;border-color:transparent}
+/* nút xoá từng dòng: nhẹ, đỏ khi rê chuột */
+.t .btn.sm.danger{border-color:transparent;background:transparent;color:var(--ink3);padding:4px 8px}
+.t .btn.sm.danger:hover{color:var(--critical);background:#fdecec}
+/* bàn phím: thấy rõ đang ở đâu */
+button:focus-visible,select:focus-visible,a:focus-visible,input[type=checkbox]:focus-visible,summary:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.dnav button:focus-visible{outline-offset:-2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* đăng nhập */
+.login{width:calc(100% - 24px)}
+.login select,.login input{background:#fff;color:var(--ink)}
+.login .btn.pri{padding:10px 12px}
+@media (max-width:760px){
+  .abar .dnav{width:100%}
+  .abar .dnav button{flex:none}
+  .abar .grow{display:none}
+  .fgrid{grid-template-columns:1fr}
+  .filters .fl:not(.wide){flex:1 1 0}
+  .filters #d-exp{flex:none;padding:7px 10px}
+  /* KPI thẻ lớn (Dashboard, FC Chi tiết): FC đứng đầu cả hàng, Target và Act. QTD chung 1 hàng */
+  .kcap.a + .kgrid.c3 > .kpi:nth-child(2){order:-1;grid-column:1/-1}
+  .kcap.a + .kgrid.c3 > .kpi:nth-child(3){grid-column:auto}
+  .kcap.a + .kgrid.c3 .meter{gap:6px}
+  .kpi .d{font-size:11.5px}
+  .login{margin:6vh auto;padding:20px}
+}
 </style>
 </head>
 <body>
@@ -1212,7 +1252,7 @@ function viewFC(){
   const teamEdit = team && isAdmin();   // Cả team: admin sửa số tổng, app chia cho từng MR theo ratio
   FC_VIEW = {rows, nAcc: new Set(rows.map(r => r.cust_code)).size, lines: null};
   let notes = ''; const acts = [];
-  if (team) notes = `<div class="note" data-tip="${esc(`Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn Địa bàn để xem full sale các account của 1 MR.${teamEdit ? ' Số tổng tự chia cho từng MR theo ratio, ghi đè số tháng đó của từng MR.' : ''}`)}">Cả team: full sale account (cộng mọi MR, không chia ratio). ${teamEdit ? 'Admin nhập số tổng, app tự chia cho từng MR theo ratio. ' : ''}Submit, duyệt ở từng MR.</div>`;
+  if (team) notes = `<div class="note" data-tip="${esc(`Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn Địa bàn để xem full sale các account của 1 MR.${teamEdit ? ' Số tổng tự chia cho từng MR theo ratio, ghi đè số tháng đó của từng MR.' : ''}`)}">Cả team: full sale account (cộng mọi MR, không chia ratio).<span class="dt"> ${teamEdit ? 'Admin nhập số tổng, app tự chia cho từng MR theo ratio. ' : ''}Submit, duyệt ở từng MR.</span></div>`;
   else {
     const ea = editedAfter(rep);
     if (st === 'returned') notes += `<div class="note bad"><b>Trả lại</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}: ${esc(sub.review_note || '')}${isOwner ? '. Sửa lại rồi bấm Submit lại.' : ''}</div>`;
@@ -1581,7 +1621,7 @@ function viewDashTeam(){
       <label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
       <label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
       <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label>
-      <button class="btn" id="d-exp">⬇ Xuất Excel</button></div>
+      <button class="btn" id="d-exp">⬇ <span class="dt">Xuất </span>Excel</button></div>
     <div class="dnav" role="tablist">${DTABS.map(([k, l]) => `<button role="tab" data-dt="${k}" class="${T === k ? 'on' : ''}">${l}${k === 'risk' && nHi ? `<span class="n" data-tip="Account rủi ro cao">${nHi}</span>` : ''}</button>`).join('')}</div>
     <div id="dt"></div>`;
   $('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDashTeam(); };
@@ -2276,7 +2316,7 @@ function viewAdmin(){
   useClock(vTeams());
   const v = $('#view'); const s = D.settings; const miss = missingAccounts(); const warn = ROWS.filter(r => r.warn); const prop = ROWS.filter(r => r.status === 'proposed');
   const t = VIEW.admTab; const subtabs = [['import', 'Kỳ & nạp dữ liệu'], ['history', 'FC lịch sử & chốt kỳ'], ['missing', `Account thiếu (${new Set(miss.map(x => x.cust_code)).size + new Set(TGT_OPEN.map(t => t.cust_code)).size})`], ['mapping', `Phân bổ account${prop.length ? ` · ${prop.length} đề xuất` : ''}${warn.length ? ` · ${warn.length} cảnh báo` : ''}`], ['members', 'Thành viên & giá']];
-  v.innerHTML = `<div class="bar">${subtabs.map(([k, l]) => `<button class="btn ${t === k ? 'pri' : ''}" data-at="${k}">${l}</button>`).join('')}<span class="grow"></span><button class="btn" id="exp">⬇ Xuất Excel</button>${MODE === 'demo' ? '<button class="btn danger" id="rst">Reset demo</button>' : ''}</div><div id="adm"></div>`;
+  v.innerHTML = `<div class="bar abar"><div class="dnav" role="tablist">${subtabs.map(([k, l]) => `<button role="tab" class="${t === k ? 'on' : ''}" data-at="${k}">${l}</button>`).join('')}</div><span class="grow"></span><button class="btn" id="exp">⬇ Xuất Excel</button>${MODE === 'demo' ? '<button class="btn danger" id="rst">Reset demo</button>' : ''}</div><div id="adm"></div>`;
   $$('[data-at]').forEach(b => b.onclick = () => { VIEW.admTab = b.dataset.at; viewAdmin(); });
   $('#exp').onclick = e => exportExcel(e.currentTarget);
   $('#rst') && ($('#rst').onclick = async () => { if (await confirmBox('Xóa toàn bộ dữ liệu demo và tạo lại?')){ STORE.reset(); await reload(); } });

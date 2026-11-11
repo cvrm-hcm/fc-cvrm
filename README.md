@@ -2,6 +2,14 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.8.1 (11/11/2026) — Rà giao diện lượt 2
+
+- **Laptop 1280–1366:** bảng FC Input vừa màn hình, không cuộn ngang (lề ô, cột Note, Lý do gọn lại ở khổ này).
+- **Admin:** tab con (Kỳ & nạp dữ liệu, FC lịch sử, Account thiếu, Phân bổ, Thành viên & giá) dùng cùng kiểu tab với Dashboard; trên điện thoại vuốt ngang thay vì 4 hàng nút. Ô nhập, ô chọn trong bảng Phân bổ / Thành viên / Giá bo góc, cùng kiểu app; nút Xóa từng dòng nhạt, đỏ khi rê chuột. Form Kỳ FC trên điện thoại 1 cột.
+- **Dashboard trên điện thoại:** 3 ô lọc + nút Excel còn 2 hàng; thẻ FC đứng đầu, Target và Act. QTD chung 1 hàng.
+- **FC Input Cả team trên điện thoại:** ghi chú Cả team còn 1 dòng.
+- **Chung:** viền focus rõ khi dùng bàn phím; tôn trọng chế độ giảm chuyển động; màn hình đăng nhập không dính mép trên điện thoại.
+
 ## Phiên bản 4.8 (11/11/2026) — Giao diện gọn, dễ nhập hơn
 
 - **FC Input gọn:** các thẻ KPI gom thành 1 dải (Target · FC + %Ach · Act. QTD vs phasing · Growth · Việc cần xử lý). Bấm **Chi tiết** để mở lại thẻ đầy đủ và 3 tháng; app nhớ lựa chọn trên từng máy. Bấm "N dòng cần lý do" / "dòng có lịch sử chưa nhập" để lọc ngay các dòng đó. Bảng nhập lên ngay màn hình đầu (máy tính: ô nhập đầu tiên từ y≈870 lên ≈460).
