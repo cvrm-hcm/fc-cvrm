@@ -1,7 +1,7 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v4 + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v5 + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql rồi migration_v4.sql; bản 3 chỉ chạy migration_v4.sql.
+-- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → migration_v4.sql → migration_v5.sql; bản 3 chạy v4 rồi v5; bản 4 chỉ chạy migration_v5.sql.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
 --   * MR: chỉ xem số của mình (account, sales, target, FC, trạng thái nộp);
@@ -115,6 +115,8 @@ create table if not exists public.fc_entries (
   reason     text,
   updated_by text not null default public.my_email(),
   updated_at timestamptz not null default now(),
+  auto_note  text,          -- lần app tự dời FC theo sales mới (bản 5)
+  auto_at    timestamptz,
   primary key (period, mapping_id)
 );
 
@@ -124,7 +126,8 @@ create table if not exists public.fc_history (
   old_m1 numeric, old_m2 numeric, old_m3 numeric,
   new_m1 numeric, new_m2 numeric, new_m3 numeric,
   changed_by text default public.my_email(),
-  changed_at timestamptz default now()
+  changed_at timestamptz default now(),
+  src        text          -- 'auto' = app tự dời khi nạp sales (bản 5)
 );
 
 -- Bản FC đã chốt theo kỳ — dùng đo độ chính xác FC (không phụ thuộc phân bổ account hiện tại)
@@ -157,17 +160,29 @@ create or replace function public.rep_approved(p text) returns boolean
   $$ select exists (select 1 from submissions where period = p and rep_name = my_rep() and status = 'approved') $$;
 
 -- ---------- Triggers ----------
+-- Lần dời tự động (app.fc_auto = '1', chỉ đặt trong hàm fc_auto_roll) giữ người sửa / giờ sửa của MR
 create or replace function public.stamp_fc() returns trigger
   language plpgsql security definer set search_path = public as $$
-begin new.updated_by := my_email(); new.updated_at := now(); return new; end $$;
+begin
+  if tg_op = 'UPDATE' and coalesce(current_setting('app.fc_auto', true), '') = '1' then
+    new.updated_by := old.updated_by; new.updated_at := old.updated_at;
+  else
+    new.updated_by := my_email(); new.updated_at := now();
+    if tg_op = 'UPDATE' and (old.m1, old.m2, old.m3) is distinct from (new.m1, new.m2, new.m3) then
+      new.auto_note := null; new.auto_at := null;      -- MR / admin đã sửa số: bỏ dấu tự dời
+    end if;
+  end if;
+  return new;
+end $$;
 create or replace function public.log_fc() returns trigger
   language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'UPDATE' and (old.m1, old.m2, old.m3) is not distinct from (new.m1, new.m2, new.m3) then return null; end if;
-  insert into fc_history(period, mapping_id, old_m1, old_m2, old_m3, new_m1, new_m2, new_m3)
+  insert into fc_history(period, mapping_id, old_m1, old_m2, old_m3, new_m1, new_m2, new_m3, src)
   values (new.period, new.mapping_id,
           case when tg_op = 'UPDATE' then old.m1 end, case when tg_op = 'UPDATE' then old.m2 end, case when tg_op = 'UPDATE' then old.m3 end,
-          new.m1, new.m2, new.m3);
+          new.m1, new.m2, new.m3,
+          case when coalesce(current_setting('app.fc_auto', true), '') = '1' then 'auto' end);
   return null;
 end $$;
 drop trigger if exists trg_stamp_fc on public.fc_entries;
@@ -216,9 +231,30 @@ begin
 end $$;
 
 -- Hàm hỗ trợ quyền đọc
--- App đọc số này để biết database đã ở bản 4 chưa
+-- App đọc số này để biết database đã ở bản mấy
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 4 $$;
+  language sql immutable set search_path = '' as $$ select 5 $$;
+
+-- Admin nạp sales mới → app tính số mới từng dòng (giữ FC quý) rồi gọi hàm này.
+-- Chỉ ghi dòng chưa ai sửa kể từ lúc app tính (so số cũ o1..o3). Trả về số dòng đã ghi.
+create or replace function public.fc_auto_roll(p_period text, p_rows jsonb) returns int
+  language plpgsql set search_path = public as $$
+declare n int;
+begin
+  if not public.is_admin() then raise exception 'Chỉ admin được tự dời FC'; end if;
+  perform set_config('app.fc_auto', '1', true);
+  update public.fc_entries f
+     set m1 = (x->>'m1')::numeric, m2 = (x->>'m2')::numeric, m3 = (x->>'m3')::numeric,
+         auto_note = left(x->>'note', 1000), auto_at = now()
+    from jsonb_array_elements(p_rows) x
+   where f.period = p_period and f.mapping_id = (x->>'mapping_id')::bigint
+     and f.m1 is not distinct from (x->>'o1')::numeric
+     and f.m2 is not distinct from (x->>'o2')::numeric
+     and f.m3 is not distinct from (x->>'o3')::numeric;
+  get diagnostics n = row_count;
+  perform set_config('app.fc_auto', '', true);
+  return n;
+end $$;
 
 -- Account × SKU này có target giao thẳng cho MR chưa (đọc cả team, không lộ số ra ngoài)
 create or replace function public.target_has_rep(p text, c text, s text) returns boolean
@@ -304,7 +340,7 @@ do $$
 declare f text;
 begin
   foreach f in array array['my_email()', 'is_member()', 'is_admin()', 'is_reviewer()', 'my_rep()', 'current_period()', 'period_open()', 'rep_approved(text)',
-                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()'] loop
+                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()', 'fc_auto_roll(text, jsonb)'] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;

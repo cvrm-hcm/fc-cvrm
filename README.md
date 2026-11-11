@@ -2,6 +2,19 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.5 (11/11/2026) — Tự trừ sales mới vào FC; TB 2Q
+
+- **Tự trừ sales mới vào FC, giữ FC quý từng dòng**: Admin nạp raw sales mới (Admin → 3. Raw sales, ô "Tự trừ sales mới vào FC của team" tick sẵn) → app giữ nguyên FC quý (box) của từng dòng MR đã nhập, phần chênh tự dời sang tháng còn lại. MR không phải sửa lại nếu tình hình đặt hàng không đổi.
+  - Trong tháng đang chạy, sales chưa vượt FC tháng: như cũ, FC cả tháng giữ nguyên, phần "FC từ ngày …" tự giảm theo đơn mới lên.
+  - Sales tháng vượt FC tháng (đơn tháng sau lên sớm, hoặc tháng chốt cao hơn FC): trừ vào tháng còn lại gần nhất, vd Nov vượt FC 30 box → Dec −30. Tháng đang chạy không xuống dưới đơn đã lên, tháng tới không xuống dưới 0; vượt cả FC quý thì FC quý tăng theo sales.
+  - Tháng chốt thấp hơn FC (đơn trễ sang tháng sau): phần thiếu cộng vào tháng còn lại gần nhất, vd Nov chốt thấp hơn FC 20 box → Dec +20. Đơn mất thật thì MR sửa lại.
+  - Dòng chưa nhập FC, dòng có người sửa đúng lúc nạp: để nguyên. File có ngày dữ liệu cũ hơn bản đang có, hoặc sales quý thấp hơn bản đang có quá 3% (file thiếu dữ liệu): không dời, log ghi lý do.
+  - MR thấy dấu **↻** dưới SKU (rê chuột / chạm để xem các lần dời), dòng ghi chú đầu trang và bộ lọc "Tự dời theo sales"; sửa số tháng của dòng đó thì dấu mất. Cả team: dấu ↻ ở dòng account × SKU.
+  - Không tính là "có sửa sau submit"; trạng thái submit / duyệt giữ nguyên. Lịch sử FC (`fc_history`) ghi `src = auto`. Log nạp ghi số dòng, số MR, số box dời theo tháng.
+- **TB 2Q** thay Est. 2Q trên Dashboard RFFM / Admin: TB sales quý của 2 quý gần nhất, cùng mốc với cảnh báo "FC lệch TB 2Q" ở FC Input. Tín hiệu "FC > TB 2Q", "Target > TB 2Q" và cột "FC vs TB 2Q" dùng mốc này.
+- Bỏ số gợi ý mờ trong ô nhập FC; nút "Điền theo TB 2Q" vẫn giữ.
+- **Cần làm 1 lần:** Supabase → SQL Editor → dán toàn bộ `migration_v5.sql` → Run (database của team đã chạy). Chưa chạy thì app vẫn dùng bình thường, chỉ chưa tự trừ sales vào FC; Admin thấy dòng nhắc màu vàng.
+
 ## Phiên bản 4.4 (11/11/2026) — Admin sửa số ở Cả team; sửa xoay ngang trên iPhone
 
 - **Cả team, admin sửa số tổng**: ô tháng (tháng đang chạy: FC từ ngày sau ngày dữ liệu; tháng tới: FC cả tháng) cho admin nhập số box tổng của account × SKU. App chia cho từng MR theo tỷ trọng ratio, làm tròn box mà tổng vẫn đúng số nhập (vd 1000 box, ratio 0.2 / 0.5 / 0.3 → 200 / 500 / 300; 3 MR × 0.33 → 334 / 333 / 333), ghi đè số tháng đó của từng MR và tự lưu. Tháng đang chạy: phần đã lên của từng MR giữ nguyên, chỉ chia phần FC còn lại. RFFM xem Cả team vẫn chỉ xem.
@@ -165,15 +178,19 @@ Phân quyền chặn ở database (Row Level Security), đã test trên Postgres
 - MR không tự duyệt được, không ghi được dòng của MR khác, không sửa được sau khi đã duyệt hoặc khi kỳ đã khóa.
 - RFFM không ghi được FC.
 - Người ngoài danh sách team đọc 0 dòng.
-- Mọi thay đổi FC đều được ghi vào `fc_history`.
+- Mọi thay đổi FC đều được ghi vào `fc_history` (lần app tự trừ sales vào FC ghi `src = auto`, chỉ admin chạy được).
+
+## Nâng cấp từ bản 4 (đang chạy)
+
+Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run**. Không đổi dữ liệu, không cần nạp lại gì. Kết quả cuối file: `db_version = 5`, `cot_moi = 2`.
 
 ## Nâng cấp từ bản 3 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run**. Không đổi dữ liệu, không cần nạp lại gì. Kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql`. Không đổi dữ liệu, không cần nạp lại gì.
 
 ## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql` và `migration_v5.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
 3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
@@ -198,7 +215,7 @@ Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột
 
 1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND)
 2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
-3. **Raw sales:** file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất.
+3. **Raw sales:** file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5).
 4. **Target:** file Target Allocation của Bayer (sheet Account, có cột REP: target theo MR), hoặc file đơn giản Cust Code · SKU · Target quý FC (VND) (chia theo Sales ratio)
 5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
@@ -208,7 +225,7 @@ Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột
 2. **Admin nạp dữ liệu:** raw sales mới nhất và target. Xem tab **Account thiếu** và **Phân bổ account → Đề xuất chờ duyệt**.
 3. **MR nhập FC:** dùng *Điền theo gợi ý* rồi chỉnh, chọn lý do cho dòng gắn cờ, rồi **Nộp FC**.
 4. **RFFM duyệt:** duyệt / trả lại ở Dashboard → Theo MR. Dùng **Copy nhắc nộp FC** để nhắc người chưa nộp.
-5. **Trong quý:** nạp raw sales mỗi tuần, theo dõi Ước đạt và gap, cho MR cập nhật FC tháng còn lại.
+5. **Trong quý:** nạp raw sales mỗi tuần. App tự trừ sales mới vào FC (giữ FC quý); MR chỉ sửa dòng có thay đổi về đặt hàng (xem dấu ↻). Theo dõi %Ach, gap vs target trên Dashboard.
 6. **Hết hạn:** tick **Khóa nhập** → **Chốt bản FC** → **Xuất Excel** (sheet Demand plan gửi supply chain).
 
 ## Backlog (đề xuất các bản sau)
