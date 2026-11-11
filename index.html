@@ -31,7 +31,7 @@ window.FC_CONFIG = {
 :root{
   color-scheme: light;
   --bg:#f4f5f7; --surface:#fcfcfb; --card:#ffffff; --line:#e3e4e8; --line2:#eef0f3;
-  --ink:#0b0b0b; --ink2:#52514e; --ink3:#86857f;
+  --ink:#1a2130; --ink2:#4f5562; --ink3:#868b96;
   --navy:#1f3864; --navy2:#2b4a80;
   --s1:#2a78d6; --s2:#eb6834;
   --good:#0ca30c; --serious:#ec835a; --critical:#d03b3b; --warning:#fab219;
@@ -90,8 +90,8 @@ h3{font-size:15px;margin:0 0 10px}
 :root{--ach-bg:#fbf8f0;--ach-bd:#eadfc6;--ach-ink:#8a6516;--gr-bg:#f0f5fd;--gr-bd:#d3e0f4;--gr-ink:#2b5aa8;
   --ok-bg:#e6f4ea;--ok-ink:#0d652d;--ok:#1e8e3e;--mid-bg:#fdecc2;--mid-ink:#6f4700;--mid:#e5a00d;--bad-bg:#fce8e6;--bad-ink:#a50e0e;--bad:#d93025;--up:#137333;--down:#c5221f}
 .kgroup{margin-bottom:12px}
-.kcap{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0 0 7px;padding:3px 9px;border-radius:6px}
-.kcap.a{background:#f3e9d2;color:#6e5113}.kcap.g{background:#e1ebf8;color:#24508f}
+.kcap{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin:0 0 6px 2px}
+.kcap.a{color:#6e5113}.kcap.g{color:#24508f}
 .kgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .kgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .kpi .l{display:flex;align-items:center;gap:6px}
@@ -233,7 +233,7 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .cols .tline span{position:absolute;right:0;bottom:3px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap}
 .xl{display:flex;gap:14px;padding:6px 4px 0}
 .xl div{flex:1;text-align:center;font-size:12px;color:var(--ink2)}
-#tip{position:fixed;pointer-events:none;background:#0b0b0b;color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:99;max-width:280px;display:none;white-space:pre-line}
+#tip{position:fixed;pointer-events:none;background:#1a2130;color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:99;max-width:280px;display:none;white-space:pre-line}
 .login{max-width:420px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px}
 .login h1{font-size:20px;margin:0 0 4px;color:var(--navy)}
 .login .f{display:flex;flex-direction:column;gap:6px;margin-top:14px}
@@ -250,7 +250,7 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .chip.lk{background:#eceef2;color:#555}
 .chip.sb{background:#e3eefc;color:#1c5cab}
 .chip.pp{background:#f3e8fd;color:#6a2fa8}
-.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0b0b0b;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;max-width:92vw}
+.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1a2130;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;max-width:92vw}
 .modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.35);display:flex;align-items:center;justify-content:center;z-index:90}
 .modal{background:#fff;border-radius:12px;padding:20px;max-width:460px;width:92%;max-height:90vh;overflow:auto}
 .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
@@ -363,7 +363,7 @@ a.nolk{text-decoration:none}
 .fchip:hover{border-color:#b9c0cc}
 .fchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .rkh,.rki{display:grid;grid-template-columns:minmax(200px,1.15fr) minmax(250px,1fr) minmax(260px,1.5fr);gap:6px 18px}
-.rkh{font-size:11.5px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;padding:0 12px 6px}
+.rkh{font-size:12px;font-weight:600;color:var(--ink3);padding:0 12px 6px}
 .rkl{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
 .rki{padding:10px 12px;border-top:1px solid var(--line2);cursor:pointer;align-items:start}
 .rki:first-child{border-top:0}
@@ -391,6 +391,103 @@ a.nolk{text-decoration:none}
 .cols.tall{padding-top:32px}
 .cols .c span.two{text-align:center;line-height:1.25;font-weight:600;color:var(--ink)}
 .cols .tline span.two{text-align:right;line-height:1.25}
+
+/* ===== Giao diện 4.8 ===== */
+.top .brand .sm,.top .br{display:none}
+.top .chips{display:contents}
+.t input.note{width:180px}
+.top .me{display:inline-flex;align-items:center;gap:6px}
+/* FC Input: dải KPI 1 hàng (bấm Chi tiết để mở thẻ đầy đủ) */
+.kstrip{display:grid;grid-template-columns:minmax(110px,.75fr) minmax(210px,1.35fr) minmax(220px,1.4fr) minmax(130px,.85fr) minmax(160px,1fr) auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.kc{padding:9px 14px 10px;border-left:1px solid var(--line2);min-width:0}
+.kc:first-child{border-left:0}
+.kc.kfc{background:var(--ach-bg)}
+.kl{font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px;white-space:nowrap;line-height:1.35}
+.kv .gr{font-size:17px}
+.ks{font-size:12px;font-weight:500;color:var(--ink2);margin-left:-4px}
+.kd{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.km{display:flex;align-items:center;gap:8px;flex:1;min-width:64px}
+.km .pbar{height:6px}
+.km .mv{font-size:14px;min-width:0}
+.kto>div{margin-top:3px;line-height:1.35}
+.kt{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink2)}
+.kt.bad{color:var(--critical)}
+.kt:hover{text-decoration:underline}
+.kmore{align-self:center;margin:0 12px}
+.kopen{display:flex;justify-content:flex-end;margin:-6px 0 6px}
+@media (max-width:1240px){ .kstrip{grid-template-columns:repeat(3,minmax(0,1fr))} .kc{border-top:1px solid var(--line2)} .kc:nth-child(-n+3){border-top:0} .kc:nth-child(4){border-left:0} .kmore{grid-column:3;justify-self:end;align-self:center} }
+/* Bảng nhập: ẩn 3 quý cũ, dòng đang nhập sáng lên */
+.t.nohist .ho{display:none}
+.t tbody tr:focus-within td,.t tbody tr:focus-within td.stick{background:#fffcf0}
+.t input.box:focus{background:#fff;outline:2px solid var(--s1);outline-offset:-1px}
+.t th{font-weight:600;color:var(--ink2)}
+/* Thanh nút cố định đáy màn hình (điện thoại, tab FC) */
+.mact{display:none}
+.mt{display:none}
+/* Admin · Kỳ FC & quy tắc */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin-bottom:14px}
+.fld{min-width:0}.fld.full{grid-column:1/-1}
+.fld>label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+.fld>label.ck{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);margin:0}
+.adm{align-items:start}
+.fctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2);min-width:0}
+.fctl input[type=number],.fctl input[type=text],.fctl input[type=date],.fctl select{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;color:var(--ink)}
+.fctl .ck{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+input[type=file]{font-size:12.5px;color:var(--ink2)}
+input[type=file]::file-selector-button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;margin-right:10px;font:inherit;font-weight:600;color:var(--navy);cursor:pointer}
+input[type=file]::file-selector-button:hover{border-color:#b9c0cc}
+input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-allowed}
+.drop{background:#f8f9fb;border-color:#d4d8df}
+.card h3{font-size:14.5px}
+@media (max-width:760px){
+  .top{gap:6px 8px;padding-bottom:6px}
+  .top .brand{flex:0 0 auto;order:0}.top .brand .lg{display:none}.top .brand .sm{display:inline}
+  .top .who{order:1;width:auto;margin-left:auto}.top .who .me{display:none}
+  .top .br{display:block;order:2;flex-basis:100%;height:0}
+  .top .chips{display:flex;order:3;flex:1 1 100%;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .top .chips::-webkit-scrollbar{display:none}
+  .top .period{padding:3px 9px;flex:none}
+  .top .tsel{flex:none;padding:1px 6px}
+  .tabs{order:4}
+  .tab{padding:6px}
+  .kstrip{grid-template-columns:1fr 1fr}
+  .kc{border-left:0;border-top:1px solid var(--line2);padding:8px 12px}
+  .kc.kfc{order:-1;grid-column:1/-1;border-top:0}
+  .kc:nth-child(1){border-top:1px solid var(--line2)}
+  .kc:nth-child(3),.kc:nth-child(5){border-left:1px solid var(--line2)}
+  .kc:nth-child(4){border-left:0}
+  .kv{font-size:17px;gap:10px}
+  .kmore{grid-column:1/-1;justify-self:stretch;margin:0;border:0;border-top:1px solid var(--line2);border-radius:0;padding:8px;color:var(--navy);font-weight:600;background:#fafbfc}
+  .dt{display:none}.mt{display:inline}
+  .fchead h2{width:auto!important;flex:0 1 auto!important;font-size:15px}
+  .fchead .grow{display:none}
+  .fchead .chip{font-size:11px}
+  .fbar{gap:6px}
+  .fbar #f-q{flex:1 1 52%!important;order:0}
+  .fbar #f-flt{flex:1 1 40%;order:1}
+  .fbar #f-terr,.fbar #f-b{flex:1 1 30%;order:2}
+  .fbar .btn{flex:1 1 30%;padding:7px 6px;order:3}
+  .fbar .grow{display:none}
+  .kc:nth-child(1) .kd{display:none}
+  .kc{padding:7px 12px}
+  .filters .fl{flex:1 1 calc(50% - 4px);min-width:0;font-size:0;gap:0}
+  .filters .fl.wide{flex:1 1 100%}
+  .filters .fl select{width:100%}
+  .mact{display:flex;align-items:center;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));box-shadow:0 -2px 10px rgba(15,30,60,.08)}
+  .mact .grow{flex:1}
+  .mact .btn{flex:1}.mact .save-ind+.grow+.btn{flex:none}
+  .fbar .save-ind{flex:1 1 100%;order:5;font-size:12px}
+  .mact .btn{padding:9px 14px}
+  .mact .save-ind{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toast{bottom:calc(74px + env(safe-area-inset-bottom))}
+  .mcards .sku{padding:9px 12px 11px}
+  .mcards .sku .meta{font-size:11.5px;gap:2px 10px;margin:1px 0 7px}
+  .mcards .sku .ins label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+  .mcards input.box{padding:9px 8px}
+  .mcards .acc-h{padding:9px 12px}
+
+}
 </style>
 </head>
 <body>
@@ -511,7 +608,10 @@ const isoDate = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 function normPeriod(v){ const s = norm(v).toUpperCase(); let m = s.match(/(\d{4})\s*[-\/ ]?\s*Q\s*([1-4])/); if (m) return pkey(+m[1], +m[2]); m = s.match(/Q\s*([1-4])\s*[\/'’\- ]?\s*(\d{2,4})/); if (m){ const y = m[2].length === 2 ? 2000 + +m[2] : +m[2]; return pkey(y, +m[1]); } return null; }
 
 const TIP = $('#tip');
-document.addEventListener('mouseover', e => { const t = e.target.closest && e.target.closest('[data-tip]'); if (!t || !t.dataset.tip){ TIP.style.display = 'none'; return; } TIP.textContent = t.dataset.tip; TIP.style.display = 'block'; });
+let lastTouch = 0; const NOHOVER = matchMedia('(hover: none)');
+document.addEventListener('touchstart', () => { lastTouch = Date.now(); TIP.style.display = 'none'; }, {passive: true});
+document.addEventListener('mouseover', e => { const t = e.target.closest && e.target.closest('[data-tip]'); if (!t || !t.dataset.tip || (NOHOVER.matches && Date.now() - lastTouch > 800)){ TIP.style.display = 'none'; return; }
+  TIP.textContent = t.dataset.tip; TIP.style.display = 'block'; TIP.style.left = Math.max(6, Math.min(e.clientX + 14, innerWidth - 290)) + 'px'; TIP.style.top = (e.clientY + 14) + 'px'; });
 addEventListener('scroll', () => { TIP.style.display = 'none'; }, {passive: true});
 document.addEventListener('mousemove', e => { if (TIP.style.display === 'block'){ const x = Math.min(e.clientX + 14, innerWidth - 290); TIP.style.left = x + 'px'; TIP.style.top = (e.clientY + 14) + 'px'; } });
 
@@ -843,7 +943,7 @@ function teamSelHtml(){ if (!canPickTeam()) return '';
   return `<select id="team-sel" class="tsel" aria-label="Team" data-tip="Team đang xem ở FC Input, Dashboard, Admin">${[...myTeams(), 'ALL'].map(t => `<option value="${t}" ${VIEW.team === t ? 'selected' : ''}>${t === 'ALL' ? 'Cả 2 team' : 'Team ' + esc(teamName(t))}</option>`).join('')}</select>`; }
 function asofChipHtml(){ const ts = vTeams(), d = ts.map(t => [t, TC[t] && TC[t].raw]).filter(x => x[1]); if (!d.length) return '';
   const same = d.length === ts.length && d.every(x => String(x[1]).slice(0, 10) === String(d[0][1]).slice(0, 10));
-  return `<span class="period" data-tip="Ngày hóa đơn mới nhất trong raw sales đã nạp${ts.length > 1 ? ' (từng team)' : ''}">${same ? `Sales đến ${ddmm(d[0][1])}` : 'Sales ' + d.map(([t, v]) => `${esc(teamName(t))} ${ddmm(v)}`).join(' · ')}</span>`; }
+  return `<span class="period" data-tip="Ngày hóa đơn mới nhất trong raw sales đã nạp${ts.length > 1 ? ' (từng team)' : ''}">${same ? `Sales <span class="dt">đến </span>${ddmm(d[0][1])}` : 'Sales ' + d.map(([t, v]) => `${esc(teamName(t))} ${ddmm(v)}`).join(' · ')}</span>`; }
 const repList = () => { const ts = vTeams(); return [...new Set([...D.members.filter(m => m.role === 'MR' && ts.includes(memTeam(m))).map(m => m.rep_name), ...ROWS.map(r => r.rep_name)])].sort(); };
 const repStatus = rep => { const s = D.subs[rep]; return s ? (s.status || 'submitted') : 'draft'; };
 function editedAfter(rep){ const s = D.subs[rep]; if (!s || !s.submitted_at) return false; const t = new Date(s.submitted_at).getTime() + 3000; return ROWS.some(r => r.rep_name === rep && r.f.updated_at && new Date(r.f.updated_at).getTime() > t); }
@@ -954,10 +1054,10 @@ function render(){
   const s = D.settings; const tabs = [['fc', ME.role === 'MR' ? 'FC của tôi' : (ME.role === 'RFFM' ? 'Xem / duyệt FC' : 'FC Input')], ['dash', 'Dashboard']]; if (isAdmin()) tabs.push(['admin', 'Admin']);
   if (!tabs.find(t => t[0] === VIEW.tab)) VIEW.tab = 'fc';
   const dl = s.deadline ? ` · deadline ${ddmm(s.deadline)}` : '';
-  $('#app').innerHTML = `<header class="top"><div class="brand">${esc(CFG.APP_NAME)}</div>
-    <span class="period ${s.locked ? 'lock' : ''}">FC ${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHOÁ' : ''}</span>${teamSelHtml()}${asofChipHtml()}
+  $('#app').innerHTML = `<header class="top"><div class="brand"><span class="lg">${esc(CFG.APP_NAME)}</span><span class="sm">${esc(CFG.APP_NAME.split(' ').slice(0, 2).join(' '))}</span></div><span class="br"></span>
+    <div class="chips"><span class="period ${s.locked ? 'lock' : ''}"><span class="dt">FC </span>${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHOÁ' : ''}</span>${teamSelHtml()}${asofChipHtml()}</div>
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</nav>
-    <div class="who"><span><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns"><button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">↻</span><span class="lb">Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
+    <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}</span></span><span class="btns"><button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">↻</span><span class="lb">Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin) bằng Đăng xuất.</div>` : ''}${MODE === 'cloud' && isAdmin() && D.dbv < 4 ? `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 4.</b> Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API. Mở Supabase → SQL Editor → chạy file <b>migration_v4.sql</b>, sau đó <b>migration_v5.sql</b> trong repo, rồi bấm Làm mới.</div>` : MODE === 'cloud' && isAdmin() && D.dbv < 5 ? `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 5.</b> Nạp raw sales mới chưa tự trừ sales vào FC. Mở Supabase → SQL Editor → chạy file <b>migration_v5.sql</b> trong repo, rồi bấm Làm mới.</div>` : ''}<div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
   $('#logout').onclick = async () => { await flushSaves(); await STORE.signOut(); renderLogin(); };
@@ -987,9 +1087,25 @@ const fcScope = rep => rep === TEAM ? ROWS : ROWS.filter(r => r.rep_name === rep
 function fcKpiHtml(rep){
   const team = rep === TEAM, mine = fcScope(rep), a = agg(mine);
   const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length;
-  const todo = `<div class="kpi"><div class="l">Việc cần xử lý</div><div class="v">${nNeed + nEmpty ? `<span ${nNeed ? 'style="color:var(--critical)"' : ''}>${nNeed + nEmpty}</span> <span class="sub" style="font-size:13px;font-weight:500">dòng</span>` : '<span style="color:var(--up)">✓</span>'}</div><div class="d">${nNeed ? `<span class="warn">${nNeed} dòng cần chọn lý do</span>` : 'Không có dòng cần lý do'}${nEmpty ? ` · ${nEmpty} dòng có lịch sử chưa nhập` : ''}</div></div>`;
   const tgtNote = team ? `${new Set(mine.map(r => r.cust_code + '|' + r.sku)).size} account × SKU · ${new Set(mine.map(r => r.rep_name)).size} MR` : `${a.n} dòng account × SKU`;
-  return kpiBlocks(a, {tgtNote, fcNote: `đã nhập ${a.filled}/${a.n} dòng`, third: todo}) + monthStrip(a);
+  const more = `<button class="btn sm kmore" data-k="more" aria-expanded="${!!VIEW.fcKpiOpen}">${VIEW.fcKpiOpen ? 'Thu gọn' : 'Chi tiết'}</button>`;
+  if (VIEW.fcKpiOpen){
+    const todo = `<div class="kpi"><div class="l">Việc cần xử lý</div><div class="v">${nNeed + nEmpty ? `<span ${nNeed ? 'style="color:var(--critical)"' : ''}>${nNeed + nEmpty}</span> <span class="sub" style="font-size:13px;font-weight:500">dòng</span>` : '<span style="color:var(--up)">✓</span>'}</div><div class="d">${nNeed ? `<span class="warn">${nNeed} dòng cần chọn lý do</span>` : 'Không có dòng cần lý do'}${nEmpty ? ` · ${nEmpty} dòng có lịch sử chưa nhập` : ''}</div></div>`;
+    return `<div class="kopen">${more}</div>` + kpiBlocks(a, {tgtNote, fcNote: `đã nhập ${a.filled}/${a.n} dòng`, third: todo}) + monthStrip(a);
+  }
+  // Dải 1 hàng: đủ để biết đang ở đâu, bảng nhập lên ngay màn hình đầu
+  const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay';
+  const meter = (x, cls, mk, mkTip) => { const has = x !== null && x !== undefined && isFinite(x), c = cls || achClass(x);
+    return `<span class="km"><span class="pbar">${has ? `<i class="${c}" style="width:${Math.max(0, Math.min(100, x * 100))}%"></i>` : ''}${mk !== undefined ? `<s style="left:calc(${Math.min(100, mk * 100)}% - 1px)" data-tip="${esc(mkTip || '')}"></s>` : ''}</span><b class="mv ${has ? c : ''}">${has ? pct(x) : '–'}</b></span>`; };
+  const todo = [nNeed ? `<a href="#" class="kt bad" data-k="need" data-tip="FC lệch nhiều so với TB 2Q: chọn lý do trước khi submit">⚠ ${nNeed} dòng cần lý do</a>` : '',
+    nEmpty ? `<a href="#" class="kt" data-k="empty" data-tip="Có sales 2 quý gần nhất nhưng chưa nhập FC">${nEmpty} dòng có lịch sử chưa nhập</a>` : ''].filter(Boolean);
+  return `<div class="kstrip">
+    <div class="kc"><div class="kl">Target ${P[4].label}</div><div class="kv">${big(a.tgt)}</div><div class="kd">${tgtNote}</div></div>
+    <div class="kc kfc" data-tip="${esc(`FC ${P[4].label} = Act. tháng đã chốt + đơn đã lên đến ${ASOF_DM} + FC từ ${NEXT_DM} đến hết quý`)}"><div class="kl">FC ${P[4].label}</div><div class="kv">${big(a.fcv)}${meter(a.filled ? a.ach : null)}</div><div class="kd">${a.filled ? gapText(a.gap) + ' · ' : ''}đã nhập ${a.filled}/${a.n} dòng</div></div>
+    <div class="kc"><div class="kl">Act. QTD · đến ${asof}</div><div class="kv">${big(a.act[4])}${meter(a.achQ, paceClass(a.achQ), PACE, paceTip())}</div><div class="kd"><span data-tip="${esc(paceTip())}">phasing ${pct(PACE)}</span> · ${paceText(a.achQ)}</div></div>
+    <div class="kc"><div class="kl">Growth FC</div><div class="kv">${grHtml(a.gLy)}<span class="ks">vs LYSP</span></div><div class="kd">${grHtml(a.gQ)} vs ${P[3].label}</div></div>
+    <div class="kc kto"><div class="kl">Việc cần xử lý</div>${todo.length ? todo.map(x => `<div>${x}</div>`).join('') : '<div class="kv"><span class="gr up">✓ Không có</span></div>'}</div>
+    ${more}</div>`;
 }
 let kpiTimer;
 function monthStrip(a){
@@ -1001,8 +1117,10 @@ function monthStrip(a){
 }
 /* Subtotal theo bộ lọc ở đầu bảng: desktop là dòng dính ngay dưới tiêu đề, mobile là thanh dính đầu danh sách. Gõ FC là số tự cập nhật. */
 let FC_VIEW = {rows: [], nAcc: 0};
+// 4 quý trước: 3 quý cũ (LYSP … Q-2) gắn class ho, mặc định ẩn để bảng vừa màn hình; nút trên thanh lọc hiện lại
+const q4 = (arr, cls = '') => arr.slice(0, 4).map((x, i) => `<td class="${cls}${i < 3 ? ' ho' : ''}">${tr(x)}</td>`).join('');
 function stotRow(a, nAcc){ const mn = MS.map(m => mlabel(D.settings.year, m));
-  return `<td class="l stick">Subtotal <span class="sub">· ${nAcc} account</span></td>${a.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(a.act[4])}</td><td>${tr(a.tgt)}</td><td class="grp"></td>`
+  return `<td class="l stick">Subtotal <span class="sub">· ${nAcc} account</span></td>${q4(a.act)}<td>${tr(a.act[4])}</td><td>${tr(a.tgt)}</td><td class="grp"></td>`
     + a.fcvM.map((x, i) => `<td data-tip="${esc(`${mn[i]}: ${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? `Act. + FC từ ${NEXT_DM}` : 'FC'} (tr VND)`)}">${tr(x)}<span class="u">tr</span></td>`).join('')
     + `<td>${tr(a.fcv)}</td><td>${achHtml(a.ach)}</td><td>${grHtml(a.gLy)}</td><td>${grHtml(a.gQ)}</td><td class="l">${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}</td><td class="l sub">đã nhập ${a.filled}/${a.n} dòng</td>`; }
 function stotBar(a, nAcc){ return `<b>Subtotal</b><span class="sub">${nAcc} account</span><span>Target <b>${big(a.tgt)}</b></span><span>FC <b>${big(a.fcv)}</b></span>${achHtml(a.ach)}<span>Gr LYSP ${grHtml(a.gLy)}</span>${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}`; }
@@ -1065,6 +1183,13 @@ function onTeamInput(el){
   clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { const k = $('#fc-kpi'); if (k) k.innerHTML = fcKpiHtml(TEAM); fcRefreshTotals(null);
     const acc = $$('#fc-body [data-agk]').find(x => x.dataset.agk === o.cust_code); if (acc) setAgg(acc, agg(FC_VIEW.rows.filter(r => r.cust_code === o.cust_code))); }, 250);
 }
+// Enter / ↓: xuống ô cùng cột ở dòng dưới; Shift+Enter / ↑: lên dòng trên (như Excel). Cột = tháng (data-f ở từng MR, data-i ở Cả team)
+function onFCKey(e){
+  const t = e.target; if (!t.matches || !t.matches('input.box') || e.altKey || e.ctrlKey || e.metaKey) return;
+  const dir = e.key === 'ArrowDown' || (e.key === 'Enter' && !e.shiftKey) ? 1 : e.key === 'ArrowUp' || (e.key === 'Enter' && e.shiftKey) ? -1 : 0; if (!dir) return;
+  const col = x => x.dataset.f || 'i' + x.dataset.i, c = col(t), list = $$('#fc-body input.box').filter(x => !x.disabled && col(x) === c), i = list.indexOf(t), nx = list[i + dir];
+  e.preventDefault(); if (nx){ nx.focus(); nx.scrollIntoView({block: 'nearest'}); }
+}
 function viewFC(){
   const v = $('#view');
   const withRows = [...new Set(ROWS.map(m => m.rep_name))].sort();   // MR của team đang xem
@@ -1087,14 +1212,13 @@ function viewFC(){
   const teamEdit = team && isAdmin();   // Cả team: admin sửa số tổng, app chia cho từng MR theo ratio
   FC_VIEW = {rows, nAcc: new Set(rows.map(r => r.cust_code)).size, lines: null};
   let notes = ''; const acts = [];
-  if (team) notes = `<div class="note">Cả team: số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn <b>Địa bàn</b> để xem full sale các account của 1 MR. ${teamEdit ? 'Admin sửa ô tháng ở đây: số tổng tự chia cho từng MR theo ratio, ghi đè số tháng đó của từng MR. Submit, duyệt vẫn ở từng MR.' : 'Chỉ xem; nhập, submit, duyệt ở từng MR.'}</div>`;
+  if (team) notes = `<div class="note" data-tip="${esc(`Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn Địa bàn để xem full sale các account của 1 MR.${teamEdit ? ' Số tổng tự chia cho từng MR theo ratio, ghi đè số tháng đó của từng MR.' : ''}`)}">Cả team: full sale account (cộng mọi MR, không chia ratio). ${teamEdit ? 'Admin nhập số tổng, app tự chia cho từng MR theo ratio. ' : ''}Submit, duyệt ở từng MR.</div>`;
   else {
     const ea = editedAfter(rep);
     if (st === 'returned') notes += `<div class="note bad"><b>Trả lại</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}: ${esc(sub.review_note || '')}${isOwner ? '. Sửa lại rồi bấm Submit lại.' : ''}</div>`;
     if (st === 'approved') notes += `<div class="note good"><b>Đã duyệt</b>${sub.reviewed_by ? ' bởi ' + esc(sub.reviewed_by) : ''}${sub.reviewed_at ? ' lúc ' + fmtTime(sub.reviewed_at) : ''}. FC đã khoá${isAdmin() ? ' (admin vẫn sửa được)' : ''}.</div>`;
     if (st === 'submitted' && ea) notes += `<div class="note warn">Có chỉnh sửa sau lần submit lúc ${fmtTime(sub.submitted_at)}. ${isOwner ? 'Bấm <b>Submit lại</b> để gửi bản mới.' : 'Chờ MR submit lại.'}</div>`;
     if (D.settings.locked && !isAdmin()) notes += `<div class="note">FC ${P[4].label} đã khoá nhập.</div>`;
-    if (nNeed && editable) notes += `<div class="note warn"><b>${nNeed} dòng</b> có FC lệch nhiều so với TB 2Q cần chọn <b>lý do</b> trước khi submit. <a href="#" id="go-need">Xem các dòng này</a></div>`;
     if (editable && (isOwner || isAdmin()) && mine.length) acts.push(`<button class="btn pri" id="submit">${st === 'draft' ? 'Submit FC' : 'Submit lại'}</button>`);
     if (isReviewer() && st === 'submitted') acts.push(`<button class="btn ok" data-rv="approved" data-rep="${esc(rep)}">✓ Duyệt</button><button class="btn danger" data-rv="returned" data-rep="${esc(rep)}">Trả lại</button>`);
     if (isReviewer() && st === 'approved') acts.push(`<button class="btn" data-rv="returned" data-rep="${esc(rep)}">Mở lại</button>`);
@@ -1102,20 +1226,23 @@ function viewFC(){
   if (nAuto) notes += `<div class="note">App đã tự dời FC theo sales mới ở <b>${nAuto} dòng</b> (dấu ↻), FC quý giữ nguyên: sales vượt FC tháng thì trừ tháng sau, thấp hơn thì cộng vào tháng còn lại. ${editable || teamEdit ? 'Sửa lại nếu tình hình đặt hàng thay đổi. ' : ''}<a href="#" id="go-auto">Xem các dòng này</a></div>`;
   const cntSt = k => withRows.filter(x => repStatus(x) === k).length;
   const teamChip = `<span class="chip sb" data-tip="${esc(`Đã submit: ${cntSt('submitted')} · Đã duyệt: ${cntSt('approved')} · Trả lại: ${cntSt('returned')} · Chưa submit: ${cntSt('draft')}`)}">${cntSt('submitted') + cntSt('approved')}/${withRows.length} MR đã submit · ${cntSt('approved')} đã duyệt</span>`;
-  const mn = MS.map(m => mlabel(D.settings.year, m));
+  const mn = MS.map(m => mlabel(D.settings.year, m)), mob = MOBILE();
+  if (VIEW.fcHist === undefined) VIEW.fcHist = !!lsGet('fcapp_hist'); if (VIEW.fcKpiOpen === undefined) VIEW.fcKpiOpen = !!lsGet('fcapp_kpi');
+  const histBtn = `<button class="btn" id="f-hist" aria-pressed="${!!VIEW.fcHist}" data-tip="Cột sales ${P[0].label}, ${P[1].label}, ${P[2].label}">${VIEW.fcHist ? 'Ẩn' : 'Hiện'} ${P[0].label}–${P[2].label}</button>`;
+  const saveInd = `<span class="save-ind" id="saveind">${teamEdit ? 'Nhập box tổng · tự chia theo ratio' : team ? 'Chỉ xem · cộng cả team' : editable ? (mob ? 'Nhập box · tự lưu' : 'Nhập box · tự lưu · Enter / ↓ xuống dòng dưới') : 'Chỉ xem'}</span>`;
   v.innerHTML = `
-    <div class="bar filters">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep"><option value="${TEAM}" ${team ? 'selected' : ''}>Cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
-      <h2 style="margin:0">${team ? (VIEW.team === 'ALL' ? 'Cả 2 team' : TEAMS.length > 1 ? 'Cả team ' + esc(teamName(VIEW.team)) : 'Cả team') : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2><span class="grow"></span>${team ? teamChip : statusChip(rep)} ${acts.join(' ')}</div>
+    <div class="bar filters fchead">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep"><option value="${TEAM}" ${team ? 'selected' : ''}>Cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
+      <h2 style="margin:0">${team ? (VIEW.team === 'ALL' ? 'Cả 2 team' : TEAMS.length > 1 ? 'Cả team ' + esc(teamName(VIEW.team)) : 'Cả team') : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2><span class="grow"></span>${team ? teamChip : statusChip(rep)} ${mob ? '' : acts.join(' ')}</div>
     ${notes}
     <div id="fc-kpi">${fcKpiHtml(rep)}</div>
-    <div class="bar filters"><input type="search" id="f-q" placeholder="${team ? 'Tìm account / mã KH / SKU / MR' : 'Tìm account / mã KH / SKU'}" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
+    <div class="bar filters fbar"><input type="search" id="f-q" placeholder="${team ? 'Tìm account / mã KH / SKU / MR' : 'Tìm account / mã KH / SKU'}" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
       ${team ? `<select id="f-terr"><option value="">Địa bàn: cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === VIEW.fcTerr ? 'selected' : ''}>Địa bàn ${esc(r)}</option>`).join('')}</select>` : ''}
       <select id="f-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.fcBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
       <select id="f-flt">${[['active', 'Dòng có sales / target / FC'], ['all', 'Tất cả dòng'], ['need', `Cần chọn lý do (${nNeed})`], ['empty', `Chưa nhập, có lịch sử (${nEmpty})`], ['flag', `FC lệch TB 2Q (${nFlag})`], ...(nAuto || F === 'auto' ? [['auto', `Tự dời theo sales (${nAuto})`]] : [])].map(([k, l]) => `<option value="${k}" ${k === F ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      ${editable ? '<button class="btn" id="fill" data-tip="Điền TB 2Q vào các dòng CHƯA nhập: TB box/tháng 2 quý gần nhất; tháng đang chạy chỉ điền phần còn thiếu so với TB">Điền theo TB 2Q</button>' : ''}
-      ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất account/SKU</button>' : ''}
-      <span class="grow"></span><span class="save-ind" id="saveind">${teamEdit ? 'Nhập box tổng · tự chia theo ratio' : team ? 'Chỉ xem · cộng cả team' : editable ? 'Nhập box · tự lưu' : 'Chỉ xem'}</span></div>
-    <div id="fc-body"></div>
+      ${editable ? '<button class="btn" id="fill" data-tip="Điền TB 2Q vào các dòng CHƯA nhập: TB box/tháng 2 quý gần nhất; tháng đang chạy chỉ điền phần còn thiếu so với TB"><span class="dt">Điền theo TB 2Q</span><span class="mt">Điền TB 2Q</span></button>' : ''}
+      ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất<span class="dt"> account/SKU</span></button>' : ''}
+      ${mob ? '' : histBtn}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
+    <div id="fc-body"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
     <div class="sub" style="margin-top:8px">${team ? `Đơn vị: tr VND, cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}Bấm tên MR để mở FC của MR đó.`
       : `Đơn vị: tr VND, ô nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
   const body = $('#fc-body');
@@ -1142,7 +1269,7 @@ function viewFC(){
   const skuLbl = r => `${esc(r.sku)}${num(r.ratio) !== 1 ? ` <span class="sub">(ratio ${rto(r.ratio)})</span>` : ''}${r.status === 'proposed' ? ' <span class="chip pp">đề xuất</span>' : ''}${r.warn ? ` <span class="warn">${r.warn}</span>` : ''}`;
   const chChip = c => c ? `<span class="chip lk">${esc(c)}</span>` : '';
   const a0 = agg(rows), stot = `<tr class="stot">${stotRow(a0, FC_VIEW.nAcc)}</tr>`, sbar = `<div class="mstot">${stotBar(a0, FC_VIEW.nAcc)}</div>`;
-  const head = `<tr><th class="l stick" data-tip="${SZ_TIP}">Account / SKU ↓</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
+  const head = `<tr><th class="l stick" data-tip="${SZ_TIP}">Account / SKU ↓</th>${P.slice(0, 4).map((p, i) => `<th class="${i < 3 ? 'ho' : ''}">${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
       ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
       <th>FC (tr)</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
   const accCells = g => `<td data-ag="fcv">${tr(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
@@ -1157,17 +1284,17 @@ function viewFC(){
     const cardHtml = x => `<div class="acc" data-agk="${esc(x.ls[0].cust_code)}"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.g.ach)}</span></span></div>
       ${x.ls.map(o => `<div class="sku" data-tl="${esc(o.key)}"><div class="n">${esc(o.sku)}</div><div class="mrs sub">${teamMRs(o)}</div>
         <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span><span>Target: ${tr(o.tgt)}</span><span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b data-tf="fcv">${tr(o.fcv)}</b> <span data-tf="ach">${achHtml(o.ach)}</span></span></div>
-        <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${mLbl(o.ck, i)}</span></label>${tIn(o, i)}</div>`).join('')}</div>
+        <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(o.ck, i)}</span></label>${tIn(o, i)}</div>`).join('')}</div>
         <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`).join('')}</div>`;
-    const accHtml = x => `<tr class="acc" data-agk="${esc(x.ls[0].cust_code)}"><td class="l stick">${accLbl(x)}</td>${x.g.act.slice(0, 4).map(v2 => `<td>${tr(v2)}</td>`).join('')}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`
-      + x.ls.map(o => `<tr data-tl="${esc(o.key)}"><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${o.act.slice(0, 4).map(v2 => `<td class="act">${tr(v2)}</td>`).join('')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
+    const accHtml = x => `<tr class="acc" data-agk="${esc(x.ls[0].cust_code)}"><td class="l stick">${accLbl(x)}</td>${q4(x.g.act)}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`
+      + x.ls.map(o => `<tr data-tl="${esc(o.key)}"><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${q4(o.act, 'act')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
           ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach">${achHtml(o.ach)}</td><td data-tf="gly">${grHtml(o.gLy)}</td><td data-tf="gq">${grHtml(o.gQ)}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`).join('');
     // Vẽ trước TEAM_N account lớn nhất (theo target); "Xem thêm" nối tiếp vào bảng, không vẽ lại, không mất vị trí cuộn. Subtotal vẫn tính mọi dòng theo bộ lọc.
     const sig = [VIEW.fcTerr, VIEW.fcBrand, VIEW.fcFlt, VIEW.fcSearch].join('|'); if (VIEW.fcTeamSig !== sig){ VIEW.fcTeamSig = sig; VIEW.fcTeamN = TEAM_N; }
     const mob = MOBILE(), n0 = Math.min(accs.length, VIEW.fcTeamN);
     const moreHtml = n => n < accs.length ? `<div class="bar more" id="fc-more-bar"><span class="sub">Đang hiện ${n}/${accs.length} account, xếp từ lớn đến bé</span><button class="btn" id="fc-more">Xem thêm ${Math.min(TEAM_N, accs.length - n)} account</button><button class="btn ghost" id="fc-all">Hiện tất cả</button></div>` : '';
     if (mob) body.innerHTML = sbar + `<div class="mcards">${accs.slice(0, n0).map(cardHtml).join('')}</div>` + moreHtml(n0);
-    else body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${accs.slice(0, n0).map(accHtml).join('')}</tbody></table></div>` + moreHtml(n0);
+    else body.innerHTML = `<div class="tw"><table class="t${VIEW.fcHist ? '' : ' nohist'}"><thead>${head}${stot}</thead><tbody>${accs.slice(0, n0).map(accHtml).join('')}</tbody></table></div>` + moreHtml(n0);
     const showMore = all => { const from = Math.min(accs.length, VIEW.fcTeamN), to = all ? accs.length : Math.min(accs.length, from + TEAM_N); VIEW.fcTeamN = to;
       const part = accs.slice(from, to); if (mob) $('.mcards', body).insertAdjacentHTML('beforeend', part.map(cardHtml).join('')); else $('tbody', body).insertAdjacentHTML('beforeend', part.map(accHtml).join(''));
       const mb = $('#fc-more-bar'); if (mb) mb.outerHTML = moreHtml(to); bindMore(); };
@@ -1180,26 +1307,30 @@ function viewFC(){
     if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(([k, rs, g]) => { return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
       ${rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}</div>
         <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span><span>Target: ${tr(r.tgt)}</span><span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</span></span></div>
-        <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
+        <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
         <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`).join('')}</div>`; }).join('')}</div>`;
     else { let html = '';
       for (const [k, rs, g] of groups){
-        html += `<tr class="acc" data-agk="${esc(k)}"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${g.act.slice(0, 4).map(x => `<td>${tr(x)}</td>`).join('')}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
+        html += `<tr class="acc" data-agk="${esc(k)}"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${q4(g.act)}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
           <td class="grp"></td><td colspan="3"></td>${accCells(g)}<td></td><td></td></tr>`;
         for (const r of rs){
-          html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${r.act.slice(0, 4).map(x => `<td class="act">${tr(x)}</td>`).join('')}<td class="act">${tr(r.act[4])}</td><td data-tip="${r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : ''}">${tr(r.tgt)}</td><td class="grp muted">${r.base || '–'}</td>
+          html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${tr(r.act[4])}</td><td data-tip="${r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : ''}">${tr(r.tgt)}</td><td class="grp muted">${r.base || '–'}</td>
             ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</td><td data-gly="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[0]) : null)}</td><td data-gq="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[3]) : null)}</td>
             <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
         }
       }
-      body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
+      body.innerHTML = `<div class="tw"><table class="t${VIEW.fcHist ? '' : ' nohist'}"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
   }
   fixStot($('table.t', body));
   $('#f-rep') && ($('#f-rep').onchange = e => { VIEW.fcRep = e.target.value; viewFC(); });
   $('#f-terr') && ($('#f-terr').onchange = e => { VIEW.fcTerr = e.target.value; viewFC(); });
   $('#f-b').onchange = e => { VIEW.fcBrand = e.target.value; viewFC(); };
   $('#f-flt').onchange = e => { VIEW.fcFlt = e.target.value; viewFC(); };
-  $('#go-need') && ($('#go-need').onclick = e => { e.preventDefault(); VIEW.fcFlt = 'need'; viewFC(); });
+  // Dải KPI: bấm Chi tiết / Thu gọn, bấm việc cần xử lý để lọc (ô #fc-kpi được vẽ lại khi gõ nên bắt sự kiện ở khung ngoài)
+  $('#fc-kpi').onclick = e => { const a = e.target.closest('[data-k]'); if (!a) return; e.preventDefault();
+    if (a.dataset.k === 'more'){ VIEW.fcKpiOpen = !VIEW.fcKpiOpen; lsSet('fcapp_kpi', VIEW.fcKpiOpen); $('#fc-kpi').innerHTML = fcKpiHtml(rep); return; }
+    VIEW.fcFlt = a.dataset.k; viewFC(); $('#fc-body').scrollIntoView({block: 'start', behavior: 'smooth'}); };
+  $('#f-hist') && ($('#f-hist').onclick = () => { VIEW.fcHist = !VIEW.fcHist; lsSet('fcapp_hist', VIEW.fcHist); viewFC(); });
   $('#go-auto') && ($('#go-auto').onclick = e => { e.preventDefault(); VIEW.fcFlt = 'auto'; viewFC(); });
   let qt; $('#f-q').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { VIEW.fcSearch = e.target.value; viewFC(); const q2 = $('#f-q'); q2.focus(); q2.setSelectionRange(q2.value.length, q2.value.length); }, 350); };
   $('#submit') && ($('#submit').onclick = () => submitFlow(rep));
@@ -1207,6 +1338,8 @@ function viewFC(){
   $('#propose') && ($('#propose').onclick = () => proposeDialog(rep));
   v.onclick = onReviewClick;
   body.addEventListener('input', onFCInput);
+  body.addEventListener('keydown', onFCKey);
+  body.addEventListener('focusin', e => { const t = e.target; if (t.matches('input.box')) setTimeout(() => { if (document.activeElement === t) try { t.select(); } catch(x){} }, 0); });   // vào ô là chọn sẵn số cũ, gõ đè luôn
 }
 function onFCInput(e){
   const el = e.target; if (el.dataset && el.dataset.tk !== undefined) return onTeamInput(el);   // ô số tổng ở Cả team
@@ -1446,8 +1579,8 @@ function viewDashTeam(){
   const accs = accAnalysis(sel), T = DTABS.some(([k]) => k === VIEW.dTab) ? VIEW.dTab : 'ov', nHi = accs.filter(o => o.level === 'hi').length;
   v.innerHTML = `<div class="bar filters"><h2 style="margin:0">Dashboard ${P[4].label}${TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}</h2><span class="grow"></span>
       <label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
-      <label class="fl">Brand <select id="d-b"><option value="">Tất cả</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
-      <label class="fl">Channel <select id="d-c"><option value="">Tất cả</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label>
+      <label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
+      <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label>
       <button class="btn" id="d-exp">⬇ Xuất Excel</button></div>
     <div class="dnav" role="tablist">${DTABS.map(([k, l]) => `<button role="tab" data-dt="${k}" class="${T === k ? 'on' : ''}">${l}${k === 'risk' && nHi ? `<span class="n" data-tip="Account rủi ro cao">${nHi}</span>` : ''}</button>`).join('')}</div>
     <div id="dt"></div>`;
@@ -1651,8 +1784,8 @@ function viewDash(){
   const mine = `<div class="kpi"><div class="l">Trạng thái FC</div><div class="v" style="font-size:15px">${statusChip(ME.rep_name)}</div><div class="d">đã nhập ${me.filled}/${me.n} dòng${me.need ? ` · <span class="warn">${me.need} dòng cần lý do</span>` : ''} · <a href="#" id="d-gofc">Mở FC của tôi</a></div></div>`;
   v.innerHTML = `
     <div class="bar filters"><h2 style="margin:0">Dashboard của tôi · ${P[4].label}</h2><span class="grow"></span>
-      <label class="fl">Brand <select id="d-b"><option value="">Tất cả</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
-      <label class="fl">Channel <select id="d-c"><option value="">Tất cả</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label></div>
+      <label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
+      <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label></div>
     ${kpiBlocks(a, {tgtNote: `${a.n} dòng account × SKU`, third: mine})}
     <div class="grid2">
       <div class="card"><h3>Sales by quarter</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND. ${P[4].label}: Act. đến ${ASOF_DM} + FC remain = FC ${P[4].label}.</div></div>
@@ -2154,10 +2287,14 @@ function viewAdmin(){
   const itNo = it ? '' : '<div class="note warn" style="margin:0 0 8px">Đang xem Cả 2 team: chọn Team CVRM hoặc WHC ở ô Team trên cùng để nạp file này cho đúng team.</div>';
   if (t === 'import'){
     A.innerHTML = `<div class="adm">
-      <div class="card"><h3>Kỳ FC & quy tắc</h3><div class="bar"><label>Năm</label><input type="number" id="s-y" value="${s.year}" style="width:90px"><label>Quý</label><select id="s-q">${[1, 2, 3, 4].map(q => `<option ${q === +s.quarter ? 'selected' : ''}>${q}</option>`).join('')}</select><label>Deadline submit</label><input type="date" id="s-d" value="${s.deadline || ''}"></div>
-        <div class="bar"><label><input type="checkbox" id="s-l" ${s.locked ? 'checked' : ''}> Khoá nhập (MR chỉ xem)</label></div>
-        <div class="bar"><label>Cảnh báo khi FC lệch quá</label><input type="number" id="s-rp" value="${Math.round(RULE.pct * 100)}" style="width:70px"><label>% so với TB 2Q, với dòng từ</label><input type="number" id="s-rm" value="${Math.round(RULE.min / 1e6)}" style="width:80px"><label>tr/quý</label></div>
-        <div class="bar">${TEAMS.map(t => `<label>${TEAMS.length > 1 ? `REP Group ${esc(teamName(t))} trong raw` : 'Team trong raw (REP Group)'}</label><input type="text" data-rg="${t}" ${t === TEAMS[0] ? 'id="s-t"' : ''} value="${esc(teamInfo(t).team_filter || (t === TEAMS[0] ? s.team_filter : '') || t)}" style="width:80px">`).join('')}<label>MR chưa gán nếu tên chứa</label><input type="text" id="s-x" value="${esc(s.exclude_keywords || '')}" style="min-width:200px"></div>
+      <div class="card"><h3>Kỳ FC & quy tắc</h3><div class="fgrid">
+        <div class="fld"><label for="s-y">Kỳ FC</label><div class="fctl"><input type="number" id="s-y" value="${s.year}" style="width:84px" aria-label="Năm"><span>Quý</span><select id="s-q" aria-label="Quý">${[1, 2, 3, 4].map(q => `<option ${q === +s.quarter ? 'selected' : ''}>${q}</option>`).join('')}</select></div></div>
+        <div class="fld"><label for="s-d">Deadline submit</label><div class="fctl"><input type="date" id="s-d" value="${s.deadline || ''}"></div></div>
+        <div class="fld full"><label class="ck"><input type="checkbox" id="s-l" ${s.locked ? 'checked' : ''}> Khoá nhập (MR chỉ xem)</label></div>
+        <div class="fld full"><label for="s-rp">Cảnh báo khi FC lệch TB 2Q</label><div class="fctl"><input type="number" id="s-rp" value="${Math.round(RULE.pct * 100)}" style="width:64px"><span>%, với dòng từ</span><input type="number" id="s-rm" value="${Math.round(RULE.min / 1e6)}" style="width:72px" aria-label="Ngưỡng tr/quý"><span>tr/quý</span></div></div>
+        ${TEAMS.map(t => `<div class="fld"><label>${TEAMS.length > 1 ? `REP Group ${esc(teamName(t))}` : 'REP Group'} trong raw</label><div class="fctl"><input type="text" data-rg="${t}" ${t === TEAMS[0] ? 'id="s-t"' : ''} value="${esc(teamInfo(t).team_filter || (t === TEAMS[0] ? s.team_filter : '') || t)}" style="width:100%"></div></div>`).join('')}
+        <div class="fld full"><label for="s-x">MR chưa gán nếu tên chứa</label><div class="fctl"><input type="text" id="s-x" value="${esc(s.exclude_keywords || '')}" style="width:100%"></div></div>
+      </div>
         <button class="btn pri" id="s-save">Lưu</button><div class="sub" style="margin-top:8px">Đổi sang quý mới: app hỏi lưu bản chốt FC kỳ cũ (để đo FC accuracy). FC & target kỳ mới bắt đầu trống.</div></div>
       <div class="card"><h3>1. Bảng giá & SKU${its}</h3>${itNo}<div class="drop">Cột Brand · SKU · Giá/box (VND). Tên SKU trùng tên trong raw.<br><input type="file" id="u-p" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div><div class="log" id="l-p">Đang có ${D.prices.filter(p => !it || (p.team || TEAMS[0]) === it).length} SKU${its}.</div><button class="btn sm" data-tpl="price" style="margin-top:6px">⬇ File mẫu</button></div>
       <div class="card"><h3>2. Danh sách account × SKU × MR${its}</h3>${itNo}<div class="drop">Cột REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Tender/Self-pay. Nhận cả sheet FC Input (file v2).<br><input type="file" id="u-f" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>

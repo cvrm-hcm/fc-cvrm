@@ -2,6 +2,14 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.8 (11/11/2026) — Giao diện gọn, dễ nhập hơn
+
+- **FC Input gọn:** các thẻ KPI gom thành 1 dải (Target · FC + %Ach · Act. QTD vs phasing · Growth · Việc cần xử lý). Bấm **Chi tiết** để mở lại thẻ đầy đủ và 3 tháng; app nhớ lựa chọn trên từng máy. Bấm "N dòng cần lý do" / "dòng có lịch sử chưa nhập" để lọc ngay các dòng đó. Bảng nhập lên ngay màn hình đầu (máy tính: ô nhập đầu tiên từ y≈870 lên ≈460).
+- **Bảng nhập:** mặc định ẩn 3 quý cũ (LYSP … Q-2), giữ quý gần nhất, QTD, Target, TB 2Q; nút "Hiện Q4'25–Q2'26" mở lại. Màn hình 1440 không còn cuộn ngang, thấy cột Note. **Enter / ↓** xuống ô cùng tháng ở dòng dưới, **Shift+Enter / ↑** lên dòng trên; vào ô là chọn sẵn số cũ để gõ đè; dòng đang nhập được tô sáng.
+- **Điện thoại:** header 2 hàng (tên ngắn "FC Sale", chip ngày gói 1 hàng); nút Submit / Duyệt / Trả lại nằm ở thanh cố định đáy màn hình; thanh lọc 2 hàng; ô nhập đầu tiên nằm trong màn hình đầu (trước đây phải cuộn khoảng 2 màn hình). Dashboard: 2 ô lọc chung 1 hàng.
+- **Chung:** nhãn nhóm KPI không viết hoa toàn bộ; màu chữ chính đổi sang navy đậm cho hợp màu app; form Admin → Kỳ FC & quy tắc xếp theo ô, nút chọn file đồng bộ kiểu nút của app; thẻ Admin không còn kéo giãn khoảng trống. Tooltip trên điện thoại chỉ hiện khi chạm, không còn treo ở góc màn hình.
+- Không đổi chức năng, số liệu, tên cột. Test mới: `test_ui48.py`.
+
 ## Phiên bản 4.7.1 (11/11/2026) — FC Input xếp account từ lớn đến bé
 
 - FC Input (từng MR và Cả team, máy tính và điện thoại): account xếp từ lớn đến bé, SKU trong account cũng vậy. Quy mô = số lớn hơn giữa target quý FC và TB sales 2 quý gần nhất, nên thứ tự đứng yên trong quý, không nhảy khi MR nhập FC. Account mới chưa có target, chưa có sales nằm cuối.
