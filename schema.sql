@@ -1,7 +1,7 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v5 + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v6 (2 team CVRM / WHC) + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → migration_v4.sql → migration_v5.sql; bản 3 chạy v4 rồi v5; bản 4 chỉ chạy migration_v5.sql.
+-- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → migration_v4.sql → migration_v5.sql; bản 3 chạy v4 rồi v5; bản 4 chạy v5 rồi v6; bản 5 chỉ chạy migration_v6.sql.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
 --   * MR: chỉ xem số của mình (account, sales, target, FC, trạng thái nộp);
@@ -14,7 +14,8 @@
 create table if not exists public.team_members (
   email     text primary key,
   rep_name  text not null,
-  role      text not null default 'MR' check (role in ('MR','RFFM','ADMIN'))
+  role      text not null default 'MR' check (role in ('MR','RFFM','ADMIN')),
+  team      text not null default 'CVRM'   -- MR: team của MR (CVRM / WHC); ADMIN / RFFM: ALL = cả 2 team
 );
 
 create or replace function public.my_email() returns text
@@ -54,8 +55,19 @@ create or replace function public.period_open() returns boolean
 create table if not exists public.prices (
   sku   text primary key,
   brand text not null,
-  price numeric not null
+  price numeric not null,
+  team  text not null default 'CVRM'
 );
+
+-- Team: mỗi team có ngày dữ liệu raw sales và giá trị REP Group riêng (bản 6)
+create table if not exists public.teams (
+  team        text primary key,
+  name        text not null,
+  data_as_of  date,
+  team_filter text,
+  sort        int not null default 0
+);
+insert into public.teams (team, name, team_filter, sort) values ('CVRM', 'CVRM', 'CVRM', 1), ('WHC', 'WHC', 'WHC', 2) on conflict (team) do nothing;
 
 create table if not exists public.mapping (
   id            bigint generated always as identity primary key,
@@ -70,6 +82,7 @@ create table if not exists public.mapping (
   proposed_by   text,
   proposed_note text,
   created_at    timestamptz not null default now(),
+  team          text not null default 'CVRM',
   unique (rep_name, cust_code, sku)
 );
 create index if not exists mapping_rep_idx on public.mapping (rep_name);
@@ -82,6 +95,7 @@ create table if not exists public.sales_agg (
   month     int  not null check (month between 1 and 12),
   value     numeric not null,
   qty       numeric not null default 0,
+  team      text not null default 'CVRM',
   primary key (cust_code, sku, year, month)
 );
 
@@ -91,6 +105,7 @@ create table if not exists public.accounts_seen (
   cust_name text,
   rep_name  text,
   value     numeric,
+  team      text not null default 'CVRM',
   primary key (cust_code, sku)
 );
 
@@ -102,6 +117,7 @@ create table if not exists public.targets (
   sku       text not null,
   value     numeric not null,
   qty       numeric,
+  team      text not null default 'CVRM',
   primary key (period, rep_name, cust_code, sku)
 );
 
@@ -139,6 +155,7 @@ create table if not exists public.fc_archive (
   ratio      numeric not null default 1,
   m1 numeric, m2 numeric, m3 numeric,
   value      numeric,
+  team       text not null default 'CVRM',
   created_at timestamptz not null default now(),
   primary key (period, rep_name, cust_code, sku)
 );
@@ -217,7 +234,7 @@ create trigger trg_stamp_mapping before insert on public.mapping for each row ex
 do $$
 declare t text;
 begin
-  foreach t in array array['team_members','settings','prices','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
+  foreach t in array array['team_members','settings','prices','teams','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "member read" on public.%I', t);
     execute format('drop policy if exists "scoped read" on public.%I', t);
@@ -225,7 +242,7 @@ begin
     execute format('create policy "admin write" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
   -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá
-  foreach t in array array['team_members','settings','prices'] loop
+  foreach t in array array['team_members','settings','prices','teams'] loop
     execute format('create policy "member read" on public.%I for select to authenticated using (public.is_member())', t);
   end loop;
 end $$;
@@ -233,7 +250,7 @@ end $$;
 -- Hàm hỗ trợ quyền đọc
 -- App đọc số này để biết database đã ở bản mấy
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 5 $$;
+  language sql immutable set search_path = '' as $$ select 6 $$;
 
 -- Admin nạp sales mới → app tính số mới từng dòng (giữ FC quý) rồi gọi hàm này.
 -- Chỉ ghi dòng chưa ai sửa kể từ lúc app tính (so số cũ o1..o3). Trả về số dòng đã ghi.
@@ -358,8 +375,8 @@ insert into public.settings (id, year, quarter, deadline) values (1, 2026, 4, '2
 -- Giá list/box: không ghi trong file này (repo có thể public).
 -- Nạp ở app: Admin → Kỳ & nạp dữ liệu → 1. Bảng giá & SKU.
 
-insert into public.team_members (email, rep_name, role)
-  values ('email.cua.ban@bayer.com', 'Nguyen Thanh Kha', 'ADMIN')
-on conflict (email) do update set role = 'ADMIN';
+insert into public.team_members (email, rep_name, role, team)
+  values ('email.cua.ban@bayer.com', 'Nguyen Thanh Kha', 'ADMIN', 'ALL')
+on conflict (email) do update set role = 'ADMIN', team = 'ALL';
 
 notify pgrst, 'reload schema';

@@ -2,6 +2,17 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.7 (11/11/2026) — 2 team: CVRM và WHC
+
+- **Ô Team ở header** (CVRM / WHC / Cả 2 team) cho người xem được cả 2 team (ADMIN, RFFM để Team = Cả 2 team). Áp cho FC Input, Dashboard, Admin; app nhớ lựa chọn trên từng máy. MR chỉ thấy team của mình, không có ô Team.
+- **2 ô nạp raw sales** ở Admin → Kỳ & nạp dữ liệu: "Raw sales CVRM" và "Raw sales WHC". Mỗi ô chỉ lấy SKU của team đó, chỉ thay sales của team đó, lưu ngày dữ liệu riêng và tự trừ sales vào FC của đúng team.
+- **Ngày dữ liệu riêng từng team**: tháng đã chốt / đang chạy, "FC từ ngày …", phasing tính theo ngày dữ liệu của team. Cả 2 team: mỗi dòng theo team của nó; header ghi "Sales CVRM dd/mm · WHC dd/mm"; nhãn chung lấy ngày sớm hơn; phasing bình quân theo quy mô sales từng team. Xem 1 MR thì theo team của MR đó.
+- **Nạp giá, account, target, file FC, FC lịch sử theo Team đang chọn ở header**: chỉ thay dữ liệu của team đó ("Thay toàn bộ" account chỉ xoá dòng của team đó; target chỉ thay target của team đó). Đang chọn Cả 2 team thì các ô này khoá, nhắc chọn 1 team.
+- **Thành viên & giá**: thêm cột Team (MR: CVRM / WHC; ADMIN, RFFM: Cả 2 team). Dán danh sách từ Excel nhận thêm cột Team. Bảng giá có cột Team cho từng SKU.
+- **Kỳ FC, deadline, khoá nhập, quy tắc cảnh báo dùng chung 2 team.** REP Group trong raw khai riêng từng team (mặc định CVRM, WHC).
+- Excel xuất theo team đang chọn (FC_Sale_WHC_HCM_…, FC_Sale_CVRM_WHC_HCM_… khi xem Cả 2 team).
+- **Cần làm 1 lần:** Supabase → SQL Editor → dán toàn bộ `migration_v6.sql` → Run (database của team đã chạy). Dữ liệu đang có thành CVRM, ADMIN / RFFM thành Cả 2 team.
+
 ## Phiên bản 4.6 (11/11/2026) — Tăng tốc tải và vẽ
 
 - **Làm mới / mở app nhanh hơn ~3 lần**: kiểm tra cấu trúc database 1 lần mỗi phiên (trước: 6 request nối tiếp mỗi lần tải); bảng lớn (raw sales ~3,900 dòng) tải các trang 1000 dòng song song, xếp theo khoá chính nên không trùng / sót dòng. Đo với độ trễ ~110 ms mỗi request: Làm mới 1.4 s → 0.5 s.
@@ -188,17 +199,21 @@ Phân quyền chặn ở database (Row Level Security), đã test trên Postgres
 - Người ngoài danh sách team đọc 0 dòng.
 - Mọi thay đổi FC đều được ghi vào `fc_history` (lần app tự trừ sales vào FC ghi `src = auto`, chỉ admin chạy được).
 
+## Nâng cấp từ bản 5 (đang chạy)
+
+Supabase → **SQL Editor** → dán toàn bộ `migration_v6.sql` → **Run**. Dữ liệu đang có thành team CVRM, ADMIN / RFFM xem cả 2 team. Kết quả cuối file: `db_version = 6`, danh sách team.
+
 ## Nâng cấp từ bản 4 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run**. Không đổi dữ liệu, không cần nạp lại gì. Kết quả cuối file: `db_version = 5`, `cot_moi = 2`.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run** (kết quả `db_version = 5`, `cot_moi = 2`), rồi chạy tiếp `migration_v6.sql`.
 
 ## Nâng cấp từ bản 3 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql`. Không đổi dữ liệu, không cần nạp lại gì.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql` và `migration_v6.sql`. Không đổi dữ liệu, không cần nạp lại gì.
 
 ## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql` và `migration_v5.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`, `migration_v5.sql`, `migration_v6.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
 3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
@@ -219,11 +234,11 @@ Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (
 
 ## Nạp dữ liệu (Admin → Kỳ & nạp dữ liệu)
 
-Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột theo tên tiêu đề.
+Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột theo tên tiêu đề. Chọn Team (CVRM hoặc WHC) ở header trước khi nạp giá, account, target, file FC: dữ liệu ghi cho team đó, không đụng team kia.
 
 1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND)
 2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
-3. **Raw sales:** file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5).
+3. **Raw sales** (mỗi team 1 ô: CVRM, WHC): file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5).
 4. **Target:** file Target Allocation của Bayer (sheet Account, có cột REP: target theo MR), hoặc file đơn giản Cust Code · SKU · Target quý FC (VND) (chia theo Sales ratio)
 5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
