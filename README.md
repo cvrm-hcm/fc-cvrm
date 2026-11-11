@@ -2,6 +2,14 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.6 (11/11/2026) — Tăng tốc tải và vẽ
+
+- **Làm mới / mở app nhanh hơn ~3 lần**: kiểm tra cấu trúc database 1 lần mỗi phiên (trước: 6 request nối tiếp mỗi lần tải); bảng lớn (raw sales ~3,900 dòng) tải các trang 1000 dòng song song, xếp theo khoá chính nên không trùng / sót dòng. Đo với độ trễ ~110 ms mỗi request: Làm mới 1.4 s → 0.5 s.
+- **Thư viện Excel (~0.9 MB) chỉ tải khi cần** (nạp file, tải file mẫu): mở app không phải chờ tải thư viện.
+- **FC Input · Cả team**: vẽ trước 50 account lớn nhất (theo target); nút "Xem thêm" / "Hiện tất cả" nối tiếp vào bảng, giữ vị trí cuộn. Subtotal, KPI vẫn tính đủ mọi dòng theo bộ lọc; đổi bộ lọc / tìm kiếm thì quay về 50 account đầu. Điện thoại: vẽ Cả team 0.7 s → 0.35 s.
+- Dữ liệu hiện tại nhỏ so với gói Free: database 13 MB / 500 MB; mỗi lần admin tải ~1 MB, MR tải ít hơn nhiều.
+- Không đổi dữ liệu, không cần chạy SQL.
+
 ## Phiên bản 4.5 (11/11/2026) — Tự trừ sales mới vào FC; TB 2Q
 
 - **Tự trừ sales mới vào FC, giữ FC quý từng dòng**: Admin nạp raw sales mới (Admin → 3. Raw sales, ô "Tự trừ sales mới vào FC của team" tick sẵn) → app giữ nguyên FC quý (box) của từng dòng MR đã nhập, phần chênh tự dời sang tháng còn lại. MR không phải sửa lại nếu tình hình đặt hàng không đổi.

@@ -26,7 +26,7 @@ window.FC_CONFIG = {
   EMAIL_LINK: false   // true khi đã cấu hình SMTP riêng trong Supabase (cho phép đăng nhập bằng link email)
 };
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
 :root{
   color-scheme: light;
@@ -135,6 +135,7 @@ h3{font-size:15px;margin:0 0 10px}
 .mon .bar2{height:6px;background:#eef0f3;border-radius:3px;margin-top:6px;overflow:hidden}
 .mon .bar2 i{display:block;height:100%;background:var(--s1);border-radius:3px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.bar.more{margin:10px 0 0;justify-content:center}
 .bar label{font-size:12.5px;color:var(--ink2)}
 .bar select,.bar input[type=search],.bar input[type=text],.bar input[type=number],.bar input[type=date]{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;min-width:110px}
 .bar .grow{flex:1}
@@ -610,6 +611,9 @@ class DemoStore {
   reset(){ this.db = seedDemo(); this.persist(); }
 }
 
+// Khoá chính từng bảng: đọc theo trang thì xếp theo khoá chính để các trang không trùng / sót dòng
+const PKS = {sales_agg: ['cust_code', 'sku', 'year', 'month'], accounts_seen: ['cust_code', 'sku'], fc_archive: ['period', 'rep_name', 'cust_code', 'sku'], targets: ['period', 'rep_name', 'cust_code', 'sku'],
+  fc_entries: ['period', 'mapping_id'], submissions: ['period', 'rep_name'], team_members: ['email'], prices: ['sku'], settings: ['id']};
 class CloudStore {
   constructor(sb){ this.sb = sb; }
   async currentEmail(){ const {data} = await this.sb.auth.getSession(); return data.session?.user?.email?.toLowerCase() || null; }
@@ -618,11 +622,26 @@ class CloudStore {
   async signOut(){ await this.sb.auth.signOut(); }
   async getUser(){ const {data} = await this.sb.auth.getUser(); return data.user; }
   async setPassword(pw){ const {error} = await this.sb.auth.updateUser({password: pw, data: {pw_changed: true}}); if (error) throw error; }
-  async all(table, sel = '*', f){ const out = []; for (let from = 0; ; from += 1000){ let q = this.sb.from(table).select(sel).range(from, from + 999); if (f) q = f(q); const {data, error} = await q; if (error) throw error; out.push(...data); if (data.length < 1000) break; } return out; }
+  // Đọc cả bảng theo trang 1000 dòng (giới hạn mặc định của Supabase): trang đầu kèm tổng số dòng, các trang sau tải song song.
+  // Không đọc được tổng số dòng, hoặc trang cuối vẫn đầy (vừa có dữ liệu mới) → đọc tiếp từng trang như cũ, không bỏ sót dòng.
+  async all(table, sel = '*', f){
+    const page = (from, cnt) => { let q = this.sb.from(table).select(sel, cnt ? {count: 'exact'} : {}).range(from, from + 999); for (const c of PKS[table] || []) q = q.order(c); if (f) q = f(q); return q; };
+    const {data, error, count} = await page(0, true); if (error) throw error;
+    const out = [...data]; if (data.length < 1000) return out;
+    const n = count > 1000 ? Math.ceil(count / 1000) : 1;
+    const rest = await Promise.all(Array.from({length: n - 1}, (_, i) => page((i + 1) * 1000)));
+    let last = data; for (const r of rest){ if (r.error) throw r.error; out.push(...r.data); last = r.data; }
+    for (let from = n * 1000; last.length === 1000; from += 1000){ const r = await page(from); if (r.error) throw r.error; out.push(...r.data); last = r.data; }
+    return out;
+  }
+  // Kiểm tra database đã đủ cột của các bản trước: 1 lần mỗi phiên, 6 bảng gửi song song
   async checkSchema(){
-    for (const [t, c] of [['sales_agg', 'month,qty'], ['fc_archive', 'period'], ['submissions', 'status'], ['mapping', 'status'], ['fc_entries', 'reason'], ['targets', 'rep_name,qty']]){
-      const {error} = await this.sb.from(t).select(c).limit(1);
-      if (error){ const e = new Error('DB_MIGRATION'); e.detail = `${t}: ${error.message}`; throw e; } } }
+    if (this.schemaOK) return;
+    const res = await Promise.all([['sales_agg', 'month,qty'], ['fc_archive', 'period'], ['submissions', 'status'], ['mapping', 'status'], ['fc_entries', 'reason'], ['targets', 'rep_name,qty']]
+      .map(async ([t, c]) => [t, (await this.sb.from(t).select(c).limit(1)).error]));
+    const bad = res.find(x => x[1]); if (bad){ const e = new Error('DB_MIGRATION'); e.detail = `${bad[0]}: ${bad[1].message}`; throw e; }
+    this.schemaOK = true;
+  }
   async loadAll(){
     await this.checkSchema();
     const st = await this.all('settings'); const settings = st[0] || {year: new Date().getFullYear(), quarter: Math.floor(new Date().getMonth() / 3) + 1, locked: false, team_filter: 'CVRM', exclude_keywords: 'Vacant,New MR,Uncovered'};
@@ -881,6 +900,7 @@ function reasonCell(r, editable, mobile){
   return `<select class="rs ${r.needReason ? 'need' : ''}" data-id="${r.id}" data-f="reason" ${editable ? '' : 'disabled'} data-tip="${esc(r.flag || 'Lý do điều chỉnh FC')}"><option value="">${r.flag ? '⚠ Chọn lý do' : '–'}</option>${REASONS.map(x => `<option ${x === r.f.reason ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
 }
 const TEAM = '*';   // ô MR ở tab FC Input: "Cả team" (RFFM / Admin)
+const TEAM_N = 50;   // Cả team: số account vẽ trước, phần còn lại bấm "Xem thêm"
 const fcScope = rep => rep === TEAM ? ROWS : ROWS.filter(r => r.rep_name === rep);
 function fcKpiHtml(rep){
   const team = rep === TEAM, mine = fcScope(rep), a = agg(mine);
@@ -1047,18 +1067,26 @@ function viewFC(){
     const accs = [...byAcc.values()].map(ls => ({ls: ls.sort((p, x) => p.brand.localeCompare(x.brand) || x.tgt - p.tgt || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
       .sort((x, y) => y.g.tgt - x.g.tgt || y.g.fcv - x.g.fcv || x.ls[0].cust_name.localeCompare(y.ls[0].cust_name));
     const accLbl = x => `${esc(x.ls[0].cust_name)} <span class="sub">${esc(x.ls[0].cust_code)} · ${x.nMR} MR</span> ${chChip(x.ls.find(o => o.channel)?.channel)}`;
-    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${accs.map(x => `<div class="acc" data-agk="${esc(x.ls[0].cust_code)}"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.g.ach)}</span></span></div>
+    // Thẻ mobile / dòng bảng của 1 account (các SKU, cộng mọi MR)
+    const cardHtml = x => `<div class="acc" data-agk="${esc(x.ls[0].cust_code)}"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.g.ach)}</span></span></div>
       ${x.ls.map(o => `<div class="sku" data-tl="${esc(o.key)}"><div class="n">${esc(o.sku)}</div><div class="mrs sub">${teamMRs(o)}</div>
         <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span><span>Target: ${tr(o.tgt)}</span><span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b data-tf="fcv">${tr(o.fcv)}</b> <span data-tf="ach">${achHtml(o.ach)}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]}<br><span>${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'từ ' + NEXT_DM : 'cả tháng'}</span></label>${tIn(o, i)}</div>`).join('')}</div>
-        <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`).join('')}</div>`).join('')}</div>`;
-    else { let html = '';
-      for (const x of accs){
-        html += `<tr class="acc" data-agk="${esc(x.ls[0].cust_code)}"><td class="l stick">${accLbl(x)}</td>${x.g.act.slice(0, 4).map(v2 => `<td>${tr(v2)}</td>`).join('')}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`;
-        for (const o of x.ls) html += `<tr data-tl="${esc(o.key)}"><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${o.act.slice(0, 4).map(v2 => `<td class="act">${tr(v2)}</td>`).join('')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
-          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach">${achHtml(o.ach)}</td><td data-tf="gly">${grHtml(o.gLy)}</td><td data-tf="gq">${grHtml(o.gQ)}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`;
-      }
-      body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
+        <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`).join('')}</div>`;
+    const accHtml = x => `<tr class="acc" data-agk="${esc(x.ls[0].cust_code)}"><td class="l stick">${accLbl(x)}</td>${x.g.act.slice(0, 4).map(v2 => `<td>${tr(v2)}</td>`).join('')}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`
+      + x.ls.map(o => `<tr data-tl="${esc(o.key)}"><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${o.act.slice(0, 4).map(v2 => `<td class="act">${tr(v2)}</td>`).join('')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
+          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach">${achHtml(o.ach)}</td><td data-tf="gly">${grHtml(o.gLy)}</td><td data-tf="gq">${grHtml(o.gQ)}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`).join('');
+    // Vẽ trước TEAM_N account lớn nhất (theo target); "Xem thêm" nối tiếp vào bảng, không vẽ lại, không mất vị trí cuộn. Subtotal vẫn tính mọi dòng theo bộ lọc.
+    const sig = [VIEW.fcTerr, VIEW.fcBrand, VIEW.fcFlt, VIEW.fcSearch].join('|'); if (VIEW.fcTeamSig !== sig){ VIEW.fcTeamSig = sig; VIEW.fcTeamN = TEAM_N; }
+    const mob = MOBILE(), n0 = Math.min(accs.length, VIEW.fcTeamN);
+    const moreHtml = n => n < accs.length ? `<div class="bar more" id="fc-more-bar"><span class="sub">Đang hiện ${n}/${accs.length} account, xếp theo target</span><button class="btn" id="fc-more">Xem thêm ${Math.min(TEAM_N, accs.length - n)} account</button><button class="btn ghost" id="fc-all">Hiện tất cả</button></div>` : '';
+    if (mob) body.innerHTML = sbar + `<div class="mcards">${accs.slice(0, n0).map(cardHtml).join('')}</div>` + moreHtml(n0);
+    else body.innerHTML = `<div class="tw"><table class="t"><thead>${head}${stot}</thead><tbody>${accs.slice(0, n0).map(accHtml).join('')}</tbody></table></div>` + moreHtml(n0);
+    const showMore = all => { const from = Math.min(accs.length, VIEW.fcTeamN), to = all ? accs.length : Math.min(accs.length, from + TEAM_N); VIEW.fcTeamN = to;
+      const part = accs.slice(from, to); if (mob) $('.mcards', body).insertAdjacentHTML('beforeend', part.map(cardHtml).join('')); else $('tbody', body).insertAdjacentHTML('beforeend', part.map(accHtml).join(''));
+      const mb = $('#fc-more-bar'); if (mb) mb.outerHTML = moreHtml(to); bindMore(); };
+    const bindMore = () => { $('#fc-more') && ($('#fc-more').onclick = () => showMore(false)); $('#fc-all') && ($('#fc-all').onclick = () => showMore(true)); };
+    bindMore();
   } else {
     const groups = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
     if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${[...groups].map(([k, rs]) => { const g = agg(rs); return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
@@ -1561,7 +1589,7 @@ function viewDash(){
 /* =========================================================
    8. TAB ADMIN — nạp dữ liệu, FC lịch sử, phân bổ, thành viên, xuất Excel
    ========================================================= */
-function readWorkbook(file, sheets){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = e => { try { res(XLSX.read(new Uint8Array(e.target.result), {type: 'array', cellDates: false, ...(sheets ? {sheets} : {})})); } catch(err){ rej(err); } }; fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
+async function readWorkbook(file, sheets){ await getXLSX(); return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = e => { try { res(XLSX.read(new Uint8Array(e.target.result), {type: 'array', cellDates: false, ...(sheets ? {sheets} : {})})); } catch(err){ rej(err); } }; fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
 function sheetRows(ws){ return XLSX.utils.sheet_to_json(ws, {header: 1, raw: true, defval: null, blankrows: false}); }
 function findHeader(rows, mustHave){ for (let i = 0; i < Math.min(rows.length, 30); i++){ const r = (rows[i] || []).map(lc); if (mustHave.every(h => r.includes(lc(h)))) return i; } return -1; }
 function colIdx(hdr, names){ const h = hdr.map(lc); for (const n of names){ const i = h.indexOf(lc(n)); if (i >= 0) return i; } return -1; }
@@ -1826,7 +1854,8 @@ async function importArchive(file, log){
   await STORE.replaceArchive(periods, list); log(`Nạp ${list.length} dòng FC cho kỳ ${periods.map(pkLabel).join(', ')}, tổng ${big(list.reduce((s, x) => s + x.value, 0))}.`);
 }
 async function snapshot(){ const rows = ROWS.filter(r => r.filled || r.act[4] || r.tgt).map(r => ({period: PK, rep_name: r.rep_name, cust_code: r.cust_code, sku: r.sku, ratio: num(r.ratio), m1: num(r.f.m1), m2: num(r.f.m2), m3: num(r.f.m3), value: r.fcv})); await STORE.replaceArchive([PK], rows); return rows.length; }
-function downloadTemplate(kind){
+async function downloadTemplate(kind){
+  try { await getXLSX(); } catch(e){ return toast(e.message); }
   const wb = XLSX.utils.book_new(); let rows, name, sh;
   if (kind === 'price'){ rows = [['Brand', 'SKU', 'Giá/box (VND)'], ...D.prices.map(p => [p.brand, p.sku, num(p.price)])]; name = 'Mau_Bang_gia_SKU.xlsx'; sh = 'Bảng giá'; }
   if (kind === 'account'){ rows = [['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'SKU', 'Sales ratio', 'Tender/Self-pay'], ...D.mapping.filter(m => m.status !== 'proposed').map(m => [m.rep_name, m.cust_code, m.cust_name, m.brand, m.sku, num(m.ratio), m.channel || ''])]; name = 'Mau_Danh_sach_account.xlsx'; sh = 'Account'; }
@@ -1840,6 +1869,9 @@ function saveWb(wb, name){ try { XLSX.writeFile(wb, name); toast('Đã xuất ' 
    Dùng ExcelJS (tải khi bấm xuất) để có định dạng, cố định tiêu đề, nhóm dòng mở/thu gọn. Số tổng hợp là công thức SUMIFS
    trỏ về FC Input: sửa FC trong Excel thì các sheet tổng hợp tự tính lại. */
 const EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+// Thư viện đọc / ghi Excel (~0.9 MB): chỉ tải khi nạp file, tải file mẫu; mở app không phải chờ
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+async function getXLSX(){ if (!window.XLSX) await loadScript(XLSX_URL); return window.XLSX; }
 function loadScript(src){ return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = () => res(); el.onerror = () => rej(new Error('Không tải được thư viện Excel, kiểm tra mạng rồi thử lại')); document.head.appendChild(el); }); }
 async function getExcelJS(){ if (!window.ExcelJS) await loadScript(EXCELJS_URL); return window.ExcelJS; }
 function downloadBlob(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
