@@ -2,6 +2,20 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.12 (13/11/2026) — Type BV + kênh theo raw, New launch theo merge code
+
+- **Type BV** (BV công / BV tư / Clinic) và **kênh** (Tender / Self-pay / Clinic) lấy theo Customer Local Group 1 Desc (hoặc Channel_name nếu raw không có cột này), Group 2, Group 3:
+  - Clinic: Sub-dis clinics, Clinic Pharmacy (phòng khám, PKĐK) → kênh Clinic.
+  - BV tư (Private entities) → kênh Self-pay (100%).
+  - BV công (GOV'T. ENTITIES): Khoa Dược (VN:PharmacyDepartmnt, PMC Center) → Tender; Nhà thuốc BV (VN:Service Pharmacy) → Self-pay.
+  - Mã chưa có trong raw: mã NTBV / mã phụ lấy type của mã gốc merge code (mã gốc chưa có thì lấy từ mã NTBV cùng account); còn lại đoán theo tên (PK / PM / Phòng khám → Clinic, Nhà thuốc → Self-pay, Khoa Dược → Tender). NTBV nằm trong merge code của BV nhưng raw ghi Sub-dis clinics (vd NT BV FV, NT BV ĐK Nhà Bè) tính theo BV, kênh Self-pay.
+  - Kênh theo raw đè lên cột Tender/Self-pay của file account; Admin → Phân bổ account chỉ cho chọn tay khi mã chưa có trong raw.
+- **Dashboard Overview:** By channel tách từng brand (sales 4 quý, QTD, FC, % FC, Gr vs LYSP, Gr vs quý trước), không %Ach vì target giao theo account. Bảng mới **By type BV** (có target, %Ach) tách brand.
+- **FC Input:** chip kênh Tender / NTBV / Self-pay / Clinic theo raw, ghi type BV cạnh mã KH.
+- **Excel:** FC Input thêm cột Type BV, cột Tender/Self-pay có thêm Clinic; 2 sheet pivot mới RFFM_By Channel, RFFM_By Type BV (kênh / type × brand).
+- **New launch:** BV gộp theo merge code (dòng merge → mã Tender (gốc) → mã NTBV → SKU; điện thoại: khung merge chứa thẻ từng mã), tổng merge cập nhật khi nhập. Dashboard New launch By BV cũng theo merge code. Gov / Priv / Clinic ở New launch đổi tên thành **Type BV** cho khỏi lẫn với kênh.
+- Raw nạp lần sau tự cập nhật danh mục khách hàng (log ghi số mã theo type và kênh). Không cần migration.
+
 ## Phiên bản 4.11 (12/11/2026) — Bảng Forecast theo brand, sửa file Excel, gọn Dashboard
 
 - **Sửa lỗi file Excel xuất từ Dashboard:** Excel báo file hỏng, sau khi sửa thì 5 sheet pivot (RFFM_By Brand, RFFM_By Account, RFFM_By MR, MR_By Brand, MR_By Account) trống. Nguyên nhân: thư viện ExcelJS ghi thẻ thiết lập in trước thẻ outline ở các sheet này, sai thứ tự chuẩn của Excel (LibreOffice / Google Sheets bỏ qua nên không thấy). Các sheet pivot giờ in theo tỉ lệ 70% thay cho "vừa 1 trang ngang"; file đã kiểm tra theo schema chuẩn của Excel.
