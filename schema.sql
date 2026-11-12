@@ -1,12 +1,13 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v6 (2 team CVRM / WHC) + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v7 (2 team CVRM / WHC, New launch) + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → migration_v4.sql → migration_v5.sql; bản 3 chạy v4 rồi v5; bản 4 chạy v5 rồi v6; bản 5 chỉ chạy migration_v6.sql.
+-- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → v4 → v5 → v6 → v7; bản 3 chạy v4 → v5 → v6 → v7; bản 4 chạy v5 → v6 → v7; bản 5 chạy v6 rồi v7; bản 6 chỉ chạy migration_v7.sql.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
 --   * MR: chỉ xem số của mình (account, sales, target, FC, trạng thái nộp);
 --         nhập/sửa FC dòng của mình, đúng kỳ hiện tại, khi kỳ chưa khóa và FC chưa được duyệt;
---         nộp FC; đề xuất account/SKU mới cho chính mình.
+--         nộp FC; đề xuất account/SKU mới cho chính mình;
+--         New launch: tự thêm / đổi kênh / xoá BV, phòng khám của mình (SKU prices.launch).
 --   * RFFM: xem cả team, duyệt / trả lại FC.
 --   * ADMIN: toàn quyền.
 -- =====================================================================
@@ -53,10 +54,11 @@ create or replace function public.period_open() returns boolean
   $$ select coalesce((select not locked from settings where id = 1), false) $$;
 
 create table if not exists public.prices (
-  sku   text primary key,
-  brand text not null,
-  price numeric not null,
-  team  text not null default 'CVRM'
+  sku    text primary key,
+  brand  text not null,
+  price  numeric not null,
+  team   text not null default 'CVRM',
+  launch boolean not null default false     -- SKU new launch (chưa có target): FC nhập riêng, không tính vào %Ach (bản 7)
 );
 
 -- Team: mỗi team có ngày dữ liệu raw sales và giá trị REP Group riêng (bản 6)
@@ -83,6 +85,7 @@ create table if not exists public.mapping (
   proposed_note text,
   created_at    timestamptz not null default now(),
   team          text not null default 'CVRM',
+  segment       text check (segment is null or segment in ('gov', 'priv', 'clinic')),   -- kênh New launch: BV công / BV tư / phòng khám (bản 7)
   unique (rep_name, cust_code, sku)
 );
 create index if not exists mapping_rep_idx on public.mapping (rep_name);
@@ -97,6 +100,17 @@ create table if not exists public.sales_agg (
   qty       numeric not null default 0,
   team      text not null default 'CVRM',
   primary key (cust_code, sku, year, month)
+);
+
+-- Danh mục khách hàng từ raw sales: tên, kênh Gov / Priv / Clinic tự phân loại (bản 7). Không có doanh số.
+create table if not exists public.customers (
+  cust_code  text primary key,
+  cust_name  text,
+  segment    text check (segment is null or segment in ('gov', 'priv', 'clinic')),
+  channel    text,          -- Channel_name: Hospital, Sub-dis clinics, Pharmacy, Wholesales
+  cust_group text,          -- Customer Local Group 2 Desc
+  sector     text,          -- Customer Local Group 3 Desc: GOV'T. ENTITIES / Private entities
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.accounts_seen (
@@ -234,15 +248,15 @@ create trigger trg_stamp_mapping before insert on public.mapping for each row ex
 do $$
 declare t text;
 begin
-  foreach t in array array['team_members','settings','prices','teams','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
+  foreach t in array array['team_members','settings','prices','teams','customers','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "member read" on public.%I', t);
     execute format('drop policy if exists "scoped read" on public.%I', t);
     execute format('drop policy if exists "admin write" on public.%I', t);
     execute format('create policy "admin write" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
-  -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá
-  foreach t in array array['team_members','settings','prices','teams'] loop
+  -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá, danh mục khách hàng (không có doanh số)
+  foreach t in array array['team_members','settings','prices','teams','customers'] loop
     execute format('create policy "member read" on public.%I for select to authenticated using (public.is_member())', t);
   end loop;
 end $$;
@@ -250,7 +264,12 @@ end $$;
 -- Hàm hỗ trợ quyền đọc
 -- App đọc số này để biết database đã ở bản mấy
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 6 $$;
+  language sql immutable set search_path = '' as $$ select 7 $$;
+
+-- SKU new launch? (bản 7)
+create or replace function public.is_launch_sku(s text) returns boolean
+  language sql stable security definer set search_path = public as
+  $$ select exists (select 1 from prices where sku = s and launch) $$;
 
 -- Admin nạp sales mới → app tính số mới từng dòng (giữ FC quý) rồi gọi hàm này.
 -- Chỉ ghi dòng chưa ai sửa kể từ lúc app tính (so số cũ o1..o3). Trả về số dòng đã ghi.
@@ -352,12 +371,27 @@ drop policy if exists "mr propose mapping" on public.mapping;
 create policy "mr propose mapping" on public.mapping for insert to authenticated
   with check (rep_name = public.my_rep() and status = 'proposed' and public.period_open());
 
+-- New launch (bản 7): MR thêm / sửa kênh / xoá BV, phòng khám của mình khi kỳ còn mở, chưa được duyệt
+drop policy if exists "mr add launch mapping" on public.mapping;
+create policy "mr add launch mapping" on public.mapping for insert to authenticated
+  with check (rep_name = public.my_rep() and status = 'active' and public.period_open()
+              and not public.rep_approved(public.current_period()) and public.is_launch_sku(sku));
+drop policy if exists "mr edit launch mapping" on public.mapping;
+create policy "mr edit launch mapping" on public.mapping for update to authenticated
+  using (rep_name = public.my_rep() and public.is_launch_sku(sku))
+  with check (rep_name = public.my_rep() and status = 'active' and public.period_open()
+              and not public.rep_approved(public.current_period()) and public.is_launch_sku(sku));
+drop policy if exists "mr remove launch mapping" on public.mapping;
+create policy "mr remove launch mapping" on public.mapping for delete to authenticated
+  using (rep_name = public.my_rep() and public.is_launch_sku(sku) and public.period_open()
+         and not public.rep_approved(public.current_period()));
+
 -- Quyền gọi hàm: người chưa đăng nhập không gọi được hàm nào; hàm trigger chỉ chạy qua trigger.
 do $$
 declare f text;
 begin
   foreach f in array array['my_email()', 'is_member()', 'is_admin()', 'is_reviewer()', 'my_rep()', 'current_period()', 'period_open()', 'rep_approved(text)',
-                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()', 'fc_auto_roll(text, jsonb)'] loop
+                           'app_db_version()', 'target_has_rep(text, text, text)', 'customer_names()', 'fc_auto_roll(text, jsonb)', 'is_launch_sku(text)'] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;

@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.9 (12/11/2026) — New launch: Firialta (CVRM), Qlaira (WHC)
+
+- **FC Input → New launch** (nút In-market / New launch cạnh tiêu đề): FC cho sản phẩm chưa có target. MR tự thêm BV / phòng khám (chọn trong danh mục khách hàng, hoặc gõ tên BV mới, app tạo mã tạm `NEW-…`), chọn SKU, nhập box theo tháng như In-market. Không tính %Ach, không cờ rủi ro; FC New launch vẫn nằm trong bản submit của MR. Admin thêm BV cho MR bất kỳ ở Cả team.
+- **Kênh Gov / Priv / Clinic** từng BV: tự lấy theo raw sales (Customer Local Group 3 Desc: GOV'T → Gov · Private → Priv; Channel_name hoặc Group 2 có "clinic" → Clinic), MR đổi được.
+- **Dashboard → New launch** (RFFM / Admin): tổng FC, By channel (tiền, box, BV có FC, kênh × SKU), By month (tr VND), By MR (bấm tên mở FC New launch của MR đó), By BV / phòng khám (lọc kênh, tìm). MR có thẻ New launch ở Dashboard của tôi.
+- **Excel:** thêm sheet *New launch* (từng dòng) và *New launch_Summary* (by channel / MR / SKU). Demand plan SKU gồm cả SKU New launch; các sheet In-market không lẫn New launch.
+- **Admin → Thành viên & giá:** cột New launch. SKU New launch chưa có giá vẫn lưu được (FC chỉ có box). File Bảng giá nhận thêm cột "New launch" (x / 1 / có).
+- Nạp danh sách account "Thay toàn bộ": giữ dòng New launch MR đã thêm (file không có SKU đó) và giữ kênh MR đã chọn.
+- **DB bản 7** (`migration_v7.sql`): cột `prices.launch`, `mapping.segment`, bảng `customers`; MR chỉ thêm / đổi kênh / xoá BV New launch của chính mình, khi kỳ còn mở và chưa được duyệt.
+
 ## Phiên bản 4.8.2 (12/11/2026) — Dashboard By MR: bảng theo brand + growth
 
 - Bảng "%Ach FC by MR × SKU" đổi thành **By MR × brand**: mỗi brand (và cột Tổng) có 3 cột %Ach FC · Gr LYSP · Gr quý trước. Gr = FC quý FC so với sales cùng kỳ năm trước / sales quý trước. Brand xếp theo target. Rê chuột vào ô để xem số FC, target, sales so sánh.
@@ -212,32 +222,39 @@ Dashboard của RFFM/Admin chia 4 tab, dùng chung bộ lọc MR / Brand / Kênh
 
 | Vai trò | Làm được |
 |---|---|
-| MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU. Chỉ xem dashboard và số của mình. |
+| MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU, thêm BV / phòng khám New launch. Chỉ xem dashboard và số của mình. |
 | RFFM | Xem FC và dashboard cả team, duyệt / trả lại / mở lại, xuất Excel. Không sửa số. |
 | ADMIN | Toàn quyền: nạp dữ liệu, đổi kỳ, khóa kỳ, chốt bản FC, phân bổ account, thành viên. |
 
 Phân quyền chặn ở database (Row Level Security), đã test trên Postgres 16 + PostgREST:
 - MR chỉ đọc được số của mình (bản 4): account, sales, target, FC, trạng thái nộp.
 - MR không tự duyệt được, không ghi được dòng của MR khác, không sửa được sau khi đã duyệt hoặc khi kỳ đã khóa.
+- New launch (bản 7): MR chỉ thêm / đổi kênh / xoá dòng SKU New launch của chính mình; không tự thêm được dòng SKU có target (vẫn qua Đề xuất account).
 - RFFM không ghi được FC.
 - Người ngoài danh sách team đọc 0 dòng.
 - Mọi thay đổi FC đều được ghi vào `fc_history` (lần app tự trừ sales vào FC ghi `src = auto`, chỉ admin chạy được).
 
+## Nâng cấp từ bản 6 (đang chạy)
+
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v7.sql` → **Run**. Kết quả cuối file: `db_version = 7`. Không đổi dữ liệu đang có.
+2. Admin → **Thành viên & giá**: tick **New launch** cho Qlaira; thêm 2 SKU Firialta đúng tên trong raw (chưa có giá thì để trống), tick New launch → Lưu.
+3. Admin → Kỳ & nạp dữ liệu: nạp lại **Raw sales** từng team để app có danh mục khách hàng và tự điền kênh Gov / Priv / Clinic.
+
 ## Nâng cấp từ bản 5 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v6.sql` → **Run**. Dữ liệu đang có thành team CVRM, ADMIN / RFFM xem cả 2 team. Kết quả cuối file: `db_version = 6`, danh sách team.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v6.sql` → **Run**. Dữ liệu đang có thành team CVRM, ADMIN / RFFM xem cả 2 team. Kết quả cuối file: `db_version = 6`, danh sách team. Sau đó làm tiếp phần Nâng cấp từ bản 6.
 
 ## Nâng cấp từ bản 4 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run** (kết quả `db_version = 5`, `cot_moi = 2`), rồi chạy tiếp `migration_v6.sql`.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run** (kết quả `db_version = 5`, `cot_moi = 2`), rồi chạy tiếp `migration_v6.sql`, `migration_v7.sql`.
 
 ## Nâng cấp từ bản 3 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql` và `migration_v6.sql`. Không đổi dữ liệu, không cần nạp lại gì.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`. Không đổi dữ liệu, không cần nạp lại gì.
 
 ## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`, `migration_v5.sql`, `migration_v6.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`, `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
 3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
@@ -260,9 +277,9 @@ Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (
 
 Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột theo tên tiêu đề. Chọn Team (CVRM hoặc WHC) ở header trước khi nạp giá, account, target, file FC: dữ liệu ghi cho team đó, không đụng team kia.
 
-1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND)
+1. **Bảng giá & SKU:** Brand · SKU · Giá/box (VND) · New launch (tuỳ chọn: x cho SKU chưa có target)
 2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
-3. **Raw sales** (mỗi team 1 ô: CVRM, WHC): file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5).
+3. **Raw sales** (mỗi team 1 ô: CVRM, WHC): file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5). Mỗi lần nạp, app cập nhật danh mục khách hàng và kênh Gov / Priv / Clinic dùng cho New launch (bản 4.9).
 4. **Target:** file Target Allocation của Bayer (sheet Account, có cột REP: target theo MR), hoặc file đơn giản Cust Code · SKU · Target quý FC (VND) (chia theo Sales ratio)
 5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
