@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.13 (13/11/2026) — Giá theo kênh, dashboard MR mới, Top account
+
+- **Giá / box theo kênh** (cần chạy `migration_v9.sql`): mỗi SKU có Giá chung + giá riêng Tender / Self-pay / Clinic (để trống = Giá chung). FC (VND) = box × giá của kênh account.
+  - Kênh giá: Tender (Khoa Dược BV công) · Self-pay (NTBV, BV tư) · Clinic (phòng khám, phòng mạch mua qua sub-dis). NT phòng khám, chuỗi PK mua trực tiếp (raw: Customer Local Group 2 = Clinic Pharmacy / Clinic Phar Dept) tính giá Self-pay vì raw cho thấy họ mua giá BV.
+  - Admin → Thành viên & giá: bảng Giá chung / Tender / Self-pay / Clinic, dưới mỗi ô là giá phổ biến nhất trong raw quý đang FC + quý trước (% số dòng). Nút **Lấy giá theo raw** điền sẵn, xem lại rồi Lưu.
+  - Giá đã nạp (raw Q3 + Q4'26 đến 09–10/11): CVRM 1 giá cho mọi kênh. WHC: Clinic thấp hơn BV ở Visanne (1,066,330 vs 1,122,453), Mirena (2,487,351 vs 2,540,843); cao hơn ở Yaz (196,190 vs 191,120), Yasmin (174,286 vs 172,800). Account có giá khác giá kênh để admin xem riêng.
+  - Excel: FC Input thêm cột **Kênh giá**; sheet SKUs có cột Giá chung · Tender · Self-pay · Clinic, công thức FC (value) lấy giá theo cột Kênh giá. File mẫu bảng giá có thêm 3 cột giá kênh; nạp file thiếu cột kênh thì giữ giá kênh cũ.
+- **Dashboard MR:** thêm 3 thẻ việc cần xử lý (account dưới target, FC cao hơn TB 2Q, chưa nhập FC / chưa có đơn). By account theo merge code, lọc Tất cả / BV công / BV tư / Clinic, có cột Type BV, kênh, % FC, Gr vs LYSP, Gr vs quý trước, rủi ro; bấm account mở chi tiết BV (phần của MR theo ratio). Thêm bảng By type BV cạnh By channel.
+- **Dashboard RFFM:** Overview bỏ bảng By brand cũ (đã có bảng Forecast theo brand). Tab mới **Top account**: xem theo Type BV (BV công / BV tư / Clinic, có target, %Ach, gap, rủi ro) hoặc theo kênh (Tender / Self-pay / Clinic, account BV công tách mã Khoa Dược và mã NTBV); mỗi nhóm có thẻ FC, % FC, số account chiếm 80% FC, top account; bảng xếp theo FC / target / gap / growth. Chi tiết BV không chia MR nữa: mỗi brand 1 dòng (cộng mọi MR), thêm Gr vs LYSP, Gr vs quý trước.
+
 ## Phiên bản 4.12 (13/11/2026) — Type BV + kênh theo raw, New launch theo merge code
 
 - **Type BV** (BV công / BV tư / Clinic) và **kênh** (Tender / Self-pay / Clinic) lấy theo Customer Local Group 1 Desc (hoặc Channel_name nếu raw không có cột này), Group 2, Group 3:

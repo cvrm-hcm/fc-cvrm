@@ -58,7 +58,10 @@ create table if not exists public.prices (
   brand  text not null,
   price  numeric not null,
   team   text not null default 'CVRM',
-  launch boolean not null default false     -- SKU new launch (chưa có target): FC nhập riêng, không tính vào %Ach (bản 7)
+  launch boolean not null default false,    -- SKU new launch (chưa có target): FC nhập riêng, không tính vào %Ach (bản 7)
+  price_tender  numeric,                     -- giá riêng từng kênh, trống = price (bản 9)
+  price_selfpay numeric,
+  price_clinic  numeric
 );
 
 -- Team: mỗi team có ngày dữ liệu raw sales và giá trị REP Group riêng (bản 6)
@@ -276,7 +279,7 @@ end $$;
 -- Hàm hỗ trợ quyền đọc
 -- App đọc số này để biết database đã ở bản mấy
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 8 $$;
+  language sql immutable set search_path = '' as $$ select 9 $$;
 
 -- SKU new launch? (bản 7)
 create or replace function public.is_launch_sku(s text) returns boolean
