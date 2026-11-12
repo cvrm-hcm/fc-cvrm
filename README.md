@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.10 (12/11/2026) — Merge code: tính theo account Bayer
+
+Bayer giao target theo account (merge code), không theo kênh. App gộp mã Khoa Dược (tender / BHYT) và mã NTBV của cùng một BV thành 1 merge code theo cách của Commex: mã Khoa Dược là merge code, mã NTBV / dịch vụ gộp vào.
+
+- **FC Input:** mỗi account 1 dòng merge code (target, FC, %Ach, growth của cả account) → bên dưới là dòng mã Tender (mã gốc) rồi mã NTBV → các SKU. MR vẫn nhập FC theo từng mã như cũ.
+- **Target, %Ach, growth, cảnh báo lệch TB 2Q, "chưa nhập"** tính theo MR × merge code × SKU (cộng các mã). Số hiện ở dòng SKU của mã gốc, dòng mã còn lại ghi "·". Cảnh báo và lý do chỉ cần 1 lần ở dòng mã gốc, có ghi "(merge code)". Chuyển FC giữa Tender và NTBV không còn bị cảnh báo sai.
+- **Cả team, Dashboard (By account, Risk), chi tiết account, Excel** (cột Merge Code · Merge Name ở FC Input, RFFM_By Account / MR_By Account gộp theo merge code, Risk accounts có cột các mã KH) đều theo merge code.
+- **Admin → Kỳ & nạp dữ liệu → Merge code:** nạp file *Mapping Channel* của Commex (Customer Code · Merge Code2 · Merge Name 1) hoặc file tải từ nút *File mẫu* (Merge Code · Merge Name · Customer Code · Customer Name · Nguồn · Ghi chú). Nạp = thay toàn bộ danh sách. Muốn sửa: tải file mẫu (là danh sách đang dùng), sửa, nạp lại.
+- **DB bản 8** (`migration_v8.sql`): bảng `cust_merge` (thành viên đọc, chỉ admin ghi).
+
 ## Phiên bản 4.9.1 (12/11/2026) — Phân bổ New launch
 
 - **Admin → Phân bổ account** có cả dòng New launch: lọc "New launch", sửa MR / ratio / kênh Gov · Priv · Clinic từng dòng, cảnh báo khi tổng ratio ≠ 1.
@@ -235,15 +245,22 @@ Phân quyền chặn ở database (Row Level Security), đã test trên Postgres
 - MR chỉ đọc được số của mình (bản 4): account, sales, target, FC, trạng thái nộp.
 - MR không tự duyệt được, không ghi được dòng của MR khác, không sửa được sau khi đã duyệt hoặc khi kỳ đã khóa.
 - New launch (bản 7): MR chỉ thêm / đổi kênh / xoá dòng SKU New launch của chính mình; không tự thêm được dòng SKU có target (vẫn qua Đề xuất account).
+- Merge code (bản 8): mọi thành viên đọc được, chỉ admin nạp / sửa.
 - RFFM không ghi được FC.
 - Người ngoài danh sách team đọc 0 dòng.
 - Mọi thay đổi FC đều được ghi vào `fc_history` (lần app tự trừ sales vào FC ghi `src = auto`, chỉ admin chạy được).
+
+## Nâng cấp từ bản 7 (đang chạy)
+
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v8.sql` → **Run**. Kết quả cuối file: `db_version = 8`. Không đổi dữ liệu đang có.
+2. Admin → Kỳ & nạp dữ liệu → **Merge code**: nạp file Mapping Channel của Commex hoặc file merge đã rà.
 
 ## Nâng cấp từ bản 6 (đang chạy)
 
 1. Supabase → **SQL Editor** → dán toàn bộ `migration_v7.sql` → **Run**. Kết quả cuối file: `db_version = 7`. Không đổi dữ liệu đang có.
 2. Admin → **Thành viên & giá**: tick **New launch** cho Qlaira; thêm 2 SKU Firialta đúng tên trong raw (chưa có giá thì để trống), tick New launch → Lưu.
 3. Admin → Kỳ & nạp dữ liệu: nạp lại **Raw sales** từng team để app có danh mục khách hàng và tự điền kênh Gov / Priv / Clinic.
+4. Làm tiếp phần Nâng cấp từ bản 7.
 
 ## Nâng cấp từ bản 5 (đang chạy)
 
@@ -251,15 +268,15 @@ Supabase → **SQL Editor** → dán toàn bộ `migration_v6.sql` → **Run**. 
 
 ## Nâng cấp từ bản 4 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run** (kết quả `db_version = 5`, `cot_moi = 2`), rồi chạy tiếp `migration_v6.sql`, `migration_v7.sql`.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v5.sql` → **Run** (kết quả `db_version = 5`, `cot_moi = 2`), rồi chạy tiếp `migration_v6.sql`, `migration_v7.sql`, `migration_v8.sql`.
 
 ## Nâng cấp từ bản 3 (đang chạy)
 
-Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`. Không đổi dữ liệu, không cần nạp lại gì.
+Supabase → **SQL Editor** → dán toàn bộ `migration_v4.sql` → **Run** (kết quả cuối file: 8 dòng `scoped read` + 3 dòng `member read`), rồi chạy tiếp `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`, `migration_v8.sql`. Không đổi dữ liệu, không cần nạp lại gì.
 
 ## Nâng cấp từ bản 1 hoặc 2 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`, `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v3.sql` (đã gồm bản 2) → **Run**, sau đó chạy tiếp `migration_v4.sql`, `migration_v5.sql`, `migration_v6.sql`, `migration_v7.sql`, `migration_v8.sql`. Chạy lại nhiều lần không sao. Bước này giữ nguyên thành viên, giá, account, target, FC đã nhập và trạng thái nộp.
 2. Mở app, Ctrl+Shift+R. Nếu còn thấy màn hình "Cần nâng cấp database" thì kiểm tra lại bước 1.
 3. Vào Admin → Kỳ & nạp dữ liệu → **nạp lại Raw sales** (bản 2+ lưu sales theo tháng + số box) và **nạp file Target Allocation** của Bayer.
 4. Vào Admin → FC lịch sử & chốt kỳ → nạp `3_FC_lich_su_Q3_2026.xlsx` để có ngay độ chính xác FC Q3'26.
@@ -286,7 +303,8 @@ Nạp theo thứ tự. Mỗi mục có nút *File mẫu*, và app tự dò cột
 2. **Danh sách account × SKU × MR:** REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Kênh. Nhận được cả sheet FC Input của file Excel v2.
 3. **Raw sales** (mỗi team 1 ô: CVRM, WHC): file export Power BI để nguyên. App lưu theo tháng và tự lấy ngày hóa đơn mới nhất. Tick sẵn "Tự trừ sales mới vào FC": giữ FC quý từng dòng, phần sales vượt / thấp hơn FC tháng tự dời sang tháng còn lại (bản 4.5). Mỗi lần nạp, app cập nhật danh mục khách hàng và kênh Gov / Priv / Clinic dùng cho New launch (bản 4.9).
 4. **Target:** file Target Allocation của Bayer (sheet Account, có cột REP: target theo MR), hoặc file đơn giản Cust Code · SKU · Target quý FC (VND) (chia theo Sales ratio)
-5. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
+5. **Merge code:** file Mapping Channel của Commex hoặc file mẫu (Merge Code · Merge Name · Customer Code). Nạp = thay toàn bộ.
+6. **FC lịch sử** (tab FC lịch sử & chốt kỳ): Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1–3 (box)
 
 ## Quy trình mỗi quý
 

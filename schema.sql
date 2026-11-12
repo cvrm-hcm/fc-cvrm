@@ -1,7 +1,7 @@
 -- =====================================================================
--- FC Sale CVRM HCM — Supabase schema v7 (2 team CVRM / WHC, New launch) + Row Level Security
+-- FC Sale CVRM HCM — Supabase schema v8 (2 team CVRM / WHC, New launch, merge code) + Row Level Security
 -- CÀI MỚI: chạy 1 lần trong Supabase → SQL Editor, sửa dòng INSERT admin ở cuối.
--- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → v4 → v5 → v6 → v7; bản 3 chạy v4 → v5 → v6 → v7; bản 4 chạy v5 → v6 → v7; bản 5 chạy v6 rồi v7; bản 6 chỉ chạy migration_v7.sql.
+-- ĐANG CHẠY BẢN CŨ: bản 1–2 chạy migration_v3.sql → v4 → v5 → v6 → v7 → v8; bản 3 chạy v4 → … → v8; bản 4 chạy v5 → v6 → v7 → v8; bản 5 chạy v6 → v7 → v8; bản 6 chạy v7 rồi v8; bản 7 chỉ chạy migration_v8.sql.
 -- Quyền:
 --   * Chỉ email có trong team_members mới đọc được dữ liệu.
 --   * MR: chỉ xem số của mình (account, sales, target, FC, trạng thái nộp);
@@ -112,6 +112,18 @@ create table if not exists public.customers (
   sector     text,          -- Customer Local Group 3 Desc: GOV'T. ENTITIES / Private entities
   updated_at timestamptz not null default now()
 );
+
+-- Merge code (bản 8): mã KH → account Bayer. Mã Khoa Dược / BHYT của BV là merge code, mã NTBV / dịch vụ / mã trùng gộp vào.
+-- App tính target, %Ach, cảnh báo theo merge code; FC vẫn nhập theo từng mã.
+create table if not exists public.cust_merge (
+  cust_code  text primary key,
+  merge_code text not null,
+  merge_name text,
+  source     text,          -- Commex / Claude (suy luận) / File
+  note       text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists cust_merge_merge_code_idx on public.cust_merge (merge_code);
 
 create table if not exists public.accounts_seen (
   cust_code text not null,
@@ -248,15 +260,15 @@ create trigger trg_stamp_mapping before insert on public.mapping for each row ex
 do $$
 declare t text;
 begin
-  foreach t in array array['team_members','settings','prices','teams','customers','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
+  foreach t in array array['team_members','settings','prices','teams','customers','cust_merge','mapping','sales_agg','accounts_seen','targets','fc_entries','fc_history','fc_archive','submissions'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "member read" on public.%I', t);
     execute format('drop policy if exists "scoped read" on public.%I', t);
     execute format('drop policy if exists "admin write" on public.%I', t);
     execute format('create policy "admin write" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
-  -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá, danh mục khách hàng (không có doanh số)
-  foreach t in array array['team_members','settings','prices','teams','customers'] loop
+  -- Ai trong team cũng đọc được: tên / vai trò, kỳ FC, bảng giá, danh mục khách hàng, merge code (không có doanh số)
+  foreach t in array array['team_members','settings','prices','teams','customers','cust_merge'] loop
     execute format('create policy "member read" on public.%I for select to authenticated using (public.is_member())', t);
   end loop;
 end $$;
@@ -264,7 +276,7 @@ end $$;
 -- Hàm hỗ trợ quyền đọc
 -- App đọc số này để biết database đã ở bản mấy
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 7 $$;
+  language sql immutable set search_path = '' as $$ select 8 $$;
 
 -- SKU new launch? (bản 7)
 create or replace function public.is_launch_sku(s text) returns boolean

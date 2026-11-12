@@ -156,6 +156,13 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .t th.stick{z-index:3;background:#f7f8fa}
 .t tr td.stick{background:#fff}
 .t tr.acc td.stick{background:#f3f6fb}
+/* Merge code: dòng merge (account Bayer) → mã Tender / NTBV → SKU */
+.t tr.mg td{background:#e6edf8;font-weight:600;border-top:2px solid #c3d1ea;color:var(--ink)}
+.t tr.mg td.stick{background:#e6edf8}
+.t tr.acc.mcode td{background:#f7f9fc;font-weight:500;border-top:1px solid var(--line2)}
+.t tr.acc.mcode td.stick{background:#f7f9fc;padding-left:14px}
+.mgi{color:#8a96a8;margin-right:5px;font-weight:400}
+.t tr.msub td:not(.stick):not(.in){color:var(--ink2)}
 .t tr.tot td.stick{background:#eef1f6}
 /* Tab FC Input: cột Account / SKU xuống dòng thay vì kéo rộng bảng; màn hình hẹp (iPhone xoay ngang) cột này hẹp hơn */
 #fc-body .t td.stick{white-space:normal;max-width:320px;min-width:180px}
@@ -201,6 +208,10 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .mcards .acc{background:#fff;border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
 .mcards .acc-h{background:#f3f6fb;padding:8px 12px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
 .mcards .sku{padding:8px 12px;border-top:1px solid var(--line2)}
+.mcards .mgc>.acc-h{background:#e6edf8}
+.mcards .mcode{border-top:1px solid var(--line)}
+.mcards .mcode-h{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;background:#f7f9fc;font-size:13px;font-weight:500}
+.mcards .mcode .sku{padding-left:20px}
 .mcards .sku .n{font-weight:500;font-size:13px}
 .mcards .sku .meta{font-size:12px;color:var(--ink2);display:flex;gap:4px 10px;flex-wrap:wrap;margin:2px 0 6px}
 .mcards .sku .ins{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -832,13 +843,24 @@ function seedDemo(){
       if (i % 3 !== 2) fc[mid] = {m1: null, m2: lv + 4, m3: lv + 6, note: '', reason: null, updated_at: '2026-11-04T03:00:00Z', updated_by: ''}; }
   }
   const teams = [{team: 'CVRM', name: 'CVRM', sort: 1, team_filter: 'CVRM', data_as_of: settings.data_as_of}, {team: 'WHC', name: 'WHC', sort: 2, team_filter: 'WHC', data_as_of: '2026-11-05'}];
-  return {settings, members, prices, mapping, sales, seen, archive, teams, customers, targets: {[pkey(2026, 4)]: targets}, fc: {[pkey(2026, 4)]: fc}, subs: {[pkey(2026, 4)]: subs}, nextId: id};
+  // Merge code (demo, bản 4.10): mỗi MR CVRM 1 cặp BV + Nhà thuốc BV gộp 1 merge code (mã BV), target chuyển hết về mã BV như cách Bayer giao
+  const merges = [];
+  { const acc = new Map(); mapping.filter(m => (m.team || 'CVRM') === 'CVRM' && !/^FIRIALTA/.test(m.sku)).forEach(m => { if (!acc.has(m.cust_code)) acc.set(m.cust_code, m); });
+    for (const rep of reps){ const mine = [...acc.values()].filter(m => m.rep_name === rep), bv = mine.find(m => /^Benh Vien/.test(m.cust_name)), nt = mine.find(m => /^Nha Thuoc BV/.test(m.cust_name));
+      if (!bv || !nt) continue; const mn = bv.cust_name.replace(/\s+\d+$/, ''), ntName = 'Nha Thuoc ' + mn;
+      mapping.forEach(m => { if (m.cust_code === nt.cust_code){ m.cust_name = ntName; m.channel = 'Self-pay'; } else if (m.cust_code === bv.cust_code) m.channel = 'Tender'; }); customers.forEach(c => { if (c.cust_code === nt.cust_code) c.cust_name = ntName; });
+      merges.push({cust_code: bv.cust_code, merge_code: bv.cust_code, merge_name: mn, source: 'demo'}, {cust_code: nt.cust_code, merge_code: bv.cust_code, merge_name: mn, source: 'demo', note: 'NTBV gộp vào mã BV'});
+      const has = new Set(mapping.filter(m => m.cust_code === bv.cust_code).map(m => m.sku));
+      targets.forEach(t => { if (t.cust_code === nt.cust_code && has.has(t.sku)){ const b = targets.find(x => x.cust_code === bv.cust_code && x.sku === t.sku); if (b){ b.value += t.value; t.value = 0; } } });
+    }
+    for (let k = targets.length - 1; k >= 0; k--) if (!targets[k].value) targets.splice(k, 1); }
+  return {settings, members, prices, mapping, sales, seen, archive, teams, customers, merges, targets: {[pkey(2026, 4)]: targets}, fc: {[pkey(2026, 4)]: fc}, subs: {[pkey(2026, 4)]: subs}, nextId: id};
 }
 
 /* =========================================================
    3. LỚP LƯU TRỮ — Demo (trình duyệt) / Cloud (Supabase)
    ========================================================= */
-const LS_KEY = 'fcapp_demo_v4';   // v4: thêm dữ liệu demo New launch (bản 4.9)
+const LS_KEY = 'fcapp_demo_v5';   // v5: thêm merge code demo (bản 4.10)
 class DemoStore {
   constructor(){ this.db = lsGet(LS_KEY) || seedDemo(); this.persist(); this.user = lsGet(LS_KEY + '_user'); }
   persist(){ lsSet(LS_KEY, this.db); }
@@ -848,7 +870,7 @@ class DemoStore {
   async loadAll(){
     const d = this.db; const pk = pkey(d.settings.year, d.settings.quarter);
     return {settings: {...d.settings}, members: d.members, prices: d.prices, mapping: d.mapping, sales: d.sales, seen: d.seen, archive: d.archive || [],
-      targets: d.targets[pk] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}, teams: d.teams || TEAM_DEF.slice(0, 1).map(t => ({...t, data_as_of: d.settings.data_as_of})), customers: d.customers || [], dbv: 7};
+      targets: d.targets[pk] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}, teams: d.teams || TEAM_DEF.slice(0, 1).map(t => ({...t, data_as_of: d.settings.data_as_of})), customers: d.customers || [], merges: d.merges || [], dbv: 8};
   }
   async customerNames(){ const m = new Map(); [...this.db.mapping, ...(this.db.seen || [])].forEach(x => { if (x.cust_name && !m.has(x.cust_code)) m.set(x.cust_code, x.cust_name); }); return [...m]; }
   async saveFC(period, mid, rec){ const t = (this.db.fc[period] ||= {}); t[mid] = {...rec, ...keepAuto(t[mid], rec), updated_at: nowIso(), updated_by: this.user}; this.persist(); }
@@ -881,12 +903,13 @@ class DemoStore {
   async addMappingRows(rows){ const out = rows.map(r => ({...r, team: r.team || 'CVRM', status: r.status || 'active', id: this.db.nextId++})); this.db.mapping.push(...out); this.persist(); return out; }
   async updateMappingRows(ids, patch){ const s = new Set(ids); this.db.mapping.forEach(m => { if (s.has(m.id)) Object.assign(m, patch); }); this.persist(); }
   async saveCustomers(list){ const m = new Map((this.db.customers || []).map(c => [c.cust_code, c])); list.forEach(c => m.set(c.cust_code, {...(m.get(c.cust_code) || {}), ...c})); this.db.customers = [...m.values()]; this.persist(); }
+  async saveMerges(list){ this.db.merges = list.map(m => ({...m})); this.persist(); }
   reset(){ this.db = seedDemo(); this.persist(); }
 }
 
 // Khoá chính từng bảng: đọc theo trang thì xếp theo khoá chính để các trang không trùng / sót dòng
 const PKS = {sales_agg: ['cust_code', 'sku', 'year', 'month'], accounts_seen: ['cust_code', 'sku'], fc_archive: ['period', 'rep_name', 'cust_code', 'sku'], targets: ['period', 'rep_name', 'cust_code', 'sku'],
-  fc_entries: ['period', 'mapping_id'], submissions: ['period', 'rep_name'], team_members: ['email'], prices: ['sku'], settings: ['id'], customers: ['cust_code']};
+  fc_entries: ['period', 'mapping_id'], submissions: ['period', 'rep_name'], team_members: ['email'], prices: ['sku'], settings: ['id'], customers: ['cust_code'], cust_merge: ['cust_code']};
 class CloudStore {
   constructor(sb){ this.sb = sb; }
   async currentEmail(){ const {data} = await this.sb.auth.getSession(); return data.session?.user?.email?.toLowerCase() || null; }
@@ -919,12 +942,12 @@ class CloudStore {
     await this.checkSchema();
     const st = await this.all('settings'); const settings = st[0] || {year: new Date().getFullYear(), quarter: Math.floor(new Date().getMonth() / 3) + 1, locked: false, team_filter: 'CVRM', exclude_keywords: 'Vacant,New MR,Uncovered'};
     const pk = pkey(settings.year, settings.quarter);
-    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows, dbv, teams, customers] = await Promise.all([
+    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows, dbv, teams, customers, merges] = await Promise.all([
       this.all('team_members'), this.all('prices'), this.all('mapping', '*', q => q.order('id')), this.all('sales_agg'), this.all('accounts_seen'), this.all('fc_archive'),
       this.all('targets', '*', q => q.eq('period', pk)), this.all('fc_entries', '*', q => q.eq('period', pk)), this.all('submissions', '*', q => q.eq('period', pk)), this.dbVersion(), this.all('teams'),
-      this.all('customers').catch(() => [])]);   // bảng customers có từ DB bản 7
+      this.all('customers').catch(() => []), this.all('cust_merge').catch(() => [])]);   // customers có từ DB bản 7, cust_merge từ bản 8
     const fc = {}; fcRows.forEach(r => fc[r.mapping_id] = r); const subs = {}; subRows.forEach(r => subs[r.rep_name] = r);
-    return {settings, members, prices, mapping, sales, seen, archive, targets, fc, subs, dbv, teams, customers};
+    return {settings, members, prices, mapping, sales, seen, archive, targets, fc, subs, dbv, teams, customers, merges};
   }
   // Bản 4 (migration_v4.sql): MR chỉ đọc được số của mình. Bản 5 (migration_v5.sql): tự trừ sales mới vào FC. 0 = database chưa nâng cấp.
   async dbVersion(){ const {data, error} = await this.sb.rpc('app_db_version'); return error ? 0 : num(data); }
@@ -965,6 +988,7 @@ class CloudStore {
   // New launch (DB bản 7): MR thêm BV của mình (status active, SKU new launch), đổi kênh; admin ghi danh mục khách hàng khi nạp raw
   async addMappingRows(rows){ const {data, error} = await this.sb.from('mapping').insert(rows.map(({id, proposed_by, ...r}) => r)).select(); if (error) throw error; return data; }
   async updateMappingRows(ids, patch){ for (let i = 0; i < ids.length; i += 200){ const {error} = await this.sb.from('mapping').update(patch).in('id', ids.slice(i, i + 200)); if (error) throw error; } }
+  async saveMerges(list){ await this.wipe('cust_merge', 'cust_code'); await this.chunked('cust_merge', list.map(m => ({cust_code: m.cust_code, merge_code: m.merge_code, merge_name: m.merge_name || null, source: m.source || null, note: m.note || null, updated_at: nowIso()}))); }
   async saveCustomers(list){ await this.chunked('customers', list.map(c => ({cust_code: c.cust_code, cust_name: c.cust_name || null, segment: c.segment || null, channel: c.channel || null, cust_group: c.cust_group || null, sector: c.sector || null, updated_at: nowIso()})), {onConflict: 'cust_code'}); }
 }
 
@@ -979,7 +1003,7 @@ let P = [], PK = '', MS = [], MST = [], ROWS = [], SQ = new Map(), PRICE = new M
 // 2 team (bản 4.7): ALLROWS = mọi dòng được xem; ROWS = dòng của team đang chọn ở header. TC[team] = ngày dữ liệu, trạng thái tháng của team.
 let ALLROWS = [], TEAMS = ['CVRM'], TC = {}, SKU_TEAM = new Map(), TGT_ALL = [];
 // New launch (bản 4.9): NLROWS = dòng SKU new launch của team đang xem (tách khỏi ROWS); NLSKU = SKU new launch; CUST = danh mục khách hàng (raw)
-let NLROWS = [], NLSKU = new Set(), CUST = new Map();
+let NLROWS = [], NLSKU = new Set(), CUST = new Map(), MERGE = new Map();
 function derive(r){
   const f = r.f || {}; const pr = r.price || 0; const raw = [f.m1, f.m2, f.m3]; const has = v => v !== null && v !== undefined && v !== '';
   // Tháng đã chốt: FC khóa = thực tế. Tháng đang chạy: số lưu = FC cả tháng, MR nhập phần từ ngày sau ngày dữ liệu → cả tháng = đã lên + còn lại. Tháng tới: FC cả tháng.
@@ -990,15 +1014,51 @@ function derive(r){
   r.fcvM = mst.map((st, i) => st === 'closed' ? r.actM[i] : st === 'current' ? r.actM[i] + num(r.rem[i]) * pr : num(raw[i]) * pr);
   r.box = r.boxM[0] + r.boxM[1] + r.boxM[2]; r.fcv = r.fcvM[0] + r.fcvM[1] + r.fcvM[2];
   r.filled = mst.every(st => st === 'closed') || mst.some((st, i) => st !== 'closed' && has(raw[i]));
-  r.flag = '';
-  if (r.filled && !r.nl && Math.max(r.baseV, r.fcv) >= RULE.min){   // New launch: chưa có lịch sử, không bắt lý do lệch TB 2Q
-    if (!r.baseV) r.flag = 'Có FC nhưng 2Q gần nhất chưa có sales';
-    else if (!r.fcv) r.flag = 'FC = 0 trong khi đang có sales';
-    else { const dv = r.fcv / r.baseV - 1; if (Math.abs(dv) > RULE.pct) r.flag = `FC ${dv > 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(dv))}`; }
-  }
+  r.flag = r.nl ? '' : fcFlag(r.filled, r.fcv, r.baseV);   // New launch: chưa có lịch sử, không bắt lý do lệch TB 2Q
   r.needReason = !!r.flag && !(f.reason && (f.reason !== OTHER || norm(f.note)));
   r.unfilledHist = !r.nl && !r.filled && (r.baseV >= RULE.min || r.tgt >= RULE.min);
   return r;
+}
+// Cảnh báo FC lệch TB 2Q (dòng hoặc merge code): bắt lý do khi lệch quá RULE.pct và quy mô từ RULE.min
+function fcFlag(filled, fcv, baseV){
+  if (!filled || Math.max(baseV, fcv) < RULE.min) return '';
+  if (!baseV) return 'Có FC nhưng 2Q gần nhất chưa có sales';
+  if (!fcv) return 'FC = 0 trong khi đang có sales';
+  const dv = fcv / baseV - 1; return Math.abs(dv) > RULE.pct ? `FC ${dv > 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(dv))}` : '';
+}
+/* ---------- Merge code (bản 4.10, DB bản 8) ----------
+   Bayer giao target theo account = merge code (mã Khoa Dược / BHYT của BV, theo cách merge của Commex); mã NTBV, mã dịch vụ, mã trùng
+   gộp vào. FC vẫn nhập theo từng mã. Đơn vị đánh giá = MR × merge code × SKU: target, %Ach, Gr, cảnh báo lệch TB 2Q, "chưa nhập" tính
+   trên tổng các mã; cảnh báo / lý do gắn ở dòng mã gốc (dòng dẫn), các mã còn lại không bắt lý do riêng. */
+function mergeUnits(rows){
+  const U = new Map();
+  for (const r of rows){ r.mu = null; r.mlead = true; if (!r.mg || r.nl) continue;
+    const k = `${r.rep_name}|${r.mc}|${r.sku}`; let u = U.get(k); if (!u) U.set(k, u = []); u.push(r); }
+  for (const u of U.values()) if (u.length > 1) unitCalc(u);
+}
+function unitCalc(u){
+  const lead = u.find(r => r.cust_code === r.mc) || u.reduce((a, b) => (b.tgt + b.baseV > a.tgt + a.baseV ? b : a));
+  const m = {rows: u, lead, fcv: 0, baseV: 0, tgt: 0, tgtQ: 0, act: [0, 0, 0, 0, 0], filled: false, flag: ''};
+  for (const r of u){ m.fcv += r.fcv; m.baseV += r.baseV; m.tgt += r.tgt; m.tgtQ += r.tgtQ; for (let i = 0; i < 5; i++) m.act[i] += r.act[i]; if (r.filled) m.filled = true; }
+  const fl = fcFlag(m.filled, m.fcv, m.baseV); m.flag = fl ? fl + ' (merge code)' : '';
+  const ok = u.some(r => r.f.reason && (r.f.reason !== OTHER || norm(r.f.note)));
+  for (const r of u){ r.mu = m; r.mlead = r === lead; r.flag = r.mlead ? m.flag : ''; r.needReason = r.mlead && !!m.flag && !ok;
+    r.unfilledHist = r.mlead && !m.filled && (m.baseV >= RULE.min || m.tgt >= RULE.min); }
+  return m;
+}
+// Số hiển thị ở dòng SKU: dòng trong merge code thì %Ach / Gr / target tính theo tổng các mã, chỉ hiện ở dòng mã gốc
+const rowTgt = r => r.mu ? (r.mlead ? r.mu.tgt : 0) : r.tgt;
+const rowAch = r => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? ratio(m ? m.fcv : r.fcv, rowTgt(r)) : null; };
+const rowGr = (r, i) => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? growth(m ? m.fcv : r.fcv, m ? m.act[i] : r.act[i]) : null; };
+const MTIP = r => r.mu ? (r.mlead ? `Tính theo merge code ${r.mc}: cộng ${r.mu.rows.length} mã (${r.mu.rows.map(x => x.cust_code).join(' + ')})` : `Tính chung ở dòng mã ${r.mu.lead.cust_code} (merge code ${r.mc})`) : '';
+// Vẽ lại ô cảnh báo / lý do / %Ach / Gr của 1 dòng (và các dòng cùng merge code) sau khi nhập
+function paintRow(r, editable = true){
+  $$(`[data-flag="${r.id}"]`).forEach(x => x.textContent = r.flag ? '⚠ ' + r.flag : '');
+  $$(`[data-ach="${r.id}"]`).forEach(x => x.innerHTML = achHtml(rowAch(r)));
+  const gly = $(`[data-gly="${r.id}"]`); if (gly) gly.innerHTML = grHtml(rowGr(r, 0));
+  const gq = $(`[data-gq="${r.id}"]`); if (gq) gq.innerHTML = grHtml(rowGr(r, 3));
+  const rs = $(`[data-rs="${r.id}"]`);
+  if (rs){ const sel = $('select', rs); if (sel && (r.flag || r.f.reason)) sel.classList.toggle('need', r.needReason); else rs.innerHTML = reasonCell(r, editable, MOBILE()); }
 }
 // MR chỉ thấy số của mình: lọc dữ liệu đã tải theo đúng quy tắc quyền đọc trên database (bản 4).
 // DB đã chạy migration_v4 thì server chỉ trả về đúng phần này; ở demo hoặc DB chưa nâng cấp thì lọc tại đây.
@@ -1032,6 +1092,7 @@ function build(){
   TGT_ALL = D.targets.filter(t => t.rep_name && !mapKeys.has(`${lc(t.rep_name)}|${t.cust_code}|${t.sku}`) && num(t.value)).map(t => ({...t, team: t.team || SKU_TEAM.get(t.sku) || TEAMS[0]}));
   PRICE = new Map(D.prices.map(p => [p.sku, num(p.price)]));
   NLSKU = new Set(D.prices.filter(p => p.launch).map(p => p.sku)); CUST = new Map((D.customers || []).map(c => [c.cust_code, c]));
+  MERGE = mergeMap(D.merges || []);
   const ratioSum = new Map(); for (const m of D.mapping){ const k = `${m.cust_code}|${m.sku}`; ratioSum.set(k, (ratioSum.get(k) || 0) + num(m.ratio)); }
   for (const f of Object.values(D.fc)) if (f && REASON_OLD[f.reason]) f.reason = REASON_OLD[f.reason];   // nhãn lý do bản cũ → nhãn mới
   const repTeam = new Map(D.members.filter(m => m.role === 'MR').map(m => [lc(m.rep_name), memTeam(m)]));
@@ -1041,6 +1102,7 @@ function build(){
     const r = {...m, f: D.fc[m.id] || {}, price: PRICE.get(m.sku), act: q.map(x => x[0] * rt), qty: q.map(x => x[1] * rt), actM: mm.map(x => x[0] * rt), qtyM: mm.map(x => x[1] * rt), tgt: 0, tgtQ: 0};
     r.team = m.team || SKU_TEAM.get(m.sku) || repTeam.get(lc(m.rep_name)) || TEAMS[0]; if (!TEAMS.includes(r.team)) r.team = TEAMS[0]; r.mst = TC[r.team].mst;
     r.nl = NLSKU.has(m.sku); r.segment = m.segment || (r.nl ? CUST.get(m.cust_code)?.segment : null) || null;
+    const mg = MERGE.get(m.cust_code); r.mg = !!mg; r.mc = mg ? mg.merge_code : m.cust_code; r.mn = mg ? mg.merge_name : m.cust_name;
     if (tHasRep.has(k)){ const x = tRep.get(`${lc(m.rep_name)}|${k}`) || [0, 0]; r.tgt = x[0]; r.tgtQ = x[1]; } else { const x = tAcc.get(k) || [0, 0]; r.tgt = x[0] * rt; r.tgtQ = x[1] * rt; }
     r.base = Math.round((r.qty[2] + r.qty[3]) / 6); r.baseV = (r.act[2] + r.act[3]) / 2;
     r.sugM = r.mst.map((st, i) => st === 'closed' ? Math.round(r.qtyM[i]) : st === 'current' ? Math.max(Math.round(r.qtyM[i]), r.base) : r.base);
@@ -1048,7 +1110,17 @@ function build(){
     r.warn = m.status === 'proposed' ? '' : Math.abs(rs - 1) > 0.001 ? 'Tổng ratio ≠ 1' : (r.price === undefined ? 'SKU thiếu giá' : '');
     return derive(r);
   });
+  mergeUnits(ALLROWS);
   setView();
+}
+// Danh sách merge → Map mã KH → {merge_code, merge_name}; chỉ giữ nhóm từ 2 mã (mã gốc tự thêm); tên merge trống thì lấy tên mã gốc
+function mergeMap(list){
+  const g = new Map(); for (const m of list){ if (!m || !m.cust_code || !m.merge_code) continue; const mc = String(m.merge_code).trim(); if (!g.has(mc)) g.set(mc, []); g.get(mc).push(m); }
+  const out = new Map();
+  for (const [mc, ms] of g){ const codes = new Set(ms.map(m => String(m.cust_code).trim())); codes.add(mc); if (codes.size < 2) continue;
+    const nm = ms.find(m => m.merge_name)?.merge_name || D.mapping.find(x => x.cust_code === mc)?.cust_name || mc;
+    for (const c of codes) out.set(c, {merge_code: mc, merge_name: nm}); }
+  return out;
 }
 function agg(rows){
   const a = {act: [0, 0, 0, 0, 0], actM: [0, 0, 0], fcvM: [0, 0, 0], tgt: 0, fcv: 0, box: 0, n: rows.length, filled: 0, flags: 0, need: 0, unfilledHist: 0};
@@ -1172,10 +1244,10 @@ document.addEventListener('visibilitychange', () => {
 });
 // Cảnh báo admin khi database chưa chạy đủ migration: liệt kê đúng các file còn thiếu
 function dbOldNote(){
-  if (MODE !== 'cloud' || !isAdmin() || D.dbv >= 7) return '';
-  const files = [4, 5, 6, 7].filter(n => n > D.dbv).map(n => `<b>migration_v${n}.sql</b>`).join(' → ');
-  const why = D.dbv < 4 ? 'Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API.' : D.dbv < 5 ? 'Nạp raw sales mới chưa tự trừ sales vào FC.' : D.dbv < 6 ? 'Chưa tách được 2 team CVRM / WHC.' : 'Phần New launch (Firialta, Qlaira) chưa dùng được.';
-  return `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 7.</b> ${why} Mở Supabase → SQL Editor → chạy lần lượt ${files} trong repo, rồi bấm Làm mới.</div>`;
+  if (MODE !== 'cloud' || !isAdmin() || D.dbv >= 8) return '';
+  const files = [4, 5, 6, 7, 8].filter(n => n > D.dbv).map(n => `<b>migration_v${n}.sql</b>`).join(' → ');
+  const why = D.dbv < 4 ? 'Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API.' : D.dbv < 5 ? 'Nạp raw sales mới chưa tự trừ sales vào FC.' : D.dbv < 6 ? 'Chưa tách được 2 team CVRM / WHC.' : D.dbv < 7 ? 'Phần New launch (Firialta, Qlaira) chưa dùng được.' : 'Merge code (gộp mã Tender + NTBV theo account Bayer) chưa dùng được.';
+  return `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 8.</b> ${why} Mở Supabase → SQL Editor → chạy lần lượt ${files} trong repo, rồi bấm Làm mới.</div>`;
 }
 function renderMigration(detail){
   $('#app').innerHTML = `<div class="login"><h1>Cần nâng cấp database</h1><div class="sub" style="margin-top:6px">App đã lên phiên bản mới nhưng database Supabase chưa được nâng cấp.</div>
@@ -1295,7 +1367,37 @@ function fcRefreshTotals(r){
   if (st) st.innerHTML = stotRow(a, FC_VIEW.nAcc); if (sb) sb.innerHTML = stotBar(a, FC_VIEW.nAcc);
   if (!r) return; const k = r.cust_code + '|' + r.cust_name, el = $$('#fc-body [data-agk]').find(x => x.dataset.agk === k);
   if (el) setAgg(el, agg(FC_VIEW.rows.filter(x => x.cust_code + '|' + x.cust_name === k)));
+  const mg = $$('#fc-body [data-mgk]').find(x => x.dataset.mgk === r.mc); if (mg) setAgg(mg, agg(FC_VIEW.rows.filter(x => x.mc === r.mc)));
 }
+// Nhóm dòng theo merge code → từng mã KH (mã gốc trước, rồi mã lớn trước); nhóm lớn trước (target / TB 2Q)
+function mGroups(rows, sz){
+  const m = new Map();
+  for (const r of rows){ let g = m.get(r.mc); if (!g){ g = {mc: r.mc, mn: r.mn, cm: new Map()}; m.set(r.mc, g); }
+    const k = r.cust_code + '|' + r.cust_name; if (!g.cm.has(k)) g.cm.set(k, []); g.cm.get(k).push(r); }
+  return [...m.values()].map(g => { const codes = [...g.cm].map(([k, rs]) => ({k, rs: rs.sort((a, b) => sz(b) - sz(a) || a.sku.localeCompare(b.sku)), g: agg(rs)}))
+      .sort((x, y) => (x.rs[0].cust_code === g.mc ? -1 : 0) - (y.rs[0].cust_code === g.mc ? -1 : 0) || sz(y.g) - sz(x.g));
+    return {mc: g.mc, mn: g.mn, codes, a: agg(codes.flatMap(c => c.rs)), multi: codes.length > 1}; })
+    .sort((x, y) => sz(y.a) - sz(x.a) || y.a.act[4] - x.a.act[4] || String(x.mn).localeCompare(String(y.mn)));
+}
+// Cả team: đơn vị merge code × SKU (cộng mọi MR, mọi mã); %Ach / Gr / target hiện ở dòng mã gốc
+function teamUnits(lines){
+  const U = new Map(); lines.forEach(o => { o.tu = null; o.tlead = true; if (!o.rows[0].mg) return; const k = o.mc + '|' + o.sku; if (!U.has(k)) U.set(k, []); U.get(k).push(o); });
+  for (const ls of U.values()) if (ls.length > 1) tuCalc(ls);
+}
+function tuCalc(ls){
+  const lead = ls.find(o => o.cust_code === o.mc) || ls.reduce((a, b) => (b.tgt + b.base > a.tgt + a.base ? b : a));
+  const u = {lines: ls, lead, fcv: 0, tgt: 0, act: [0, 0, 0, 0, 0], filled: false};
+  for (const o of ls){ u.fcv += o.fcv; u.tgt += o.tgt; for (let i = 0; i < 5; i++) u.act[i] += o.act[i]; if (o.filled) u.filled = true; }
+  u.ach = u.filled ? ratio(u.fcv, u.tgt) : null; u.gLy = u.filled ? growth(u.fcv, u.act[0]) : null; u.gQ = u.filled ? growth(u.fcv, u.act[3]) : null;
+  ls.forEach(o => { o.tu = u; o.tlead = o === lead; }); return u;
+}
+const tTgt = o => o.tu ? (o.tlead ? o.tu.tgt : null) : o.tgt;
+const tAch = o => o.tu ? (o.tlead ? o.tu.ach : null) : o.ach;
+const tGr = (o, k) => o.tu ? (o.tlead ? o.tu[k] : null) : o[k];
+const tTip = o => o.tu ? (o.tlead ? `Tính theo merge code ${o.mc}: cộng ${o.tu.lines.length} mã (${o.tu.lines.map(x => x.cust_code).join(' + ')})` : `Tính chung ở dòng mã ${o.tu.lead.cust_code} (merge code ${o.mc})`) : '';
+function paintLine(o){ const row = $$('#fc-body [data-tl]').find(x => x.dataset.tl === o.key); if (!row) return;
+  const set = (k, h) => $$(`[data-tf="${k}"]`, row).forEach(c => c.innerHTML = h);
+  set('fcv', tr(o.fcv)); set('ach', achHtml(tAch(o))); set('gly', grHtml(tGr(o, 'gLy'))); set('gq', grHtml(tGr(o, 'gQ'))); set('flag', teamFlag(o) + teamAuto(o)); set('rs', teamRs(o)); }
 function setAgg(el, g){ const set = (f, h) => { const c = $(`[data-ag="${f}"]`, el); if (c) c.innerHTML = h; };
   set('fcv', el.tagName === 'TR' ? tr(g.fcv) : tr(g.fcv) + ' tr'); set('ach', achHtml(g.ach)); set('gly', grHtml(g.gLy)); set('gq', grHtml(g.gQ)); }
 // Cả team: gộp dòng của các MR theo account × SKU → full sale account (không chia ratio)
@@ -1310,7 +1412,7 @@ function teamCalc(o){
 }
 function teamLines(rows){
   const m = new Map();
-  for (const r of rows){ const k = r.cust_code + '|' + r.sku; let o = m.get(k); if (!o){ o = {key: k, cust_code: r.cust_code, cust_name: r.cust_name, sku: r.sku, brand: r.brand, channel: r.channel, rows: []}; m.set(k, o); } o.rows.push(r); if (!o.channel && r.channel) o.channel = r.channel; }
+  for (const r of rows){ const k = r.cust_code + '|' + r.sku; let o = m.get(k); if (!o){ o = {key: k, cust_code: r.cust_code, cust_name: r.cust_name, sku: r.sku, brand: r.brand, channel: r.channel, mc: r.mc, mn: r.mn, rows: []}; m.set(k, o); } o.rows.push(r); if (!o.channel && r.channel) o.channel = r.channel; }
   return [...m.values()].map(teamCalc);
 }
 const teamMulti = o => o.rows.length > 1;
@@ -1339,13 +1441,13 @@ function onTeamInput(el){
   const T = v === '' ? null : Number(v), parts = T === null ? o.rows.map(() => null) : splitByRatio(T, o.rows);
   o.rows.forEach((r, j) => { if (!canEdit(r.rep_name)) return; let val = parts[j]; if (val !== null && r.mst[i] === 'current') val += r.mtdBox[i];   // tháng đang chạy: lưu cả tháng = đã lên + phần chia
     const chg = fcVal(r.f[f]) !== fcVal(val); r.f = {...r.f, [f]: val, updated_at: nowIso(), ...(chg ? {auto_note: null, auto_at: null} : {})}; D.fc[r.id] = r.f; derive(r); clearTimeout(saveTimers[r.id]); saveTimers[r.id] = setTimeout(() => doSave(r.id), 700); });
-  teamCalc(o);
-  const row = $$('#fc-body [data-tl]').find(x => x.dataset.tl === o.key);
-  if (row){ const set = (k, h) => $$(`[data-tf="${k}"]`, row).forEach(c => c.innerHTML = h);
-    set('fcv', tr(o.fcv)); set('ach', achHtml(o.ach)); set('gly', grHtml(o.gLy)); set('gq', grHtml(o.gQ)); set('flag', teamFlag(o) + teamAuto(o)); set('rs', teamRs(o)); }
+  new Set(o.rows.filter(r => r.mu).map(r => r.mu)).forEach(m => unitCalc(m.rows));   // merge code: cảnh báo của từng MR tính lại trên tổng các mã
+  teamCalc(o); if (o.tu){ o.tu.lines.forEach(x => { if (x !== o) teamCalc(x); }); tuCalc(o.tu.lines); }
+  (o.tu ? o.tu.lines : [o]).forEach(paintLine);
   const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
   clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { const k = $('#fc-kpi'); if (k) k.innerHTML = fcKpiHtml(TEAM); fcRefreshTotals(null);
-    const acc = $$('#fc-body [data-agk]').find(x => x.dataset.agk === o.cust_code); if (acc) setAgg(acc, agg(FC_VIEW.rows.filter(r => r.cust_code === o.cust_code))); }, 250);
+    const acc = $$('#fc-body [data-agk]').find(x => x.dataset.agk === o.cust_code); if (acc) setAgg(acc, agg(FC_VIEW.rows.filter(r => r.cust_code === o.cust_code)));
+    const mg = $$('#fc-body [data-mgk]').find(x => x.dataset.mgk === o.mc); if (mg) setAgg(mg, agg(FC_VIEW.rows.filter(r => r.mc === o.mc))); }, 250);
 }
 // Enter / ↓: xuống ô cùng cột ở dòng dưới; Shift+Enter / ↑: lên dòng trên (như Excel). Cột = tháng (data-f ở từng MR, data-i ở Cả team)
 function onFCKey(e){
@@ -1368,13 +1470,16 @@ function viewFC(){
   // Xếp từ lớn đến bé: quy mô = số lớn hơn giữa target quý FC và TB sales 2 quý gần nhất (ổn định trong quý, không nhảy khi MR nhập FC)
   const sz = x => Math.max(x.tgt || 0, ((x.act[2] || 0) + (x.act[3] || 0)) / 2), SZ_TIP = 'Xếp từ lớn đến bé theo target hoặc TB sales 2 quý gần nhất (lấy số lớn hơn)';
   const passF = r => F === 'all' ? true : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : F === 'auto' ? !!r.f.auto_note : (r.act.some(x => x) || r.tgt || r.filled || r.status === 'proposed');
-  const passQ = r => !q || lc(`${r.cust_name} ${r.cust_code} ${r.sku}${team ? ' ' + r.rep_name : ''}`).includes(q);
+  const passQ = r => !q || lc(`${r.cust_name} ${r.cust_code} ${r.mg ? r.mn + ' ' + r.mc + ' ' : ''}${r.sku}${team ? ' ' + r.rep_name : ''}`).includes(q);
   let base = mine.filter(r => !VIEW.fcBrand || r.brand === VIEW.fcBrand), rows;
   if (team && VIEW.fcTerr){ const ks = new Set(base.filter(r => r.rep_name === VIEW.fcTerr).map(key)); base = base.filter(r => ks.has(key(r))); }   // địa bàn 1 MR: các account × SKU MR đó giữ, số của mọi MR
-  if (team){ const ks = new Set(base.filter(r => passF(r) && passQ(r)).map(key)); rows = base.filter(r => ks.has(key(r))); }
-  else rows = base.filter(r => passF(r) && passQ(r));
+  // Lọc cần lý do / lệch / chưa nhập: dòng trong merge code kéo theo các mã cùng nhóm (cảnh báo tính trên tổng các mã)
+  const sel0 = base.filter(r => passF(r) && passQ(r)), sel = new Set(sel0), bset = new Set(base);
+  if (['need', 'flag', 'empty'].includes(F)) for (const r of sel0) if (r.mu) r.mu.rows.forEach(x => { if (bset.has(x)) sel.add(x); });
+  if (team){ const ks = new Set([...sel].map(key)); rows = base.filter(r => ks.has(key(r))); }
+  else rows = base.filter(r => sel.has(r));
   const teamEdit = team && isAdmin();   // Cả team: admin sửa số tổng, app chia cho từng MR theo ratio
-  FC_VIEW = {rows, nAcc: new Set(rows.map(r => r.cust_code)).size, lines: null};
+  FC_VIEW = {rows, nAcc: new Set(rows.map(r => r.mc)).size, lines: null};   // account = merge code
   let notes = ''; const acts = [];
   if (team) notes = `<div class="note" data-tip="${esc(`Số các MR cộng lại theo account × SKU, ra full sale account (không chia ratio). Chọn Địa bàn để xem full sale các account của 1 MR.${teamEdit ? ' Số tổng tự chia cho từng MR theo ratio, ghi đè số tháng đó của từng MR.' : ''}`)}">Cả team: full sale account (cộng mọi MR, không chia ratio).<span class="dt"> ${teamEdit ? 'Admin nhập số tổng, app tự chia cho từng MR theo ratio. ' : ''}Submit, duyệt ở từng MR.</span></div>`;
   else {
@@ -1436,7 +1541,7 @@ function viewFC(){
   const mTip = i => MST[i] === 'closed' ? 'Tháng đã có Act.: FC khoá = Act. (box)' : MST[i] === 'current' ? `Chỉ nhập FC từ ${NEXT_DM} đến hết tháng. Số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM}, đã cộng sẵn vào FC.` : 'FC cả tháng (box)';
   const noteInp = r => `<input class="note" data-id="${r.id}" data-f="note" value="${esc(r.f.note ?? '')}" placeholder="Note (quota, tồn kho, BS…)" ${editable ? '' : 'disabled'}>`;
   const skuLbl = r => `${esc(r.sku)}${num(r.ratio) !== 1 ? ` <span class="sub">(ratio ${rto(r.ratio)})</span>` : ''}${r.status === 'proposed' ? ' <span class="chip pp">đề xuất</span>' : ''}${r.warn ? ` <span class="warn">${r.warn}</span>` : ''}`;
-  const chChip = c => c ? `<span class="chip lk">${esc(c)}</span>` : '';
+  const chChip = (c, mg) => c ? `<span class="chip lk">${esc(mg && c === 'Self-pay' ? 'NTBV' : c)}</span>` : '';   // trong nhóm merge: Self-pay ghi là NTBV cho khớp cách gọi Tender / NTBV
   const a0 = agg(rows), stot = `<tr class="stot">${stotRow(a0, FC_VIEW.nAcc)}</tr>`, sbar = `<div class="mstot">${stotBar(a0, FC_VIEW.nAcc)}</div>`;
   const head = `<tr><th class="l stick" data-tip="${SZ_TIP}">Account / SKU ↓</th>${P.slice(0, 4).map((p, i) => `<th class="${i < 3 ? 'ho' : ''}">${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
       ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
@@ -1444,20 +1549,29 @@ function viewFC(){
   const accCells = g => `<td data-ag="fcv">${tr(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
   if (!rows.length) body.innerHTML = `<div class="card sub">Không có dòng nào${F !== 'all' || q || VIEW.fcBrand || (team && VIEW.fcTerr) ? ' theo bộ lọc này' : ''}.</div>`;
   else if (team){
-    const lines = teamLines(rows); FC_VIEW.lines = new Map(lines.map(o => [o.key, o]));
-    const byAcc = new Map(); for (const o of lines){ if (!byAcc.has(o.cust_code)) byAcc.set(o.cust_code, []); byAcc.get(o.cust_code).push(o); }
-    const accs = [...byAcc.values()].map(ls => ({ls: ls.sort((p, x) => sz(x) - sz(p) || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
-      .sort((x, y) => sz(y.g) - sz(x.g) || y.g.act[4] - x.g.act[4] || x.ls[0].cust_name.localeCompare(y.ls[0].cust_name));
-    const accLbl = x => `${esc(x.ls[0].cust_name)} <span class="sub">${esc(x.ls[0].cust_code)} · ${x.nMR} MR</span> ${chChip(x.ls.find(o => o.channel)?.channel)}`;
-    // Thẻ mobile / dòng bảng của 1 account (các SKU, cộng mọi MR)
-    const cardHtml = x => `<div class="acc" data-agk="${esc(x.ls[0].cust_code)}"><div class="acc-h"><span>${accLbl(x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.g.ach)}</span></span></div>
-      ${x.ls.map(o => `<div class="sku" data-tl="${esc(o.key)}"><div class="n">${esc(o.sku)}</div><div class="mrs sub">${teamMRs(o)}</div>
-        <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span><span>Target: ${tr(o.tgt)}</span><span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b data-tf="fcv">${tr(o.fcv)}</b> <span data-tf="ach">${achHtml(o.ach)}</span></span></div>
+    const lines = teamLines(rows); FC_VIEW.lines = new Map(lines.map(o => [o.key, o])); teamUnits(lines);
+    // Nhóm theo merge code → mã KH → SKU (cộng mọi MR). Account 1 mã giữ như cũ.
+    const byMc = new Map(); for (const o of lines){ let g = byMc.get(o.mc); if (!g) byMc.set(o.mc, g = {mc: o.mc, mn: o.mn, cm: new Map()}); if (!g.cm.has(o.cust_code)) g.cm.set(o.cust_code, []); g.cm.get(o.cust_code).push(o); }
+    const accs = [...byMc.values()].map(g => {
+      const codes = [...g.cm.values()].map(ls => ({ls: ls.sort((p, x) => sz(x) - sz(p) || p.sku.localeCompare(x.sku)), g: agg(ls.flatMap(o => o.rows)), nMR: new Set(ls.flatMap(o => o.rows.map(r => r.rep_name))).size}))
+        .sort((x, y) => (x.ls[0].cust_code === g.mc ? -1 : 0) - (y.ls[0].cust_code === g.mc ? -1 : 0) || sz(y.g) - sz(x.g));
+      const all = codes.flatMap(c => c.ls.flatMap(o => o.rows));
+      return {mc: g.mc, mn: g.mn, codes, a: agg(all), nMR: new Set(all.map(r => r.rep_name)).size, multi: codes.length > 1}; })
+      .sort((x, y) => sz(y.a) - sz(x.a) || y.a.act[4] - x.a.act[4] || String(x.mn).localeCompare(String(y.mn)));
+    const accLbl = (c, x) => `${x.multi ? '<span class="mgi">↳</span>' : ''}${esc(c.ls[0].cust_name)} <span class="sub">${esc(c.ls[0].cust_code)}${x.multi && c.ls[0].cust_code === x.mc ? ' · mã gốc' : ''}${!x.multi && c.ls[0].rows[0].mg ? ` · merge ${esc(c.ls[0].mc)}` : ''} · ${c.nMR} MR</span> ${chChip(c.ls.find(o => o.channel)?.channel, x.multi)}`;
+    const mgLbl = x => `<b>${esc(x.mn)}</b> <span class="sub">merge ${esc(x.mc)} · ${x.codes.length} mã · ${x.nMR} MR</span>`;
+    const tTd = o => `<td data-tip="${esc(o.tu ? tTip(o) : o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : '')}">${o.tu && !o.tlead ? '<span class="muted">·</span>' : tr(tTgt(o))}</td>`;
+    // Thẻ mobile / dòng bảng (các SKU, cộng mọi MR)
+    const lineCard = o => `<div class="sku" data-tl="${esc(o.key)}"><div class="n">${esc(o.sku)}</div><div class="mrs sub">${teamMRs(o)}</div>
+        <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span><span${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>Target: ${o.tu && !o.tlead ? 'tính theo merge code' : tr(tTgt(o))}</span><span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b data-tf="fcv">${tr(o.fcv)}</b> <span data-tf="ach">${achHtml(tAch(o))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(o.ck, i)}</span></label>${tIn(o, i)}</div>`).join('')}</div>
-        <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`).join('')}</div>`;
-    const accHtml = x => `<tr class="acc" data-agk="${esc(x.ls[0].cust_code)}"><td class="l stick">${accLbl(x)}</td>${q4(x.g.act)}<td>${tr(x.g.act[4])}</td><td>${tr(x.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.g)}<td></td><td></td></tr>`
-      + x.ls.map(o => `<tr data-tl="${esc(o.key)}"><td class="l stick">&nbsp;&nbsp;${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${q4(o.act, 'act')}<td class="act">${tr(o.act[4])}</td><td data-tip="${o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : ''}">${tr(o.tgt)}</td><td class="grp muted">${o.base || '–'}</td>
-          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach">${achHtml(o.ach)}</td><td data-tf="gly">${grHtml(o.gLy)}</td><td data-tf="gq">${grHtml(o.gQ)}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`).join('');
+        <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`;
+    const cardHtml = x => `<div class="acc${x.multi ? ' mgc' : ''}" ${x.multi ? `data-mgk="${esc(x.mc)}"` : `data-agk="${esc(x.codes[0].ls[0].cust_code)}"`}><div class="acc-h"><span>${x.multi ? `${esc(x.mn)}<br><span class="sub">merge ${esc(x.mc)} · ${x.codes.length} mã · ${x.nMR} MR · target ${tr(x.a.tgt)} tr</span>` : accLbl(x.codes[0], x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.a.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
+      ${x.codes.map(c => x.multi ? `<div class="mcode" data-agk="${esc(c.ls[0].cust_code)}"><div class="mcode-h"><span>${accLbl(c, x)}</span><span data-ag="fcv">${tr(c.g.fcv)} tr</span></div>${c.ls.map(lineCard).join('')}</div>` : c.ls.map(lineCard).join('')).join('')}</div>`;
+    const lineRow = o => `<tr data-tl="${esc(o.key)}"${o.tu ? ` class="${o.tlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${o.tu || o.rows[0].mg ? '&nbsp;&nbsp;' : ''}${esc(o.sku)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${q4(o.act, 'act')}<td class="act">${tr(o.act[4])}</td>${tTd(o)}<td class="grp muted">${o.base || '–'}</td>
+          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach"${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>${achHtml(tAch(o))}</td><td data-tf="gly">${grHtml(tGr(o, 'gLy'))}</td><td data-tf="gq">${grHtml(tGr(o, 'gQ'))}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`;
+    const accHtml = x => (x.multi ? `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick">${mgLbl(x)}</td>${q4(x.a.act)}<td>${tr(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${tr(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>` : '')
+      + x.codes.map(c => `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.ls[0].cust_code)}"><td class="l stick">${accLbl(c, x)}</td>${q4(c.g.act)}<td>${tr(c.g.act[4])}</td><td>${x.multi ? '' : tr(c.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${tr(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>` + c.ls.map(lineRow).join('')).join('');
     // Vẽ trước TEAM_N account lớn nhất (theo target); "Xem thêm" nối tiếp vào bảng, không vẽ lại, không mất vị trí cuộn. Subtotal vẫn tính mọi dòng theo bộ lọc.
     const sig = [VIEW.fcTerr, VIEW.fcBrand, VIEW.fcFlt, VIEW.fcSearch].join('|'); if (VIEW.fcTeamSig !== sig){ VIEW.fcTeamSig = sig; VIEW.fcTeamN = TEAM_N; }
     const mob = MOBILE(), n0 = Math.min(accs.length, VIEW.fcTeamN);
@@ -1470,22 +1584,28 @@ function viewFC(){
     const bindMore = () => { $('#fc-more') && ($('#fc-more').onclick = () => showMore(false)); $('#fc-all') && ($('#fc-all').onclick = () => showMore(true)); };
     bindMore();
   } else {
-    const gm = new Map(); rows.forEach(r => { const k = r.cust_code + '|' + r.cust_name; if (!gm.has(k)) gm.set(k, []); gm.get(k).push(r); });
-    const groups = [...gm].map(([k, rs]) => [k, rs.sort((a, b) => sz(b) - sz(a) || a.sku.localeCompare(b.sku)), agg(rs)])
-      .sort((x, y) => sz(y[2]) - sz(x[2]) || y[2].act[4] - x[2].act[4] || x[1][0].cust_name.localeCompare(y[1][0].cust_name));
-    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(([k, rs, g]) => { return `<div class="acc" data-agk="${esc(k)}"><div class="acc-h"><span>${esc(rs[0].cust_name)}<br><span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(g.fcv)} tr</span><br><span data-ag="ach">${achHtml(g.ach)}</span></span></div>
-      ${rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}</div>
-        <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span><span>Target: ${tr(r.tgt)}</span><span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</span></span></div>
+    // Từng MR: nhóm theo merge code → mã KH (Tender / NTBV) → SKU. Account 1 mã giữ như cũ (account → SKU).
+    const groups = mGroups(rows, sz);
+    const tgtTd = r => `<td data-tip="${esc(r.mu ? MTIP(r) : r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : '')}">${r.mu && !r.mlead ? '<span class="muted">·</span>' : tr(rowTgt(r))}</td>`;
+    const skuCard = r => `<div class="sku${r.mu ? (r.mlead ? ' mlead' : ' msub') : ''}"><div class="n">${skuLbl(r)}</div>
+        <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span><span${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>Target: ${r.mu && !r.mlead ? 'tính theo merge code' : tr(rowTgt(r))}</span><span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(rowAch(r))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
-        <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`).join('')}</div>`; }).join('')}</div>`;
-    else { let html = '';
-      for (const [k, rs, g] of groups){
-        html += `<tr class="acc" data-agk="${esc(k)}"><td class="l stick">${esc(rs[0].cust_name)} <span class="sub">${esc(rs[0].cust_code)}</span> ${chChip(rs[0].channel)}</td>${q4(g.act)}<td>${tr(g.act[4])}</td><td>${tr(g.tgt)}</td>
-          <td class="grp"></td><td colspan="3"></td>${accCells(g)}<td></td><td></td></tr>`;
-        for (const r of rs){
-          html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${tr(r.act[4])}</td><td data-tip="${r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : ''}">${tr(r.tgt)}</td><td class="grp muted">${r.base || '–'}</td>
-            ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}">${achHtml(r.filled ? ratio(r.fcv, r.tgt) : null)}</td><td data-gly="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[0]) : null)}</td><td data-gq="${r.id}">${grHtml(r.filled ? growth(r.fcv, r.act[3]) : null)}</td>
+        <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`;
+    const codeLbl = (c, x) => `${esc(c.rs[0].cust_name)} <span class="sub">${esc(c.rs[0].cust_code)}${x.multi && c.rs[0].cust_code === x.mc ? ' · mã gốc' : ''}${!x.multi && c.rs[0].mg ? ` · merge ${esc(c.rs[0].mc)}` : ''}</span> ${chChip(c.rs[0].channel, x.multi)}`;
+    const skuRow = (r, deep) => `<tr${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${tr(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
+            ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}"${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${achHtml(rowAch(r))}</td><td data-gly="${r.id}">${grHtml(rowGr(r, 0))}</td><td data-gq="${r.id}">${grHtml(rowGr(r, 3))}</td>
             <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
+    if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(x => x.multi
+      ? `<div class="acc mgc" data-mgk="${esc(x.mc)}"><div class="acc-h"><span>${esc(x.mn)}<br><span class="sub">merge ${esc(x.mc)} · ${x.codes.length} mã · target ${tr(x.a.tgt)} tr</span></span><span style="text-align:right"><span data-ag="fcv">${tr(x.a.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
+        ${x.codes.map(c => `<div class="mcode" data-agk="${esc(c.k)}"><div class="mcode-h"><span>↳ ${codeLbl(c, x)}</span><span data-ag="fcv">${tr(c.g.fcv)} tr</span></div>${c.rs.map(skuCard).join('')}</div>`).join('')}</div>`
+      : x.codes.map(c => `<div class="acc" data-agk="${esc(c.k)}"><div class="acc-h"><span>${esc(c.rs[0].cust_name)}<br><span class="sub">${esc(c.rs[0].cust_code)}${c.rs[0].mg ? ` · merge ${esc(c.rs[0].mc)}` : ''}</span> ${chChip(c.rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(c.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(c.g.ach)}</span></span></div>${c.rs.map(skuCard).join('')}</div>`).join('')).join('')}</div>`;
+    else { let html = '';
+      for (const x of groups){
+        if (x.multi) html += `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick"><b>${esc(x.mn)}</b> <span class="sub">merge ${esc(x.mc)} · ${x.codes.length} mã</span></td>${q4(x.a.act)}<td>${tr(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${tr(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>`;
+        for (const c of x.codes){
+          html += `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.k)}"><td class="l stick">${x.multi ? '<span class="mgi">↳</span>' : ''}${codeLbl(c, x)}</td>${q4(c.g.act)}<td>${tr(c.g.act[4])}</td><td>${x.multi ? '' : tr(c.g.tgt)}</td>
+            <td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${tr(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>`;
+          for (const r of c.rs) html += skuRow(r, x.multi);
         }
       }
       body.innerHTML = `<div class="tw"><table class="t${VIEW.fcHist ? '' : ' nohist'}"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`; }
@@ -1520,15 +1640,11 @@ function onFCInput(e){
   if (f === 'reason') val = val || null;
   const chg = /^m[123]$/.test(f) && fcVal(r.f[f]) !== fcVal(val);   // sửa số tháng: bỏ dấu tự dời (↻)
   r.f = {...r.f, [f]: val, updated_at: nowIso(), ...(chg ? {auto_note: null, auto_at: null} : {})}; D.fc[id] = r.f; derive(r);
+  if (r.mu) unitCalc(r.mu.rows);   // merge code: cảnh báo / %Ach tính lại trên tổng các mã
   if (chg) $$(`[data-auto="${id}"]`).forEach(x => x.remove());
   $$(`[data-fcv="${id}"]`).forEach(x => x.textContent = tr(r.fcv));
-  $$(`[data-ach="${id}"]`).forEach(x => x.innerHTML = achHtml(r.filled ? ratio(r.fcv, r.tgt) : null));
-  const gly = $(`[data-gly="${id}"]`); if (gly) gly.innerHTML = grHtml(r.filled ? growth(r.fcv, r.act[0]) : null);
-  const gq = $(`[data-gq="${id}"]`); if (gq) gq.innerHTML = grHtml(r.filled ? growth(r.fcv, r.act[3]) : null);
-  $$(`[data-flag="${id}"]`).forEach(x => x.textContent = r.flag ? '⚠ ' + r.flag : '');
+  for (const x of r.mu ? r.mu.rows : [r]) paintRow(x);
   clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { if (r.nl) return nlRefresh(r); const el = $('#fc-kpi'); if (el) el.innerHTML = fcKpiHtml(r.rep_name); fcRefreshTotals(r); }, 250);
-  const rs = $(`[data-rs="${id}"]`);
-  if (rs){ const sel = $('select', rs); if (sel && (f === 'reason' || f === 'note') && (r.flag || r.f.reason)) sel.classList.toggle('need', r.needReason); else rs.innerHTML = reasonCell(r, true, MOBILE()); }
   const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
   clearTimeout(saveTimers[id]); saveTimers[id] = setTimeout(() => doSave(id), 700);
 }
@@ -1549,6 +1665,7 @@ async function fillSuggest(rep){
   if (!list.length) return toast('Không có dòng trống nào có TB 2Q');
   if (!await confirmBox(`Điền TB 2Q cho <b>${list.length}</b> dòng chưa nhập?<br><span class="sub">TB 2Q = TB box/tháng 2 quý gần nhất. Tháng đang chạy chỉ điền phần còn thiếu so với TB (trừ đơn đã lên). Bạn vẫn sửa lại được từng ô.</span>`)) return;
   const payload = list.map(r => { r.f = {...r.f, m1: r.sugM[0], m2: r.sugM[1], m3: r.sugM[2], updated_at: nowIso()}; D.fc[r.id] = r.f; derive(r); return {mapping_id: r.id, m1: r.sugM[0], m2: r.sugM[1], m3: r.sugM[2], note: r.f.note || '', reason: r.f.reason || null}; });
+  mergeUnits(ALLROWS);
   try { await STORE.upsertFC(PK, payload); toast(`Đã điền ${list.length} dòng`); } catch(e){ toast('Lỗi: ' + e.message); }
   viewFC();
 }
@@ -1961,9 +2078,9 @@ const SIGS = [['tgt', 'Gap vs target'], ['opt', 'FC > TB 2Q'], ['noord', 'Chưa 
 function accAnalysis(rows){
   const g = new Map();
   for (const r of rows){
-    let o = g.get(r.cust_code);
-    if (!o){ o = {code: r.cust_code, name: r.cust_name, chs: new Set(), reps: new Set(), rows: [], notes: [], topics: new Set()}; g.set(r.cust_code, o); }
-    o.rows.push(r); o.reps.add(r.rep_name); if (r.channel) o.chs.add(r.channel);
+    let o = g.get(r.mc || r.cust_code);   // account = merge code (Bayer giao target theo account, không theo kênh)
+    if (!o){ o = {code: r.mc || r.cust_code, name: r.mn || r.cust_name, chs: new Set(), reps: new Set(), codes: new Set(), rows: [], notes: [], topics: new Set()}; g.set(o.code, o); }
+    o.rows.push(r); o.reps.add(r.rep_name); o.codes.add(r.cust_code); if (r.channel) o.chs.add(r.channel);
     const tx = norm(r.f.note), rs = r.f.reason || '';
     if (tx || rs){ const tps = topicsOf(tx, rs); o.notes.push({sku: r.sku, rep: r.rep_name, text: tx, reason: rs, tps}); tps.forEach(t => o.topics.add(t)); }
   }
@@ -2165,7 +2282,7 @@ function dashBV(c){
     const S = {short: (x, y) => y.short - x.short || y.tgt - x.tgt, risk: byRisk, tgt: (x, y) => y.tgt - x.tgt, pace: (x, y) => (x.vsPace ?? 9) - (y.vsPace ?? 9), ly: (x, y) => (x.gLy ?? 9) - (y.gLy ?? 9)}[VIEW.bvSort] || byRisk;
     l.sort(S); const shown = l.slice(0, VIEW.bvN);
     $('#bv-tbl').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">Account</th><th class="l">Channel</th><th class="l">MR</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th><th>QTD</th><th data-tip="TB sales quý của ${P[2].label}, ${P[3].label}">TB 2Q</th><th data-tip="FC so với TB 2Q">FC vs TB 2Q</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="l">Rủi ro</th><th data-tip="Số Note của MR">Note</th></tr></thead><tbody>
-      ${shown.map(o => `<tr class="clk" data-bv="${esc(o.code)}"><td class="l stick">${esc(o.name)} <span class="sub">${esc(o.code)}</span></td><td class="l sub">${esc([...o.chs].map(chLabel).join(', ') || '–')}</td><td class="l sub wr">${esc([...o.reps].join(', '))}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${tr(o.qtd)}</td><td>${tr(o.pace)}</td><td>${vsPaceHtml(o.vsPace)}</td><td>${grHtml(o.gLy)}</td><td class="l">${lvChip(o.level)}</td><td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : '<span class="muted">–</span>'}</td></tr>`).join('')}</tbody></table></div>
+      ${shown.map(o => `<tr class="clk" data-bv="${esc(o.code)}"><td class="l stick">${esc(o.name)} <span class="sub">${esc(o.code)}${o.codes.size > 1 ? ` · merge ${o.codes.size} mã` : ''}</span></td><td class="l sub">${esc([...o.chs].map(chLabel).join(', ') || '–')}</td><td class="l sub wr">${esc([...o.reps].join(', '))}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${tr(o.qtd)}</td><td>${tr(o.pace)}</td><td>${vsPaceHtml(o.vsPace)}</td><td>${grHtml(o.gLy)}</td><td class="l">${lvChip(o.level)}</td><td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : '<span class="muted">–</span>'}</td></tr>`).join('')}</tbody></table></div>
       <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · đơn vị tr VND · bấm dòng để xem chi tiết</span>${l.length > shown.length ? '<button class="btn sm" id="b-more">Xem thêm</button>' : ''}</div>`;
     $('#b-more') && ($('#b-more').onclick = () => { VIEW.bvN += 30; draw(); });
   };
@@ -2248,16 +2365,16 @@ function riskText(accs, a){
 }
 function bvDetail(code){
   const fil = r => (!VIEW.dBrand || r.brand === VIEW.dBrand) && (!VIEW.dCh || (r.channel || '(chưa gán)') === VIEW.dCh);
-  const rows = ROWS.filter(r => r.cust_code === code && fil(r)); const o = accAnalysis(rows)[0]; if (!o) return;
+  const rows = ROWS.filter(r => (r.mc || r.cust_code) === code && fil(r)); const o = accAnalysis(rows)[0]; if (!o) return; const multi = o.codes.size > 1;
   const mini = (l, v, d) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d || '&nbsp;'}</div></div>`;
-  const rs = [...o.rows].sort((x, y) => x.brand.localeCompare(y.brand) || y.tgt - x.tgt || x.rep_name.localeCompare(y.rep_name));
-  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0">${esc(o.name)}</h3><div class="sub">${esc(o.code)} · ${esc([...o.chs].map(chLabel).join(', ') || 'chưa gán channel')} · MR: ${esc([...o.reps].join(', '))}${VIEW.dBrand || VIEW.dCh ? ` · đang lọc ${esc([VIEW.dBrand, VIEW.dCh].filter(Boolean).join(', '))}` : ''}</div></div><div class="acts" style="margin:0">${lvChip(o.level)}<button class="btn sm" data-a="close">Đóng</button></div></div>
+  const rs = [...o.rows].sort((x, y) => x.brand.localeCompare(y.brand) || x.sku.localeCompare(y.sku) || (x.cust_code === o.code ? -1 : 0) - (y.cust_code === o.code ? -1 : 0) || y.tgt - x.tgt || x.rep_name.localeCompare(y.rep_name));
+  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0">${esc(o.name)}</h3><div class="sub">${multi ? `Merge code ${esc(o.code)} · ${o.codes.size} mã: ${esc([...o.codes].join(', '))}` : esc(o.code)} · ${esc([...o.chs].map(chLabel).join(', ') || 'chưa gán channel')} · MR: ${esc([...o.reps].join(', '))}${VIEW.dBrand || VIEW.dCh ? ` · đang lọc ${esc([VIEW.dBrand, VIEW.dCh].filter(Boolean).join(', '))}` : ''}</div></div><div class="acts" style="margin:0">${lvChip(o.level)}<button class="btn sm" data-a="close">Đóng</button></div></div>
     <div class="bvd-k">${mini(`Target ${P[4].label}`, big(o.tgt))}${mini(`FC ${P[4].label}`, big(o.fcv), o.tgt ? achHtml(o.ach) : 'không có target')}${mini('Act. QTD', big(o.qtd), `đến ${ASOF_DM}`)}${mini('TB 2Q', big(o.pace), o.vsPace !== null ? `FC ${o.vsPace >= 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(o.vsPace))}` : o.base < RISK.mat ? 'ít sales 2Q gần nhất' : '')}${mini(`LYSP · ${P[0].label}`, big(o.ly), `Gr ${grHtml(o.gLy)}`)}</div>
     ${o.sig.length ? `<div class="bvd-s">${sigHtml(o)}${topicHtml(o)}</div>` : ''}
     <div class="grid2"><div><h4>Sales by quarter</h4><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div>${qChartHtml(o, 170)}</div>
       <div><h4>Note MR</h4>${o.notes.length ? `<div class="nt full">${notesHtml(o, 99)}</div>` : '<div class="sub">MR chưa có Note cho account này.</div>'}</div></div>
-    <h4>Chi tiết SKU <span class="sub">· tr VND</span></h4><div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l stick">SKU</th><th class="l">MR</th><th>Target</th>${MS.map((m, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mlabel(D.settings.year, m)}<div class="hs">${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th>FC ${P[4].label}</th><th class="h-ach">%Ach</th><th>QTD</th><th data-tip="TB sales quý của 2 quý gần nhất">TB 2Q</th><th class="l">Note / lý do</th></tr></thead><tbody>
-      ${rs.map(r => `<tr><td class="l stick">${esc(skuShort(r.sku))}</td><td class="l sub">${esc(r.rep_name)}${num(r.ratio) < 1 ? ` · ratio ${rto(r.ratio)}` : ''}</td><td>${tr(r.tgt)}</td>${r.fcvM.map((v, i) => `<td class="${MST[i] === 'closed' ? 'act' : ''}">${r.filled || MST[i] === 'closed' ? tr(v) : '<span class="muted">chưa nhập</span>'}</td>`).join('')}<td>${tr(r.fcv)}</td><td>${r.tgt ? achHtml(r.filled ? r.fcv / r.tgt : null) : '<span class="muted">–</span>'}</td><td>${tr(r.act[4])}</td><td>${tr(r.baseV)}</td><td class="l nt">${esc(norm(r.f.note))}${r.f.reason ? ` <span class="muted">(${esc(r.f.reason)})</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`);
+    <h4>Chi tiết SKU <span class="sub">· tr VND</span></h4><div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l stick">SKU</th>${multi ? '<th class="l">Mã KH</th>' : ''}<th class="l">MR</th><th>Target</th>${MS.map((m, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mlabel(D.settings.year, m)}<div class="hs">${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th>FC ${P[4].label}</th><th class="h-ach">%Ach</th><th>QTD</th><th data-tip="TB sales quý của 2 quý gần nhất">TB 2Q</th><th class="l">Note / lý do</th></tr></thead><tbody>
+      ${rs.map(r => `<tr><td class="l stick">${esc(skuShort(r.sku))}</td>${multi ? `<td class="l sub">${esc(r.cust_code)}${r.cust_code === o.code ? ' · gốc' : ''}</td>` : ''}<td class="l sub">${esc(r.rep_name)}${num(r.ratio) < 1 ? ` · ratio ${rto(r.ratio)}` : ''}</td><td${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${r.mu && !r.mlead ? '<span class="muted">·</span>' : tr(rowTgt(r))}</td>${r.fcvM.map((v, i) => `<td class="${MST[i] === 'closed' ? 'act' : ''}">${r.filled || MST[i] === 'closed' ? tr(v) : '<span class="muted">chưa nhập</span>'}</td>`).join('')}<td>${tr(r.fcv)}</td><td>${r.mu && !r.mlead ? '<span class="muted">·</span>' : rowTgt(r) ? achHtml(rowAch(r)) : '<span class="muted">–</span>'}</td><td>${tr(r.act[4])}</td><td>${tr(r.baseV)}</td><td class="l nt">${esc(norm(r.f.note))}${r.f.reason ? ` <span class="muted">(${esc(r.f.reason)})</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`);
   bg.querySelector('.modal').classList.add('wide');
   bg.addEventListener('click', e => { if (e.target === bg || e.target.dataset.a === 'close') bg.remove(); });
 }
@@ -2315,6 +2432,28 @@ function findHeader(rows, mustHave){ for (let i = 0; i < Math.min(rows.length, 3
 function colIdx(hdr, names){ const h = hdr.map(lc); for (const n of names){ const i = h.indexOf(lc(n)); if (i >= 0) return i; } return -1; }
 function findSheet(wb, prefer, mustHave){ for (const n of [...prefer, ...wb.SheetNames]){ if (!wb.Sheets[n]) continue; const rows = sheetRows(wb.Sheets[n]); const hi = findHeader(rows, mustHave); if (hi >= 0) return {rows, hi, hdr: rows[hi]}; } return null; }
 
+// Merge code: file Commex (sheet Mapping Channel: Customer Code · Merge Code2 · Merge Name 1) hoặc file merge xuất từ app
+// (Merge Code · Merge Name · Customer Code). Thay toàn bộ danh sách merge; chỉ giữ nhóm từ 2 mã, mã gốc tự thêm nếu file thiếu.
+async function importMerges(file, log){
+  const wb = await readWorkbook(file); const f = findSheet(wb, ['Merge code', 'Mapping Channel'], ['Customer Code']);
+  if (!f) throw new Error('Không thấy cột Customer Code');
+  const h = f.hdr, c = {code: colIdx(h, ['Customer Code']), mc: colIdx(h, ['Merge Code', 'Merge Code2', 'Merge Code1']), mn: colIdx(h, ['Merge Name', 'Merge Name 1', 'Tên sau Merge']), src: colIdx(h, ['Nguồn', 'Source']), note: colIdx(h, ['Ghi chú', 'Note'])};
+  if (c.mc < 0) throw new Error('Không thấy cột Merge Code');
+  const by = new Map();
+  for (let i = f.hi + 1; i < f.rows.length; i++){ const r = f.rows[i] || []; const code = norm(r[c.code]), mc = norm(r[c.mc]); if (!code || !mc) continue;
+    by.set(code, {cust_code: code, merge_code: mc, merge_name: c.mn >= 0 ? norm(r[c.mn]) : '', source: c.src >= 0 ? norm(r[c.src]) || 'File' : 'Commex', note: c.note >= 0 ? norm(r[c.note]) : ''}); }
+  const groups = new Map(); for (const m of by.values()){ if (!groups.has(m.merge_code)) groups.set(m.merge_code, []); groups.get(m.merge_code).push(m); }
+  const list = [];
+  for (const [mc, ms] of groups){
+    if (!ms.some(m => m.cust_code === mc)){ if (by.has(mc)) continue; ms.push({cust_code: mc, merge_code: mc, merge_name: ms[0].merge_name, source: ms[0].source, note: 'merge code (mã gốc)'}); }   // mã gốc nằm ở nhóm khác: bỏ nhóm lỗi
+    if (ms.length < 2) continue;
+    const nm = ms.find(m => m.cust_code === mc && m.merge_name)?.merge_name || ms.find(m => m.merge_name)?.merge_name || '';
+    ms.forEach(m => { m.merge_name = nm; list.push(m); }); }
+  if (!list.length) throw new Error('File không có nhóm merge nào (cần ít nhất 2 mã cùng merge code)');
+  await STORE.saveMerges(list);
+  const app = new Set(D.mapping.map(m => m.cust_code)), inApp = list.filter(m => app.has(m.cust_code)), gApp = new Set(inApp.map(m => m.merge_code)).size;
+  log(`Merge code: ${nf0.format(groups.size ? new Set(list.map(m => m.merge_code)).size : 0)} nhóm, ${nf0.format(list.length)} mã. Trên app: ${nf0.format(inApp.length)} mã thuộc ${nf0.format(gApp)} merge code. Đã thay danh sách merge cũ.`);
+}
 async function importPrices(file, log, team = TEAMS[0]){
   const wb = await readWorkbook(file); const f = findSheet(wb, ['Bảng giá', 'Setup'], ['SKU']); if (!f) throw new Error('Không thấy cột SKU');
   const c = {b: colIdx(f.hdr, ['Brand']), s: colIdx(f.hdr, ['SKU']), p: colIdx(f.hdr, ['Giá/box (VND)', 'Giá/box', 'Giá', 'Price']), l: colIdx(f.hdr, ['New launch', 'Launch', 'NL'])}; if (c.p < 0) throw new Error('Không thấy cột Giá/box (VND)');
@@ -2592,6 +2731,10 @@ async function downloadTemplate(kind){
   if (kind === 'account'){ rows = [['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'SKU', 'Sales ratio', 'Tender/Self-pay'], ...D.mapping.filter(m => m.status !== 'proposed').map(m => [m.rep_name, m.cust_code, m.cust_name, m.brand, m.sku, num(m.ratio), m.channel || ''])]; name = 'Mau_Danh_sach_account.xlsx'; sh = 'Account'; }
   if (kind === 'target'){ rows = [['REP', 'Cus. Code', 'Account', 'Product Name', 'Final Target', 'Volume Target'], ...D.targets.map(t => [t.rep_name || '', t.cust_code, D.mapping.find(m => m.cust_code === t.cust_code)?.cust_name || '', t.sku, num(t.value), num(t.qty)])]; name = 'Mau_Target.xlsx'; sh = 'Account'; }
   if (kind === 'archive'){ rows = [['Kỳ', 'REP Name', 'Cust Code', 'SKU', 'Sales ratio', 'FC tháng 1 (box)', 'FC tháng 2 (box)', 'FC tháng 3 (box)'], ...D.archive.map(a => [a.period, a.rep_name, a.cust_code, a.sku, num(a.ratio), num(a.m1), num(a.m2), num(a.m3)])]; name = 'Mau_FC_lich_su.xlsx'; sh = 'FC lịch sử'; }
+  if (kind === 'merge'){ const nm = new Map(D.mapping.map(m => [m.cust_code, m.cust_name])); (D.customers || []).forEach(c => { if (c.cust_name && !nm.has(c.cust_code)) nm.set(c.cust_code, c.cust_name); });
+    rows = [['Merge Code', 'Merge Name', 'Customer Code', 'Customer Name', 'Nguồn', 'Ghi chú'], ...[...(D.merges || [])].sort((a, b) => String(a.merge_name).localeCompare(String(b.merge_name)) || (a.cust_code === a.merge_code ? -1 : 0) - (b.cust_code === b.merge_code ? -1 : 0) || String(a.cust_code).localeCompare(String(b.cust_code)))
+      .map(m => [m.merge_code, m.merge_name || '', m.cust_code, nm.get(m.cust_code) || '', m.source || '', m.note || ''])]; name = 'Merge_code.xlsx'; sh = 'Merge code'; }
+  if (rows.length === 1 && kind === 'merge') rows.push(['30190628', 'Benh Vien Cho Ray', '30190643', 'Nha Thuoc Benh Vien Cho Ray So 5', 'Mẫu', 'NTBV gộp vào mã Khoa Dược']);
   if (rows.length === 1) rows.push(kind === 'archive' ? ['2026Q3', 'Nguyen Van A', '30190000', "XARELTO TAB 20MG 14'S", 1, 10, 10, 12] : kind === 'target' ? ['Nguyen Van A', '30190000', 'Benh Vien Mau', "XARELTO TAB 20MG 14'S", 100000000, 130] : kind === 'price' ? ['XARELTO', "XARELTO TAB 20MG 14'S", 750000] : ['Nguyen Van A', '30190000', 'Benh Vien Mau', 'XARELTO', "XARELTO TAB 20MG 14'S", 1, 'Tender']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sh); saveWb(wb, name);
 }
@@ -2635,7 +2778,8 @@ function buildExport(ExcelJS){
   const grRules = ref => [{ref, rules: [{type: 'cellIs', operator: 'greaterThan', formulae: [0.00001], style: {font: {color: {argb: 'FF137333'}}}}, {type: 'cellIs', operator: 'lessThan', formulae: [-0.00001], style: {font: {color: {argb: 'FFC5221F'}}}}]}];
 
   /* ---------- Sheet FC Input (giống sheet FC Sale của team) ---------- */
-  const rows = [...ROWS].sort((a, b) => a.rep_name.localeCompare(b.rep_name) || a.cust_name.localeCompare(b.cust_name) || a.sku.localeCompare(b.sku));
+  const root = r => r.cust_code === r.mc ? 0 : 1;   // merge code: mã gốc trước, NTBV sau, cùng nhóm liền nhau
+  const rows = [...ROWS].sort((a, b) => a.rep_name.localeCompare(b.rep_name) || String(a.mn).localeCompare(String(b.mn)) || root(a) - root(b) || a.cust_name.localeCompare(b.cust_name) || a.sku.localeCompare(b.sku));
   const PAGE = rows => ({paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: rows, margins: {left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2}});
   const ws = wb.addWorksheet('FC Input', {views: [{state: 'frozen', xSplit: 6, ySplit: 5, zoomScale: 90}], properties: {tabColor: {argb: NAVY}}, pageSetup: PAGE('4:5')});
   // Cột FC (box) theo trạng thái tháng: đã chốt = thực tế (khóa) · đang chạy = đã lên + FC còn lại · tháng tới = FC cả tháng
@@ -2643,8 +2787,8 @@ function buildExport(ExcelJS){
   const nb = BX.length, INP = BX.map((x, k) => ['rem', 'fc'].includes(x.kind) ? k : -1).filter(k => k >= 0);
   const H = ['REP Name', 'Cust Code', 'Cust Name', 'Brand', 'Sales ratio', 'SKUs', ...QS.map(o => `Act. sales ${ql(o.y, o.q)}`), `Target ${CUR} (value)`,
     ...BX.map(x => x.h), `FC ${CUR} (box)`, ...MN.map(m => `FC ${m} (value)`), `FC ${CUR} (Value)`, `FC Achievement ${CUR}`, `% Growth ${CUR} vs ${LY}`, `% Growth ${CUR} vs ${PREV}`,
-    'Note', 'Lý do', 'Tender/Self-pay', 'Trạng thái dòng', 'Cảnh báo', 'Cập nhật lúc', 'Cập nhật bởi'];
-  const C = {act: 6, tgt: 14, box: 15, boxQ: 15 + nb, val: 16 + nb, valQ: 19 + nb, ach: 20 + nb, gLY: 21 + nb, gPrev: 22 + nb, note: 23 + nb, last: H.length - 1};
+    'Note', 'Lý do', 'Tender/Self-pay', 'Trạng thái dòng', 'Cảnh báo', 'Cập nhật lúc', 'Cập nhật bởi', 'Merge Code', 'Merge Name'];
+  const C = {act: 6, tgt: 14, box: 15, boxQ: 15 + nb, val: 16 + nb, valQ: 19 + nb, ach: 20 + nb, gLY: 21 + nb, gPrev: 22 + nb, note: 23 + nb, last: H.length - 1, upd: H.indexOf('Cập nhật lúc'), mc: H.indexOf('Merge Code')};
   const R0 = 6, R1 = R0 + rows.length - 1;
   ws.getCell('A1').value = `FC SALE ${expTeam()} HCM · ${CUR}`; ws.getCell('A1').font = {bold: true, size: 14, color: {argb: NAVY}};
   ws.getCell('A2').value = `Xuất từ app lúc ${stamp}${asof ? ` · Sales đến ${asof}` : ''} · Sales, target, FC value: VND · FC tháng: box. ${MST.includes('closed') ? 'Tháng đã chốt: FC = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: FC = Act. đến ${ASOF_DM} + FC từ ${NEXT_DM}. ` : ''}Ô vàng là ô nhập; sửa xong nạp lại được vào app (Admin → 5).`; ws.getCell('A2').font = {size: 9, color: {argb: INK2}};
@@ -2663,7 +2807,7 @@ function buildExport(ExcelJS){
         : MST[i] === 'current' ? {formula: `${+r.actM[i].toFixed(2)}+IFERROR(${colOf(i, 'rem')}${n}*VLOOKUP($F${n},SKUs!$B:$C,2,0),0)`, result: +r.actM[i].toFixed(2) + num(r.rem[i]) * price(r.sku)}
         : {formula: `IFERROR(${colOf(i, 'fc')}${n}*VLOOKUP($F${n},SKUs!$B:$C,2,0),0)`, result: num(raw[i]) * price(r.sku)}),
       null, null, null, null,
-      r.f.note || '', r.f.reason || '', r.channel || '', r.status === 'proposed' ? 'Đề xuất' : 'Chính thức', r.flag || '', r.f.updated_at ? new Date(r.f.updated_at) : null, r.f.updated_by || ''];
+      r.f.note || '', r.f.reason || '', r.channel || '', r.status === 'proposed' ? 'Đề xuất' : 'Chính thức', r.flag || '', r.f.updated_at ? new Date(r.f.updated_at) : null, r.f.updated_by || '', codeVal(r.mc), r.mn || r.cust_name];
     const row = ws.getRow(n); vals.forEach((v, i) => { row.getCell(i + 1).value = v; });
     const vq = [0, 1, 2].reduce((x, i) => { const v = row.getCell(C.val + i + 1).value; return x + num(v && typeof v === 'object' ? v.result : v); }, 0);
     row.getCell(C.valQ + 1).value = {formula: `SUM(${L(C.val)}${n}:${L(C.val + 2)}${n})`, result: vq};
@@ -2671,9 +2815,9 @@ function buildExport(ExcelJS){
     row.getCell(C.gLY + 1).value = {formula: `IFERROR(${L(C.valQ)}${n}/${L(C.act + iLY)}${n}-1,"")`, result: gr(vq, a8[iLY])};
     row.getCell(C.gPrev + 1).value = {formula: `IFERROR(${L(C.valQ)}${n}/${L(C.act + iPrev)}${n}-1,"")`, result: gr(vq, a8[iPrev])};
   });
-  ws.columns.forEach((col, i) => { col.width = [20, 11, 34, 10, 8, 26][i] || (i >= C.act && i <= C.valQ ? 14 : i === C.note ? 34 : 12); });
+  ws.columns.forEach((col, i) => { col.width = [20, 11, 34, 10, 8, 26][i] || (i >= C.act && i <= C.valQ ? 14 : i === C.note || i === C.mc + 1 ? 34 : 12); });
   for (let i = 0; i <= C.last; i++){ const col = ws.getColumn(i + 1);
-    if (i === 4) col.numFmt = RATIO; else if ((i >= C.act && i <= C.tgt) || (i >= C.val && i <= C.valQ)) col.numFmt = VND; else if (i >= C.box && i <= C.boxQ) col.numFmt = BOX; else if (i >= C.ach && i <= C.gPrev) col.numFmt = PCT; else if (i === C.last - 1) col.numFmt = 'dd/mm/yyyy hh:mm'; }
+    if (i === 4) col.numFmt = RATIO; else if ((i >= C.act && i <= C.tgt) || (i >= C.val && i <= C.valQ)) col.numFmt = VND; else if (i >= C.box && i <= C.boxQ) col.numFmt = BOX; else if (i >= C.ach && i <= C.gPrev) col.numFmt = PCT; else if (i === C.upd) col.numFmt = 'dd/mm/yyyy hh:mm'; }
   for (let n = R0; n <= R1; n++) BX.forEach((x, k) => { const cell = ws.getCell(n, C.box + k + 1); if (INP.includes(k)){ cell.fill = fill('FFFFF6D5'); cell.border = {left: thin, right: thin, bottom: thin}; } else { cell.fill = fill('FFEEF0F3'); cell.font = {color: {argb: 'FF52514E'}}; } });
   for (let n = R0; n <= R1; n++) MS.forEach((m, i) => { if (MST[i] === 'closed'){ const cell = ws.getCell(n, C.val + i + 1); cell.fill = fill('FFEEF0F3'); } });
   // Dòng tổng (theo bộ lọc) như mẫu
@@ -2692,7 +2836,7 @@ function buildExport(ExcelJS){
   /* ---------- 5 sheet tổng hợp như pivot của mẫu ---------- */
   const rng = i => `'FC Input'!$${L(i)}$${R0}:$${L(i)}$${Math.max(R1, R0)}`;
   const VCOLS = [...QS.map((o, k) => ({h: `Sum of Act. sales ${ql(o.y, o.q)}`, i: C.act + k, v: r => qv(r)[k]})), {h: `Sum of FC ${CUR} (Value)`, i: C.valQ, v: r => r.fcv}, {h: `Sum of Target ${CUR} (value)`, i: C.tgt, v: r => r.tgt}];
-  const LEV = {rep: {col: 0, key: r => r.rep_name, lab: r => r.rep_name, crit: r => r.rep_name}, brand: {col: 3, key: r => r.brand, lab: r => r.brand, crit: r => r.brand}, acc: {col: 1, key: r => r.cust_code, lab: r => r.cust_name || r.cust_code, crit: r => codeVal(r.cust_code)}};
+  const LEV = {rep: {col: 0, key: r => r.rep_name, lab: r => r.rep_name, crit: r => r.rep_name}, brand: {col: 3, key: r => r.brand, lab: r => r.brand, crit: r => r.brand}, acc: {col: C.mc, key: r => r.mc, lab: r => r.mn || r.cust_name || r.mc, crit: r => codeVal(r.mc)}};   // account = merge code
   function pivot(name, title, levels, notes){
     const sh = wb.addWorksheet(name, {views: [{state: 'frozen', xSplit: 1, ySplit: 3, zoomScale: 90}], properties: {outlineProperties: {summaryBelow: false, summaryRight: false}}, pageSetup: PAGE('3:3')});
     const nv = VCOLS.length, cM = nv + 2;   // B..K giá trị, L trống, M..P chỉ số (cM = vị trí 0-based của cột M)
@@ -2747,10 +2891,10 @@ function buildExport(ExcelJS){
   repList().filter(rep => ROWS.some(r => r.rep_name === rep)).forEach(rep => { const a = agg(ROWS.filter(r => r.rep_name === rep)); const sb = D.subs[rep] || {}; st.addRow([rep, STATUS[repStatus(rep)][0], sb.submitted_at ? new Date(sb.submitted_at) : null, sb.reviewed_by || '', sb.review_note || '', a.tgt, a.fcv, a.ach ?? '', a.gap ?? '', a.act[4], a.need]); });
   [22, 22, 16, 22, 30, 15, 15, 10, 14, 15, 12].forEach((w, i) => st.getColumn(i + 1).width = w); [6, 7, 9, 10].forEach(i => st.getColumn(i).numFmt = VND); st.getColumn(8).numFmt = PCT; st.getColumn(3).numFmt = 'dd/mm/yyyy hh:mm';
   const rk = wb.addWorksheet('Risk accounts', {views: [{state: 'frozen', xSplit: 2, ySplit: 1}], pageSetup: PAGE('1:1')});
-  rk.addRow(['Mức rủi ro', 'Account', 'Cust Code', 'Channel', 'MR', `Target ${CUR} (VND)`, `FC ${CUR} (VND)`, '%Ach FC', `Act. QTD đến ${asof} (VND)`, 'TB 2Q (VND)', 'Gap + FC > TB 2Q (VND)', 'FC vs TB 2Q', 'Tín hiệu', 'Nhóm issue', 'Note MR']); header(rk.getRow(1), 34);
-  accAnalysis(ROWS).filter(o => o.level).sort(byRisk).forEach(o => rk.addRow([LVL[o.level][0], o.name, codeVal(o.code), [...o.chs].map(chLabel).join(', '), [...o.reps].join(', '), o.tgt, o.fcv, o.tgt ? o.fcv / o.tgt : '', o.qtd, o.pace, o.expo, o.vsPace ?? '', o.sig.filter(x => x.k !== 'note').map(x => x.t).join('; '), [...o.topics].join('; '), notesPlain(o)]));
-  [12, 38, 12, 14, 24, 15, 15, 9, 15, 15, 15, 10, 34, 24, 64].forEach((w, i) => rk.getColumn(i + 1).width = w); [6, 7, 9, 10, 11].forEach(i => rk.getColumn(i).numFmt = VND); [8, 12].forEach(i => rk.getColumn(i).numFmt = PCT);
-  [13, 14, 15].forEach(i => rk.getColumn(i).alignment = {wrapText: true, vertical: 'top'}); rk.autoFilter = {from: 'A1', to: 'O1'};
+  rk.addRow(['Mức rủi ro', 'Account', 'Cust Code', 'Channel', 'MR', `Target ${CUR} (VND)`, `FC ${CUR} (VND)`, '%Ach FC', `Act. QTD đến ${asof} (VND)`, 'TB 2Q (VND)', 'Gap + FC > TB 2Q (VND)', 'FC vs TB 2Q', 'Tín hiệu', 'Nhóm issue', 'Note MR', 'Các mã KH (merge)']); header(rk.getRow(1), 34);
+  accAnalysis(ROWS).filter(o => o.level).sort(byRisk).forEach(o => rk.addRow([LVL[o.level][0], o.name, codeVal(o.code), [...o.chs].map(chLabel).join(', '), [...o.reps].join(', '), o.tgt, o.fcv, o.tgt ? o.fcv / o.tgt : '', o.qtd, o.pace, o.expo, o.vsPace ?? '', o.sig.filter(x => x.k !== 'note').map(x => x.t).join('; '), [...o.topics].join('; '), notesPlain(o), o.codes.size > 1 ? [...o.codes].join(', ') : '']));
+  [12, 38, 12, 14, 24, 15, 15, 9, 15, 15, 15, 10, 34, 24, 64, 22].forEach((w, i) => rk.getColumn(i + 1).width = w); [6, 7, 9, 10, 11].forEach(i => rk.getColumn(i).numFmt = VND); [8, 12].forEach(i => rk.getColumn(i).numFmt = PCT);
+  [13, 14, 15].forEach(i => rk.getColumn(i).alignment = {wrapText: true, vertical: 'top'}); rk.autoFilter = {from: 'A1', to: 'P1'};
   { const LVC = {'Cao': 'FFFCE8E6', 'Trung bình': 'FFFDECC2', 'Theo dõi': 'FFE8ECF2'}; rk.getColumn(1).eachCell((cl, i) => { if (i > 1 && LVC[cl.value]) cl.fill = fill(LVC[cl.value]); }); }
   const dp = wb.addWorksheet('Demand plan SKU', {views: [{state: 'frozen', ySplit: 1}]});
   dp.addRow(['Brand', 'SKU', ...MN.map((x, i) => `${x} (box)${MST[i] === 'closed' ? ' · Act.' : MST[i] === 'current' ? ' · Act. + FC' : ''}`), `${CUR} (box)`, ...MN.map(x => `${x} (VND)`), `${CUR} (VND)`, `Act. ${PREV} (box)`]); header(dp.getRow(1));
@@ -2802,6 +2946,8 @@ function viewAdmin(){
       <div class="card"><h3>4. Target ${P[4].label}${its}</h3>${itNo}<div class="drop"><b>File Target Allocation</b> (sheet Account: REP · Cus. Code · Product Name · Final Target · Volume Target): target tự gắn theo từng MR. Cũng nhận file chỉ có Cust Code · SKU · Target.<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-tc" checked> Tự tạo dòng FC cho MR có target nhưng chưa có dòng</label></div>
         <div class="bar"><label><input type="checkbox" id="u-ts"> Cập nhật Sales ratio theo tỷ trọng target (account chia nhiều MR)</label></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((x, y) => x + num(y.value), 0))}${D.targets.some(t => t.rep_name) ? ' (theo MR)' : ''}${TGT_OPEN.length ? `, ${big(TGT_OPEN.reduce((x, t) => x + num(t.value), 0))} chưa có dòng FC/MR` : ''}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>Merge code (account Bayer)</h3><div class="drop">File <b>Mapping Channel</b> của Commex (Customer Code · Merge Code2 · Merge Name 1) hoặc file merge tải từ đây (Merge Code · Merge Name · Customer Code). Mã Khoa Dược / BHYT là merge code, mã NTBV gộp vào: target, %Ach, cảnh báo tính theo merge code.<br><input type="file" id="u-mg" accept=".xlsx,.xls,.xlsm" ${MODE === 'cloud' && D.dbv < 8 ? 'disabled' : ''}></div>
+        <div class="log" id="l-mg">${(() => { const ms = D.merges || [], app = new Set(D.mapping.map(m => m.cust_code)); const nA = ms.filter(m => app.has(m.cust_code)); return MODE === 'cloud' && D.dbv < 8 ? 'Cần chạy migration_v8.sql trước.' : ms.length ? `Đang có ${nf0.format(new Set(ms.map(m => m.merge_code)).size)} merge code, ${nf0.format(ms.length)} mã (${nf0.format(nA.length)} mã trên app, ${nf0.format(new Set(nA.map(m => m.merge_code)).size)} merge code).` : 'Chưa có merge code: mỗi mã KH là 1 account.'; })()}</div><button class="btn sm" data-tpl="merge" style="margin-top:6px">⬇ File merge hiện tại</button></div>
       <div class="card"><h3>5. FC từ file Excel của ${it && TEAMS.length > 1 ? 'team ' + esc(teamName(it)) : 'team'}</h3>${itNo}<div class="drop">File FC Sale của team (sheet <b>FC Sale</b>, .xlsm) hoặc file Excel xuất từ app (sheet <b>FC Input</b>). App đọc 3 cột FC tháng (box) và Note, ghép theo MR × Cust Code × SKU rồi ghi vào kỳ ${P[4].label}.<br><input type="file" id="u-fcx" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fcs" checked> Đồng bộ phân bổ account theo file: tạo dòng account × SKU còn thiếu, Sales ratio theo file, MR khác đang giữ cùng account × SKU về 0%</label></div>
         <div class="bar"><label><input type="checkbox" id="u-fcz"> File là bản chốt: dòng nào file để trống / toàn 0 thì xóa FC đang có trong app</label></div>
@@ -2818,6 +2964,7 @@ function viewAdmin(){
     hook('#u-p', '#l-p', (f, log) => importPrices(f, log, it)); for (const t of myTeams()) hook('#u-s' + sid(t), '#l-s' + sid(t), (f, log) => importSalesKeepFC(f, log, t));
     hook('#u-f', '#l-f', (f, log) => importAccounts(f, $('#u-fc').checked, $('#u-del').checked, log, it)); hook('#u-t', '#l-t', (f, log) => importTargets(f, {create: $('#u-tc').checked, sync: $('#u-ts').checked}, log, it)); hook('#u-fcx', '#l-fcx', (f, log) => importFCFile(f, {sync: $('#u-fcs').checked, clear: $('#u-fcz').checked}, log));
     $$('[data-tpl]').forEach(b => b.onclick = () => downloadTemplate(b.dataset.tpl));
+    $('#u-mg') && hook('#u-mg', '#l-mg', (f, log) => importMerges(f, log));
   }
   if (t === 'history'){
     const per = [...new Set(D.archive.map(x => x.period))].sort().reverse(); const cur = D.archive.filter(x => x.period === PK);
