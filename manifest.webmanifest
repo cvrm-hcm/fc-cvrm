@@ -1,15 +1,28 @@
 {
-  "name": "FC Sale CVRM HCM",
-  "short_name": "FC CVRM",
-  "description": "Forecast doanh số theo quý của team CVRM HCM",
+  "name": "FC Sale Team HCM",
+  "short_name": "FC HCM",
+  "description": "Forecast doanh số theo quý của team HCM (CVRM, WHC)",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1f3864",
   "theme_color": "#1f3864",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

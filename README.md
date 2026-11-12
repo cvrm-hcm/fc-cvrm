@@ -1,6 +1,13 @@
-# FC Sale CVRM HCM — web app
+# FC Sale Team HCM — web app
 
-App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
+App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
+
+## Phiên bản 4.11 (12/11/2026) — Bảng Forecast theo brand, sửa file Excel, gọn Dashboard
+
+- **Sửa lỗi file Excel xuất từ Dashboard:** Excel báo file hỏng, sau khi sửa thì 5 sheet pivot (RFFM_By Brand, RFFM_By Account, RFFM_By MR, MR_By Brand, MR_By Account) trống. Nguyên nhân: thư viện ExcelJS ghi thẻ thiết lập in trước thẻ outline ở các sheet này, sai thứ tự chuẩn của Excel (LibreOffice / Google Sheets bỏ qua nên không thấy). Các sheet pivot giờ in theo tỉ lệ 70% thay cho "vừa 1 trang ngang"; file đã kiểm tra theo schema chuẩn của Excel.
+- **Overview → bảng Forecast Q4-2026 theo brand** (theo mẫu báo cáo RFFM; chọn Cả 2 team để có đủ CVRM + WHC): Act. Q4'25 · Act. FY25 · QTD · YTD Q3'26 · Target Q4'26 (gồm phần chưa giao MR) · Target FY26 · từng tháng (Act. / Act. + FC / FC) · %Ach FC Q4 · Gr vs Q4'25 · %Ach FC FY (= (YTD + FC Q4) / Target FY) · Gr vs FY25. Có New launch (Firialta, Qlaira). Nút **⬇ Excel** tải riêng bảng này (số VND, công thức %, dòng Grand Total) để đưa vào báo cáo. Admin bấm **Nhập Target FY** để nhập target năm theo brand (lưu ở bảng targets, kỳ `2026FY`, không cần chạy migration).
+- **FC Input:** tên app "FC Sale Team HCM". Không submit được khi còn dòng cần lý do **hoặc** dòng có sales / target chưa nhập FC (không có đơn thì nhập 0); app tự lọc ra các dòng đó. New launch xếp BV theo kênh Gov → Priv → Clinic, mỗi kênh có dòng tiêu đề.
+- **Dashboard:** Overview đưa bảng Forecast, By brand, By channel lên đầu; bỏ dòng "Cách đọc". By MR bỏ cột Gap vs target, FC vs TB 2Q, Account rủi ro, Gap ở các account; thêm Gr vs quý trước. Chi tiết account: theo brand (không theo SKU), cột Kênh BHYT / Self-pay; account merge có dòng tổng brand (target, %Ach) rồi từng kênh.
 
 ## Phiên bản 4.10 (12/11/2026) — Merge code: tính theo account Bayer
 
