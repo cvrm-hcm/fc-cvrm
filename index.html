@@ -336,6 +336,8 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .hm td.c{min-width:66px;text-align:center;font-weight:600;font-size:12px}
 .hm td.c.good{background:var(--ok-bg);color:var(--ok-ink)}.hm td.c.mid{background:var(--mid-bg);color:var(--mid-ink)}.hm td.c.bad{background:var(--bad-bg);color:var(--bad-ink)}.hm td.c.na{color:var(--ink3);font-weight:400}
 .hm tr.tot td.c{border-top:2px solid #fff}
+.hmb th{text-align:center}.hmb .bl{border-left:2px solid var(--line)}.hmb td.c.gq{font-weight:500;min-width:62px}.hmb td.c.gq .gr{font-size:12px}
+.hmb thead tr:first-child th{border-bottom:0;height:30px}.hmb thead tr:nth-child(2) th{top:30px}.hmb thead th[rowspan]{z-index:4}
 .mx{display:block;max-width:100%}
 .mx text{font-size:11px;fill:var(--ink2)}
 .mx .grid{stroke:#eef0f3}.mx .ref{stroke:#8a909a;stroke-dasharray:4 3}
@@ -1685,8 +1687,12 @@ function dashOV(c){
 function dashMR(c){
   const {byRep, base} = c, cnt = k => byRep.filter(x => x.st === k).length, nSub = cnt('submitted') + cnt('approved');
   const t = agg(base), tAcc = byRep.flatMap(x => x.accs), tPace = byRep.reduce((s, x) => s + x.pace, 0);
-  const skus = [...new Set(base.map(r => r.sku))].map(s => { const rs = base.filter(r => r.sku === s); return {s, b: rs[0].brand, tgt: rs.reduce((x, r) => x + r.tgt, 0)}; }).filter(x => x.tgt > 0).sort((x, y) => x.b.localeCompare(y.b) || y.tgt - x.tgt);
-  const cell = (rows, tip) => { const g = agg(rows); if (!(g.tgt > 0)) return `<td class="c na" data-tip="${esc(tip)}\nKhông có target${g.fcv ? `\nFC: ${big(g.fcv)}` : ''}">${g.fcv ? '·' : ''}</td>`; return `<td class="c ${g.filled ? achClass(g.ach) : 'na'}" data-tip="${esc(tip)}\nTarget: ${big(g.tgt)}\nFC: ${big(g.fcv)}">${g.filled ? pct(g.ach) : '–'}</td>`; };
+  // By MR × brand: mỗi brand 3 cột %Ach FC · Gr vs LYSP · Gr vs quý trước (FC so với sales cùng kỳ / quý trước)
+  const brands = [...new Set(base.map(r => r.brand))].map(b => { const rs = base.filter(r => r.brand === b); return {b, tgt: rs.reduce((x, r) => x + r.tgt, 0), fcv: rs.reduce((x, r) => x + r.fcv, 0)}; }).filter(x => x.tgt > 0 || x.fcv > 0).sort((x, y) => y.tgt - x.tgt || y.fcv - x.fcv);
+  const cell = (rows, tip) => { const g = agg(rows), gr = (v, ref, lb) => `<td class="c gq" data-tip="${esc(tip)}\nFC ${big(g.fcv)} vs ${lb} ${big(ref)}">${g.filled ? grHtml(v) : '<span class="muted">–</span>'}</td>`;
+    const ach = !(g.tgt > 0) ? `<td class="c na bl" data-tip="${esc(tip)}\nKhông có target${g.fcv ? `\nFC: ${big(g.fcv)}` : ''}">${g.fcv ? '·' : ''}</td>` : `<td class="c bl ${g.filled ? achClass(g.ach) : 'na'}" data-tip="${esc(tip)}\nTarget: ${big(g.tgt)}\nFC: ${big(g.fcv)}">${g.filled ? pct(g.ach) : '–'}</td>`;
+    return ach + gr(g.gLy, g.act[0], P[0].label) + gr(g.gQ, g.act[3], P[3].label); };
+  const sub = `<th class="bl h-ach">%Ach</th><th class="h-gr">Gr LYSP</th><th class="h-gr">Gr ${P[3].label}</th>`;
   c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><button class="btn sm" id="d-remind">📋 Copy nhắc submit FC</button></div>
       <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th class="l">Trạng thái</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th><th class="h-ach" data-tip="Màu so với phasing: % sales quý thường đạt tới ngày dữ liệu">%Ach QTD</th><th data-tip="FC so với TB 2Q (TB sales quý của ${P[2].label}, ${P[3].label}). Dương = FC cao hơn TB 2Q, âm = thận trọng hơn">FC vs TB 2Q</th><th data-tip="Số account rủi ro cao · trung bình. Bấm để xem danh sách">Account rủi ro</th><th data-tip="Tổng gap vs target ở từng account, không bù trừ account vượt">Gap ở các account</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th data-tip="Dòng đã nhập FC / tổng dòng · dòng lệch nhiều chưa có lý do">Nhập FC</th><th class="l">Duyệt</th></tr></thead>
       <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a></td><td class="l">${statusChip(x.rep)}</td><td>${tr(x.tgt)}</td><td>${tr(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${gapHtml(x.gap)}</td><td>${achQHtml(x.achQ)}</td><td>${vsPaceHtml(x.vsPace)}</td>
@@ -1694,10 +1700,10 @@ function dashMR(c){
         <td class="l">${x.st === 'submitted' ? `<button class="btn sm ok" data-rv="approved" data-rep="${esc(x.rep)}">Duyệt</button> <button class="btn sm danger" data-rv="returned" data-rep="${esc(x.rep)}">Trả lại</button>` : x.st === 'approved' ? `<button class="btn sm" data-rv="returned" data-rep="${esc(x.rep)}">Mở lại</button>` : ''}</td></tr>`).join('')}
       <tr class="tot"><td class="l stick">Tổng team</td><td class="l">${nSub}/${byRep.length} đã submit</td><td>${tr(t.tgt)}</td><td>${tr(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${gapHtml(t.gap)}</td><td>${achQHtml(t.achQ)}</td><td>${vsPaceHtml(t.filled && tPace >= 1e6 ? t.fcv / tPace - 1 : null)}</td><td>${tAcc.filter(o => o.level === 'hi').length}·${tAcc.filter(o => o.level === 'md').length}</td><td>${tr(tAcc.reduce((s, o) => s + o.short, 0))}</td><td>${grHtml(t.gLy)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
       <div class="sub" style="margin-top:6px">Đơn vị: tr VND. Bấm tên MR để mở FC của MR đó; bấm số account rủi ro để xem danh sách.</div></div>
-    <div class="card"><h3>%Ach FC by MR × SKU</h3><div class="legend"><span>${achHtml(1.05)} ≥100%</span><span>${achHtml(0.9)} 80–99%</span><span>${achHtml(0.6)} &lt;80%</span><span>· có FC nhưng không có target</span></div>
-      ${skus.length ? `<div class="tw"><table class="t hm"><thead><tr><th class="l stick">MR</th>${skus.map(k => `<th data-tip="${esc(k.s)}">${esc(skuShort(k.s))}</th>`).join('')}<th>Tổng</th></tr></thead><tbody>
-        ${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick">${esc(x.rep)}</td>${skus.map(k => cell(x.rows.filter(r => r.sku === k.s), `${x.rep} · ${skuShort(k.s)}`)).join('')}${cell(x.rows, x.rep)}</tr>`).join('')}
-        <tr class="tot"><td class="l stick">Tổng team</td>${skus.map(k => cell(base.filter(r => r.sku === k.s), `Team · ${skuShort(k.s)}`)).join('')}${cell(base, 'Team')}</tr></tbody></table></div>` : '<div class="sub">Chưa có target.</div>'}</div>`;
+    <div class="card"><h3>By MR × brand</h3><div class="legend"><span>${achHtml(1.05)} ≥100%</span><span>${achHtml(0.9)} 80–99%</span><span>${achHtml(0.6)} &lt;80%</span><span>· có FC nhưng không có target</span><span>Gr = FC ${P[4].label} vs sales ${P[0].label} (LYSP) / ${P[3].label}</span></div>
+      ${brands.length ? `<div class="tw"><table class="t hm hmb"><thead><tr><th class="l stick" rowspan="2">MR</th>${brands.map(k => `<th class="bl" colspan="3">${esc(k.b)}</th>`).join('')}<th class="bl" colspan="3">Tổng</th></tr><tr>${brands.map(() => sub).join('')}${sub}</tr></thead><tbody>
+        ${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick">${esc(x.rep)}</td>${brands.map(k => cell(x.rows.filter(r => r.brand === k.b), `${x.rep} · ${k.b}`)).join('')}${cell(x.rows, x.rep)}</tr>`).join('')}
+        <tr class="tot"><td class="l stick">Tổng team</td>${brands.map(k => cell(base.filter(r => r.brand === k.b), `Team · ${k.b}`)).join('')}${cell(base, 'Team')}</tr></tbody></table></div>` : '<div class="sub">Chưa có target / FC.</div>'}</div>`;
   $('#d-remind').onclick = () => copyText(reminderText());
 }
 function dashBV(c){

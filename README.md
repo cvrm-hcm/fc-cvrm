@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.8.2 (12/11/2026) — Dashboard By MR: bảng theo brand + growth
+
+- Bảng "%Ach FC by MR × SKU" đổi thành **By MR × brand**: mỗi brand (và cột Tổng) có 3 cột %Ach FC · Gr LYSP · Gr quý trước. Gr = FC quý FC so với sales cùng kỳ năm trước / sales quý trước. Brand xếp theo target. Rê chuột vào ô để xem số FC, target, sales so sánh.
+
 ## Phiên bản 4.8.1 (11/11/2026) — Rà giao diện lượt 2
 
 - **Laptop 1280–1366:** bảng FC Input vừa màn hình, không cuộn ngang (lề ô, cột Note, Lý do gọn lại ở khổ này).
