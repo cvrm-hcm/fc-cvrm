@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team CVRM HCM (kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.9.1 (12/11/2026) — Phân bổ New launch
+
+- **Admin → Phân bổ account** có cả dòng New launch: lọc "New launch", sửa MR / ratio / kênh Gov · Priv · Clinic từng dòng, cảnh báo khi tổng ratio ≠ 1.
+- New launch: BV chưa có FC xếp theo quy mô In-market của account (target / TB 2Q), account lớn lên trước.
+
 ## Phiên bản 4.9 (12/11/2026) — New launch: Firialta (CVRM), Qlaira (WHC)
 
 - **FC Input → New launch** (nút In-market / New launch cạnh tiêu đề): FC cho sản phẩm chưa có target. MR tự thêm BV / phòng khám (chọn trong danh mục khách hàng, hoặc gõ tên BV mới, app tạo mã tạm `NEW-…`), chọn SKU, nhập box theo tháng như In-market. Không tính %Ach, không cờ rủi ro; FC New launch vẫn nằm trong bản submit của MR. Admin thêm BV cho MR bất kỳ ở Cả team.
