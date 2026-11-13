@@ -2,6 +2,14 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.17 + Database bản 12 (13/11/2026) — FC giùm địa bàn chung
+
+- FC Input của MR có nút **FC của tôi | Địa bàn chung (N)** khi có account × SKU cùng phụ trách với MR khác. Ở "Địa bàn chung": mỗi dòng là cả account, MR nhập số box cả account, app chia cho từng MR theo ratio (làm tròn box, tổng đúng số nhập) và lưu vào FC của từng người. Ai lưu sau thì số đó được dùng; dòng ghi "cập nhật: tên · giờ".
+- "FC của tôi" giữ như cũ, dòng địa bàn chung có chip "chung"; đồng nghiệp nhập giùm thì ghi "nhập giùm: tên · giờ". Địa bàn 1 mình: MR tự nhập, tự submit.
+- Số đồng nghiệp nhập giùm KHÔNG làm FC của MR thành "có sửa sau submit" (user chốt 13/11). FC của 1 MR đã được duyệt hoặc kỳ đã khoá → ô địa bàn chung chỉ xem.
+- `migration_v12.sql`: MR đọc thêm mapping / FC / target / trạng thái submit của đồng nghiệp, chỉ ở account × SKU mình cũng phụ trách; ghi FC giùm ở các dòng đó khi kỳ mở và FC đồng nghiệp chưa duyệt. Đã chạy trên app thật 13/11 (migration `v12_shared_territory_fc`): 17 MR, 15 MR có địa bàn chung, không MR nào thấy dòng ngoài địa bàn chung.
+- Bảng New launch By BV: chỉ 1 SKU thì bỏ cột SKU (trùng FC box). Dòng Total / Grand Total luôn hiện ở đáy khung bảng khi cuộn. Top account bỏ cột Kênh, MR.
+
 ## Phiên bản 4.16 (13/11/2026) — Bấm tiêu đề cột để sắp xếp
 
 - Mọi bảng (FC Input, Dashboard, New launch, Tender, Admin, chi tiết BV): bấm tiêu đề cột → số lớn → nhỏ (cột chữ A → Z), bấm lần nữa đảo lại. Cột đang sắp có dấu ▼ / ▲.
@@ -26,6 +34,10 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - `migration_v11.sql`: tính các hàm quyền 1 lần cho mỗi truy vấn, kiểm tra "dòng của MR" bằng danh sách mapping của MR. **Không đổi quyền**: đã so số dòng + checksum từng bảng của 22 tài khoản test, giống hệt bản 10; MR vẫn không ghi được dòng của MR khác, không ghi khi kỳ đã khoá.
 - Kết quả: 20 MR cùng đăng nhập 1.3 s, 40 MR 2–2.6 s, 80 MR 3.6–4.6 s, 150 MR 7.5–9.4 s, không lỗi. Lưu FC p50 ~60 ms ở 20 người. Trên Supabase thật, 1 lần tải dữ liệu của MR nhiều dòng nhất: 920 ms → 14 ms (thời gian database).
 - Đã chạy trên app thật 13/11/2026 (migration `v11_rls_fast`). Cài mới: `schema.sql` đã gồm bản 11.
+
+## Nâng cấp từ bản 11 (đang chạy)
+
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v12.sql` → **Run**. Kết quả cuối file: `db_version = 12`.
 
 ## Nâng cấp từ bản 10 (đang chạy)
 
