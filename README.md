@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.21.3 (13/11/2026) — Ẩn dòng trống, target về mã có sales
+- **FC Input mặc định ẩn dòng trống:** không có sales 4 quý gần nhất + QTD, không có target, FC = 0 hoặc chỉ có Note (kể cả note nhập nhầm). Chọn **Tất cả dòng (+N dòng trống)** để hiện. Dòng có FC > 0 (account muốn mở rộng trong quý) vẫn hiện ở FC của MR và ở Cả team cho RFFM / admin. Đề xuất, dòng tự add, dòng cần lý do luôn hiện.
+- **Target về mã có sales:** cùng MR × merge code × SKU, mã có target nhưng không có sales 4 quý + QTD (vd target giao ở mã Khoa Dược, sales nằm ở NTBV) → target tính ở mã có sales. Tổng target MR / brand / account không đổi, chỉ đổi mã (kênh) mang target; rê chuột ô target để xem target chuyển từ mã nào. Mã chưa gộp merge code thì app chưa biết là cùng BV: thêm ở Admin → Merge code.
+- Subtotal, %Ach, Excel giữ nguyên số khi ẩn (dòng ẩn đều = 0).
+
 ## Phiên bản 4.21 (13/11/2026) — Địa bàn tự add, tra cứu ai phụ trách
 - **Thêm địa bàn mới** (FC Input → New launch → ＋ Thêm BV / phòng khám, và In-market → ＋ Đề xuất account/SKU): điền **Code** (mã KH; chưa có mã thì SĐT phòng khám / BS, gõ có dấu cách, dấu chấm, +84 đều được, app lưu dạng 0903456789) + **Tên PK / BV**; địa chỉ không bắt buộc. Gõ mã có trong raw thì app tự điền tên, địa chỉ, type BV. Code lạ không phải SĐT (9–11 số) và không có trong raw thì báo lỗi.
 - Ngay khi gõ, app kiểm tra **đã có ai phụ trách** code / tên đó (cả team, kể cả account gộp): "⚠ Đã có Lê Minh Chi phụ trách" hoặc "✓ SĐT mới, chưa ai phụ trách". Vẫn thêm được nếu cùng phụ trách (địa bàn chung).

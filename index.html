@@ -1210,6 +1210,11 @@ function derive(r){
   r.unfilledHist = !r.nl && !r.filled && (r.baseV >= RULE.min || r.tgt >= RULE.min);
   return r;
 }
+// Dòng hiện mặc định ở FC Input (bản 4.21.3): có sales 4 quý gần nhất / QTD, có target (merge code: target tính ở dòng dẫn — mã có sales,
+// vd target ở mã Khoa Dược mà sales ở NTBV thì hiện ở dòng NTBV), có FC > 0, đề xuất / tự add, hoặc cần lý do.
+// Dòng chỉ có Note / FC = 0, không sales, không target: ẩn, chọn "Tất cả dòng" mới hiện. Có FC > 0 (account muốn mở rộng) vẫn hiện, kể cả ở Cả team.
+// Số FC, target, Subtotal không đổi: dòng ẩn đều = 0 (target ở mã không có sales đã chuyển sang mã có sales — tgtToLead).
+const isLive = r => r.act.some(x => x) || r.tgt > 0 || rowTgt(r) > 0 || [r.f.m1, r.f.m2, r.f.m3].some(v => num(v) > 0) || r.status === 'proposed' || !!r.self_add || !!r.needReason;
 // Lý do hợp lệ: đã chọn, chọn "Khác" thì phải có Note
 const rsOK = r => !!(r.f && r.f.reason && (r.f.reason !== OTHER || norm(r.f.note)));
 // Địa bàn chung (bản 4.18): dòng của MR khác cùng account (merge code) × SKU đã có lý do → MR còn lại thấy lý do + note, không bắt chọn
@@ -1230,7 +1235,15 @@ function mergeUnits(rows){
   const U = new Map();
   for (const r of rows){ r.mu = null; r.mlead = true; if (!r.mg || r.nl) continue;
     const k = `${r.rep_name}|${r.mc}|${r.sku}`; let u = U.get(k); if (!u) U.set(k, u = []); u.push(r); }
-  for (const u of U.values()) if (u.length > 1) unitCalc(u);
+  for (const u of U.values()) if (u.length > 1){ tgtToLead(u); unitCalc(u); }
+}
+/* Target chuyển về mã có sales (bản 4.21.3): cùng MR × merge code × SKU, mã có target nhưng không có sales 4 quý gần nhất + QTD
+   (vd target giao ở mã Khoa Dược, sales nằm ở NTBV) → target chuyển sang dòng dẫn có sales. Tổng target MR / brand / account không đổi,
+   chỉ đổi mã (kênh) mang target. Chạy lại nhiều lần vẫn ra như nhau (giữ target gốc ở tgt0). */
+function tgtToLead(u){
+  u.forEach(r => { if (r.tgt0 === undefined){ r.tgt0 = r.tgt; r.tgtQ0 = r.tgtQ; } r.tgt = r.tgt0; r.tgtQ = r.tgtQ0; r.tgtMv = null; });
+  const lead = mLead(u, r => r.cust_code === r.mc), sales = r => r.act.some(x => x); if (!sales(lead)) return;
+  for (const r of u) if (r !== lead && r.tgt > 0 && !sales(r)){ lead.tgt += r.tgt; lead.tgtQ += r.tgtQ; r.tgtMv = lead.cust_code; r.tgt = 0; r.tgtQ = 0; }
 }
 /* Dòng dẫn của merge code × SKU (nơi hiện target / %Ach / Gr / lý do của cả account), bản 4.19.1:
    mã gốc nếu mã gốc có sales 2 quý gần nhất / QTD; không thì mã có sales nhiều nhất trong 2 quý + QTD (vd BV Từ Dũ: mã Khoa Dược
@@ -1260,7 +1273,8 @@ function unitCalc(u){
 const rowTgt = r => r.mu ? (r.mlead ? r.mu.tgt : 0) : r.tgt;
 const rowAch = r => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? ratio(m ? m.fcv : r.fcv, rowTgt(r)) : null; };
 const rowGr = (r, i) => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? growth(m ? m.fcv : r.fcv, m ? m.act[i] : r.act[i]) : null; };
-const MTIP = r => r.mu ? (r.mlead ? `Tính theo merge code ${r.mc}: cộng ${r.mu.rows.length} mã (${r.mu.rows.map(x => x.cust_code).join(' + ')})` : `Tính chung ở dòng mã ${r.mu.lead.cust_code} (merge code ${r.mc})`) : '';
+const MTIP = r => { if (!r.mu) return ''; const mv = r.mu.rows.filter(x => x.tgtMv).map(x => x.cust_code);
+  return r.mlead ? `Tính theo merge code ${r.mc}: cộng ${r.mu.rows.length} mã (${r.mu.rows.map(x => x.cust_code).join(' + ')})${mv.length ? `. Target của mã ${mv.join(', ')} (không có sales 4 quý) tính ở dòng này` : ''}` : `Tính chung ở dòng mã ${r.mu.lead.cust_code} (merge code ${r.mc})${r.tgtMv ? ', target của mã này đã chuyển sang mã có sales' : ''}`; };
 // Vẽ lại ô cảnh báo / lý do / %Ach / Gr của 1 dòng (và các dòng cùng merge code) sau khi nhập
 function paintRow(r, editable = true){
   $$(`[data-flag="${r.id}"]`).forEach(x => x.textContent = r.flag ? '⚠ ' + r.flag : '');
@@ -1720,11 +1734,11 @@ function viewFC(){
   useClock(team || VIEW.team !== 'ALL' ? vTeams() : [teamOfRep(rep)]);   // Cả 2 team, xem 1 MR: nhãn ngày theo team của MR
   const mine = shared ? ROWS.filter(r => r.shared).concat(CO_ROWS.filter(r => ROWS.some(x => x.shared && x.cust_code === r.cust_code && x.sku === r.sku))) : fcScope(rep), st = team ? '' : repStatus(rep), sub = team ? {} : (D.subs[rep] || {}), editable = !team && canEdit(rep);
   const brands = [...new Set(mine.map(r => r.brand))].sort(); const F = VIEW.fcFlt;
-  const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length, nFlag = mine.filter(r => r.flag).length, nAuto = mine.filter(r => r.f.auto_note).length, nSelf = mine.filter(r => r.self_add).length;
+  const nNeed = mine.filter(r => r.needReason).length, nEmpty = mine.filter(r => r.unfilledHist).length, nFlag = mine.filter(r => r.flag).length, nAuto = mine.filter(r => r.f.auto_note).length, nSelf = mine.filter(r => r.self_add).length, nQuiet = mine.filter(r => !isLive(r)).length;
   const key = r => r.cust_code + '|' + r.sku, q = lc(VIEW.fcSearch);
   // Xếp từ lớn đến bé: quy mô = số lớn hơn giữa target quý FC và TB sales 2 quý gần nhất (ổn định trong quý, không nhảy khi MR nhập FC)
   const sz = x => Math.max(x.tgt || 0, ((x.act[2] || 0) + (x.act[3] || 0)) / 2), SZ_TIP = 'Xếp từ lớn đến bé theo target hoặc TB sales 2 quý gần nhất (lấy số lớn hơn)';
-  const passF = r => F === 'all' ? true : F === 'self' ? !!r.self_add : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : F === 'auto' ? !!r.f.auto_note : (r.act.some(x => x) || r.tgt || r.filled || r.status === 'proposed');
+  const passF = r => F === 'all' ? true : F === 'self' ? !!r.self_add : F === 'need' ? r.needReason : F === 'empty' ? r.unfilledHist : F === 'flag' ? !!r.flag : F === 'auto' ? !!r.f.auto_note : isLive(r);
   const passQ = r => !q || lc(`${r.cust_name} ${r.cust_code} ${r.mg ? r.mn + ' ' + r.mc + ' ' : ''}${r.sku}${team ? ' ' + r.rep_name : ''}`).includes(q);
   let base = mine.filter(r => !VIEW.fcBrand || r.brand === VIEW.fcBrand), rows;
   if (team && VIEW.fcTerr){ const ks = new Set(base.filter(r => r.rep_name === VIEW.fcTerr).map(key)); base = base.filter(r => ks.has(key(r))); }   // địa bàn 1 MR: các account × SKU MR đó giữ, số của mọi MR
@@ -1775,7 +1789,7 @@ function viewFC(){
     <div class="bar filters fbar"><input type="search" id="f-q" placeholder="${team ? 'Tìm account / mã KH / SKU / MR' : 'Tìm account / mã KH / SKU'}" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
       ${team ? `<select id="f-terr"><option value="">Địa bàn: cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === VIEW.fcTerr ? 'selected' : ''}>Địa bàn ${esc(r)}</option>`).join('')}</select>` : ''}
       <select id="f-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.fcBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
-      <select id="f-flt">${[['active', 'Dòng có sales / target / FC'], ['all', 'Tất cả dòng'], ['need', `Cần chọn lý do (${nNeed})`], ['empty', `Chưa nhập, có lịch sử (${nEmpty})`], ['flag', `FC lệch TB 2Q (${nFlag})`], ...(nAuto || F === 'auto' ? [['auto', `Tự dời theo sales (${nAuto})`]] : []), ...(nSelf || F === 'self' ? [['self', `Địa bàn tự add (${nSelf})`]] : [])].map(([k, l]) => `<option value="${k}" ${k === F ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <select id="f-flt" data-tip="${esc(`Mặc định ẩn dòng không có sales 4 quý gần nhất + QTD, không có target (merge code: target tính ở dòng có sales), FC = 0 hoặc chỉ có Note. Chọn Tất cả dòng để hiện.`)}">${[['active', 'Dòng có sales / target / FC'], ['all', `Tất cả dòng${nQuiet ? ` (+${nQuiet} dòng trống)` : ''}`], ['need', `Cần chọn lý do (${nNeed})`], ['empty', `Chưa nhập, có lịch sử (${nEmpty})`], ['flag', `FC lệch TB 2Q (${nFlag})`], ...(nAuto || F === 'auto' ? [['auto', `Tự dời theo sales (${nAuto})`]] : []), ...(nSelf || F === 'self' ? [['self', `Địa bàn tự add (${nSelf})`]] : [])].map(([k, l]) => `<option value="${k}" ${k === F ? 'selected' : ''}>${l}</option>`).join('')}</select>
       ${editable ? '<button class="btn" id="fill" data-tip="Điền TB 2Q vào các dòng CHƯA nhập: TB box/tháng 2 quý gần nhất; tháng đang chạy chỉ điền phần còn thiếu so với TB"><span class="dt">Điền theo TB 2Q</span><span class="mt">Điền TB 2Q</span></button>' : ''}
       ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất<span class="dt"> account/SKU</span></button>' : ''}
       ${mob ? '' : histBtn}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
