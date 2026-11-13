@@ -469,6 +469,7 @@ a.nolk{text-decoration:none}
 .tqs{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11.5px;font-weight:600;background:#eef6ee;color:#226b2a;white-space:nowrap}.tqs.out,.tqs.noq,.tqs.bad{background:#fdecec;color:#a32020}.tqs.fast{background:#fff4e0;color:#8a5300}.tqs.exp{background:#fdf6dd;color:#6d5800}.tqs.slow{background:#f1f2f4;color:#4f5562}.tqs.up{background:#fff;border:1px dashed #9fb3d1;color:#24456f}
 .tqkg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}.tqk{text-align:left;font:inherit;color:inherit;cursor:pointer}.tqk .v{font-size:19px}.tqk .u{font-size:12px;font-weight:500;color:var(--ink2)}.tqk.on{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1);background:#f5f9ff}.tqk.bad .v{color:#a32020}.tqk.mid .v{color:#8a5300}
 .t.tqt td.tqhot{color:#a32020;font-weight:600}.t.tqt td.tqlow{color:var(--ink3)}.t.tqt td.stick .sub{font-weight:400}
+.t.tqt .tqa{font-weight:650;color:var(--ink);font-size:13.5px;line-height:1.3}.t.tqt .tqsk{font-size:12px;color:var(--ink2);margin-top:2px}   /* tên BV đậm, SKU nhỏ bên dưới (bản 4.15.2) */
 .tqf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding:10px;border:1px dashed #9fb3d1;border-radius:var(--r);background:#fafcff}
 .prh{font-size:10px;text-align:right;margin-top:2px;white-space:nowrap}
 .fctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2);min-width:0}
@@ -1654,7 +1655,7 @@ function viewFC(){
       const all = codes.flatMap(c => c.ls.flatMap(o => o.rows));
       return {mc: g.mc, mn: g.mn, codes, a: agg(all), nMR: new Set(all.map(r => r.rep_name)).size, multi: codes.length > 1}; })
       .sort((x, y) => sz(y.a) - sz(x.a) || y.a.act[4] - x.a.act[4] || String(x.mn).localeCompare(String(y.mn)));
-    const accLbl = (c, x) => `${x.multi ? '<span class="mgi">↳</span>' : ''}${esc(c.ls[0].cust_name)} <span class="sub">${esc(c.ls[0].cust_code)}</span> ${chChip(c.ls.find(o => o.channel)?.channel, x.multi)}`;
+    const accLbl = (c, x) => `${x.multi ? '<span class="mgi">↳</span>' : ''}<span data-tip="Mã KH ${esc(c.ls[0].cust_code)}">${esc(c.ls[0].cust_name)}</span> ${chChip(c.ls.find(o => o.channel)?.channel, x.multi)}`;
     const mgLbl = x => `<b>${esc(x.mn)}</b>`;
     const tTd = o => `<td data-tip="${esc(o.tu ? tTip(o) : o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : '')}">${o.tu && !o.tlead ? '<span class="muted">·</span>' : trU(tTgt(o))}</td>`;
     // Thẻ mobile / dòng bảng (các SKU, cộng mọi MR)
@@ -1687,14 +1688,14 @@ function viewFC(){
         <div class="meta"><span>${P[3].label}: ${trU(r.act[3])}</span><span>QTD: ${trU(r.act[4])}</span>${r.mu && !r.mlead ? '' : `<span${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>Target: ${trU(rowTgt(r))}</span>`}<span>TB 2Q: ${r.base ? r.base + ' box' : '–'}/th</span><span>FC: <b data-fcv="${r.id}">${trU(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(rowAch(r))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
         <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`;
-    const codeLbl = (c, x) => `${esc(c.rs[0].cust_name)} <span class="sub">${esc(c.rs[0].cust_code)}</span> ${chChip(c.rs[0].channel, x.multi)}`;
+    const codeLbl = (c, x) => `<span data-tip="Mã KH ${esc(c.rs[0].cust_code)}">${esc(c.rs[0].cust_name)}</span> ${chChip(c.rs[0].channel, x.multi)}`;
     const skuRow = (r, deep) => `<tr${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${trU(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
             ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${trU(r.fcv)}</td><td data-ach="${r.id}"${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${achHtml(rowAch(r))}</td><td data-gly="${r.id}">${grHtml(rowGr(r, 0))}</td><td data-gq="${r.id}">${grHtml(rowGr(r, 3))}</td>
             <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
     if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(x => x.multi
       ? `<div class="acc mgc" data-mgk="${esc(x.mc)}"><div class="acc-h"><span>${esc(x.mn)}<br><span class="sub">target ${trU(x.a.tgt)}</span></span><span style="text-align:right"><span data-ag="fcv">${trU(x.a.fcv)}</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
         ${x.codes.map(c => `<div class="mcode" data-agk="${esc(c.k)}"><div class="mcode-h"><span>↳ ${codeLbl(c, x)}</span><span data-ag="fcv">${trU(c.g.fcv)}</span></div>${c.rs.map(skuCard).join('')}</div>`).join('')}</div>`
-      : x.codes.map(c => `<div class="acc" data-agk="${esc(c.k)}"><div class="acc-h"><span>${esc(c.rs[0].cust_name)}<br><span class="sub">${esc(c.rs[0].cust_code)}</span> ${chChip(c.rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${trU(c.g.fcv)}</span><br><span data-ag="ach">${achHtml(c.g.ach)}</span></span></div>${c.rs.map(skuCard).join('')}</div>`).join('')).join('')}</div>`;
+      : x.codes.map(c => `<div class="acc" data-agk="${esc(c.k)}"><div class="acc-h"><span>${esc(c.rs[0].cust_name)}<br>${chChip(c.rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${trU(c.g.fcv)}</span><br><span data-ag="ach">${achHtml(c.g.ach)}</span></span></div>${c.rs.map(skuCard).join('')}</div>`).join('')).join('')}</div>`;
     else { let html = '';
       for (const x of groups){
         if (x.multi) html += `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick"><b>${esc(x.mn)}</b></td>${q4(x.a.act)}<td>${trU(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${trU(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>`;
@@ -1960,7 +1961,7 @@ function nlView(c){
   else if (!rows.length) body.innerHTML = '<div class="card sub">Không có BV nào theo bộ lọc này.</div>';
   else if (mob){
     const card = (x, sub) => `<div class="acc nlacc${sub ? ' nlsub' : ''}" data-nacc="${esc(x.code)}">
-      <div class="acc-h nlh"><span class="nlh-n">${sub ? '↳ ' : ''}${esc(x.name)}<span class="sub">${esc(x.code)}${mrN(x)}</span></span><span class="nlh-v"><span><b data-nag="fcv">${trU(x.g.fcv)}</b></span><span class="sub"><span data-nag="box">${nf0.format(Math.round(x.g.box))}</span> box</span></span><span class="nlh-c">${sub ? nlChip(x) : ''}${segCell(x)}${rmBtn(x)}</span></div>
+      <div class="acc-h nlh"><span class="nlh-n">${sub ? '↳ ' : ''}<span data-tip="Mã KH ${esc(x.code)}">${esc(x.name)}</span>${mrN(x) ? `<span class="sub">${mrN(x).replace(' · ', '')}</span>` : ''}</span><span class="nlh-v"><span><b data-nag="fcv">${trU(x.g.fcv)}</b></span><span class="sub"><span data-nag="box">${nf0.format(Math.round(x.g.box))}</span> box</span></span><span class="nlh-c">${sub ? nlChip(x) : ''}${segCell(x)}${rmBtn(x)}</span></div>
       ${x.rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}${team ? ` <span class="sub">· ${esc(r.rep_name)}</span>` : ''}</div><div class="meta"><span>QTD: ${trU(r.act[4])}</span><span>FC: <b data-fbox="${r.id}">${nlBox(r)}</b> box · <b data-fcv="${r.id}">${trU(r.fcv)}</b></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>${noteInp(r)}</div>`).join('')}</div>`;
     body.innerHTML = `<div class="mstot"><b>Subtotal</b><span class="sub">${nAcc} BV</span><span>FC <b data-nst="fcv">${nlBig(a0.fcv)}</b></span><span><b data-nst="box">${nf0.format(Math.round(a0.box))}</b> box</span></div><div class="mcards">${mgs.map((M, gi) => `${gi && mgs[gi - 1].seg === M.seg ? '' : `<div class="nlsegm ${M.seg || 'none'}">${esc(M.seg ? segName(M.seg) + ' · ' + segLong(M.seg) : 'Chưa chọn type')} <span class="sub">· ${mgs.filter(y => y.seg === M.seg).length} BV</span></div>`}${M.multi
@@ -1977,7 +1978,7 @@ function nlView(c){
       if (M.seg !== segPrev){ segPrev = M.seg; const gs = mgs.filter(y => y.seg === M.seg), sa = nlAgg(gs.flatMap(y => y.rs)); html += `<tr class="nlsegh ${M.seg || 'none'}"><td class="l stick" colspan="${cols}">${esc(M.seg ? segName(M.seg) + ' · ' + segLong(M.seg) : 'Chưa chọn type')} <span class="sub">· ${gs.length} BV · FC ${nlBig(sa.fcv)} · ${nf0.format(Math.round(sa.box))} box</span></td></tr>`; }
       if (M.multi) html += `<tr class="mg" data-nmg="${esc(M.mc)}"><td class="l stick">${esc(M.name)}${mrN(M) ? `<span class="sub">${mrN(M)}</span>` : ''}</td><td></td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(M.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(M.g.box))}</td><td data-nag="fcv">${trU(M.g.fcv)}</td><td>${trU(M.g.act[4])}</td><td></td>${canAcc ? '<td></td>' : ''}</tr>`;
      for (const x of M.codes){
-      html += `<tr class="acc${M.multi ? ' mcode' : ''}" data-nacc="${esc(x.code)}"><td class="l stick">${M.multi ? '<span class="mgi">↳</span>' : ''}${esc(x.name)} <span class="sub">${esc(x.code)}${mrN(x)}</span> ${M.multi ? nlChip(x) : ''}</td><td class="l">${segCell(x)}</td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(x.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(x.g.box))}</td><td data-nag="fcv">${trU(x.g.fcv)}</td><td>${trU(x.g.act[4])}</td><td></td>${canAcc ? `<td>${rmBtn(x)}</td>` : ''}</tr>`;
+      html += `<tr class="acc${M.multi ? ' mcode' : ''}" data-nacc="${esc(x.code)}"><td class="l stick">${M.multi ? '<span class="mgi">↳</span>' : ''}<span data-tip="Mã KH ${esc(x.code)}">${esc(x.name)}</span>${mrN(x) ? ` <span class="sub">${mrN(x)}</span>` : ''} ${M.multi ? nlChip(x) : ''}</td><td class="l">${segCell(x)}</td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(x.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(x.g.box))}</td><td data-nag="fcv">${trU(x.g.fcv)}</td><td>${trU(x.g.act[4])}</td><td></td>${canAcc ? `<td>${rmBtn(x)}</td>` : ''}</tr>`;
       for (const r of x.rs) html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}</td><td></td>${team ? `<td class="l sub">${esc(r.rep_name)}</td>` : ''}${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fbox="${r.id}">${nlBox(r)}</td><td data-fcv="${r.id}">${trU(r.fcv)}</td><td class="act">${trU(r.act[4])}</td><td class="in l">${noteInp(r)}</td>${canAcc ? '<td></td>' : ''}</tr>`;
      }
     }
@@ -2123,7 +2124,7 @@ function dashNL(c){
     const skuTd = (g, p) => { const v2 = g.sku.get(p.sku); return `<td>${v2 && Math.round(v2.box) ? nf0.format(Math.round(v2.box)) : '<span class="muted">–</span>'}</td>`; };
     const notes = x => { const multi = new Set(x.rs.map(r => r.rep_name)).size > 1; return [...new Set(x.rs.filter(r => norm(r.f.note)).map(r => `${multi ? r.rep_name.split(' ').pop() + ': ' : ''}${norm(r.f.note)}`))]; };
     $('#nlb').innerHTML = gs.length ? `<div class="tw"><table class="t nlbt"><thead><tr><th class="l stick">BV / phòng khám</th><th class="l">Type BV</th><th class="l">MR</th>${skus.map(p => `<th data-tip="${esc(p.sku)}">${esc(nlSku(p.sku))}<br><span class="hs">box</span></th>`).join('')}<th>FC (box)</th><th>FC</th><th>Act. QTD</th><th class="l">Note</th></tr></thead>
-      <tbody>${list.map(x => `<tr><td class="l stick">${esc(x.name)} <span class="sub nlcode">${esc(x.multi ? x.codes.join(', ') : x.code)}</span></td><td class="l">${segChip(x.seg)}</td><td class="l">${[...new Set(x.rs.map(r => r.rep_name))].map(esc).join(', ')}</td>${skus.map(p => skuTd(x.g, p)).join('')}
+      <tbody>${list.map(x => `<tr><td class="l stick"><span data-tip="Mã KH ${esc(x.multi ? x.codes.join(', ') : x.code)}">${esc(x.name)}</span></td><td class="l">${segChip(x.seg)}</td><td class="l">${[...new Set(x.rs.map(r => r.rep_name))].map(esc).join(', ')}</td>${skus.map(p => skuTd(x.g, p)).join('')}
         <td>${Math.round(x.g.box) ? nf0.format(Math.round(x.g.box)) : '–'}</td><td>${trU(x.g.fcv)}</td><td>${trU(x.g.act[4])}</td><td class="l nt">${esc(notes(x).join(' · '))}</td></tr>`).join('')}
         <tr class="tot"><td class="l stick">Tổng ${gs.length} BV</td><td></td><td></td>${skus.map(p => skuTd(tt, p)).join('')}<td>${nf0.format(Math.round(tt.box))}</td><td>${trU(tt.fcv)}</td><td>${trU(tt.act[4])}</td><td></td></tr></tbody></table></div>
       ${gs.length > N ? `<div class="bar more"><span class="sub">Đang hiện ${N}/${gs.length} BV, xếp theo FC rồi quy mô account</span><button class="btn sm" id="nlb-more">Xem thêm</button></div>` : ''}` : '<div class="sub">Không có BV nào.</div>';
@@ -2374,7 +2375,7 @@ function dimTableHtml(dim, sel){
   const subRows = rs => { const bs = [...new Set(rs.map(r => r.brand))].sort(); return bs.map(b => { const g = agg(rs.filter(r => r.brand === b)); return g.tgt || g.fcv || g.act.some(x => x) ? `<tr class="dsub"><td class="l stick">↳ ${esc(b)}</td>${cells(g)}</tr>` : ''; }).join(''); };
   const title = dim === 'brand' ? 'By brand' : dim === 'channel' ? 'By channel' : 'By type BV';
   const note = '';
-  return `<div class="card"><h3>${title}</h3><div class="tw"><table class="t dimt"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : dim === 'channel' ? 'Kênh · brand' : 'Type BV · brand'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th>${withT ? '<th>Target</th>' : ''}<th>FC</th>${withT ? '<th class="h-ach">%Ach FC</th>' : '<th data-tip="Tỷ trọng FC">% FC</th>'}<th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC vs ${P[3].label}">Gr vs ${P[3].label}</th></tr></thead><tbody>
+  return `<div class="card"><h3>${title}</h3><div class="tw"><table class="t dimt"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : dim === 'channel' ? 'Kênh · brand' : 'Type BV · brand'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th>${withT ? '<th>Target</th>' : ''}<th>FC</th>${withT ? '<th class="h-ach">%Ach FC</th>' : '<th data-tip="% đóng góp vào tổng FC">%Contri</th>'}<th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC vs ${P[3].label}">Gr vs ${P[3].label}</th></tr></thead><tbody>
     ${keys.map(([k, g, rs]) => `<tr${subB ? ' class="dgrp"' : ''}><td class="l stick">${esc(lab(k))}</td>${cells(g)}</tr>${subB ? subRows(rs) : ''}`).join('')}</tbody></table></div>${note}</div>`;
 }
 function qChartHtml(a, height){
@@ -2519,7 +2520,7 @@ function dashBV(c){
     const S = {short: (x, y) => y.short - x.short || y.tgt - x.tgt, risk: byRisk, tgt: (x, y) => y.tgt - x.tgt, pace: (x, y) => (x.vsPace ?? 9) - (y.vsPace ?? 9), ly: (x, y) => (x.gLy ?? 9) - (y.gLy ?? 9)}[VIEW.bvSort] || byRisk;
     l.sort(S); const shown = l.slice(0, VIEW.bvN);
     $('#bv-tbl').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">Account</th><th class="l dt">Channel</th><th class="l dt">MR</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th><th>QTD</th><th data-tip="TB sales quý của ${P[2].label}, ${P[3].label}">TB 2Q</th><th data-tip="FC so với TB 2Q">FC vs TB 2Q</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="l">Rủi ro</th><th data-tip="Số Note của MR">Note</th></tr></thead><tbody>
-      ${shown.map(o => `<tr class="clk" data-bv="${esc(o.code)}"><td class="l stick">${esc(o.name)} <span class="sub">${esc(o.code)}${o.codes.size > 1 ? ` · merge ${o.codes.size} mã` : ''}</span><span class="sub mt">${esc([[...o.chs].join(' + '), [...o.reps].join(', ')].filter(Boolean).join(' · '))}</span></td><td class="l sub dt">${esc([...o.chs].map(chLabel).join(', ') || '–')}</td><td class="l sub wr dt">${esc([...o.reps].join(', '))}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${tr(o.qtd)}</td><td>${tr(o.pace)}</td><td>${vsPaceHtml(o.vsPace)}</td><td>${grHtml(o.gLy)}</td><td class="l">${lvChip(o.level)}</td><td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : '<span class="muted">–</span>'}</td></tr>`).join('')}</tbody></table></div>
+      ${shown.map(o => `<tr class="clk" data-bv="${esc(o.code)}"><td class="l stick"><span data-tip="Mã KH ${esc([...o.codes].join(', '))}">${esc(bvName(o.name))}</span><span class="sub mt">${esc([[...o.chs].join(' + '), [...o.reps].join(', ')].filter(Boolean).join(' · '))}</span></td><td class="l sub dt">${esc([...o.chs].map(chLabel).join(', ') || '–')}</td><td class="l sub wr dt">${esc([...o.reps].join(', '))}</td><td>${tr(o.tgt)}</td><td>${tr(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${tr(o.qtd)}</td><td>${tr(o.pace)}</td><td>${vsPaceHtml(o.vsPace)}</td><td>${grHtml(o.gLy)}</td><td class="l">${lvChip(o.level)}</td><td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : '<span class="muted">–</span>'}</td></tr>`).join('')}</tbody></table></div>
       <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · đơn vị tr VND · bấm dòng để xem chi tiết</span>${l.length > shown.length ? '<button class="btn sm" id="b-more">Xem thêm</button>' : ''}</div>`;
     $('#b-more') && ($('#b-more').onclick = () => { VIEW.bvN += 30; draw(); });
   };
@@ -2576,7 +2577,7 @@ function dashRisk(c){
       && (!q || lc(`${o.name} ${o.code} ${[...o.reps].join(' ')} ${o.notes.map(n => n.text + ' ' + n.reason).join(' ')}`).includes(q))).sort(byRisk);
     const shown = l.slice(0, VIEW.rkN);
     $('#rk-l').innerHTML = l.length ? `<div class="rkh"><span>Account</span><span class="n4"><span>Target</span><span>FC</span><span>TB 2Q</span><span>Gap</span></span><span>Tín hiệu · Note MR</span></div>
-      <div class="rkl">${shown.map(o => `<div class="rki" data-bv="${esc(o.code)}"><div class="a">${lvChip(o.level)} <b>${esc(o.name)}</b><div class="sub">${esc(o.code)}${o.chs.size ? ' · ' + esc([...o.chs].map(chLabel).join(', ')) : ''} · ${esc([...o.reps].join(', '))}</div></div>
+      <div class="rkl">${shown.map(o => `<div class="rki" data-bv="${esc(o.code)}"><div class="a">${lvChip(o.level)} <b>${esc(bvName(o.name))}</b><div class="sub">${esc([[...o.chs].map(chLabel).join(', '), [...o.reps].join(', ')].filter(Boolean).join(' · '))}</div></div>
         <div class="n4"><span><i>Target</i>${trU(o.tgt)}</span><span><i>FC</i>${trU(o.fcv)} ${o.tgt ? `<small>${pct(o.fcv / o.tgt)}</small>` : ''}</span><span><i>TB 2Q</i>${trU(o.pace)}${isOpt(o) ? ` <small class="up" data-tip="FC cao hơn TB 2Q ${big(o.over)}">FC +${trU(o.over)}</small>` : ''}</span><span><i>Gap</i>${o.short ? `<b class="gap neg">−${trU(o.short)}</b>` : '<span class="muted">–</span>'}</span></div>
         <div class="c">${sigHtml(o)}${topicHtml(o)}${o.notes.length ? `<div class="nt">${notesHtml(o)}</div>` : ''}</div></div>`).join('')}</div>
       <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · đơn vị tr VND · xếp theo mức rủi ro, rồi theo gap + phần FC cao hơn TB 2Q · bấm dòng để xem chi tiết từng SKU</span>${l.length > shown.length ? '<button class="btn sm" id="rk-more">Xem thêm</button>' : ''}</div>` : '<div class="sub">Không có account nào khớp bộ lọc.</div>';
@@ -2661,12 +2662,12 @@ function quotaFlag(r){
 // RR dự kiến cuối quý nếu FC về đủ: (đã dùng + FC còn lại) / (quota × % thời gian tới cuối quý)
 const tqRRfc = (o, open) => o.wEnd ? (o.used + open) / o.wEnd : null;
 function tqTip(o, ratio){
-  const L = [`Quota còn ${tqN(o.rem)} / ${tqN(o.quota)} box · RR ${tqRR(o.rr)} · ${TQS[o.st][0]}`];
+  const L = [`Remaining Quota ${tqN(o.rem)} / Winning Quota ${tqN(o.quota)} box · RR ${tqRR(o.rr)} · ${TQS[o.st][0]}`];
   o.pk.forEach((p, i) => L.push(`Gói ${i + 1}: ${tqN(p.q)} box, ${p.st ? dmy(p.st) : '?'} – ${p.en ? dmy(p.en) : '?'}, còn ${tqN(p.rem)}${p.expired ? ' (hết hạn)' : `, RR ${tqRR(p.rr)}`}`));
-  if (o.act.length && o.rem > 0){ L.push(`Cần ${tqN(o.need)} box/tháng để dùng hết trước hạn (RR = 1)`);
-    if (o.pace) L.push(`Tốc độ hiện tại ${tqN(o.pace)} box/tháng → ${o.outAt && o.enMax && o.outAt < o.enMax ? 'hết quota ~' + tqMy(o.outAt) : 'còn dư ~' + tqN(Math.max(0, o.rem - o.pace * Math.max(0, (o.enMax - TQ_ASOF) / TQ_DAY / TQ_MON))) + ' box khi hết hạn'}`); }
+  if (o.act.length && o.rem > 0){ L.push(`Cần dùng ${tqN(o.need)} box/th để utilize hết trước hạn thầu (RR = 1)`);
+    if (o.pace) L.push(`Đã dùng TB ${tqN(o.pace)} box/th → ${o.outAt && o.enMax && o.outAt < o.enMax ? 'hết quota ~' + tqMy(o.outAt) : 'còn dư ~' + tqN(Math.max(0, o.rem - o.pace * Math.max(0, (o.enMax - TQ_ASOF) / TQ_DAY / TQ_MON))) + ' box khi hết hạn'}`); }
   if (ratio !== undefined && num(ratio) !== 1) L.push(`Phần của MR (ratio ${rto(ratio)}): ${tqN((o.rem + o.upQ) * num(ratio))} box`);
-  o.upE.forEach(u => L.push(`◇ Dự kiến: +${tqN(u.qty)} box từ ${tqMy(u.eff)}${u.kind ? ' · ' + u.kind : ''}${u.rep_name ? ' · ' + u.rep_name : ''}`));
+  o.upE.forEach(u => L.push(`◇ Upcoming: +${tqN(u.qty)} box từ ${tqMy(u.eff)}${u.kind ? ' · ' + u.kind : ''}${u.rep_name ? ' · ' + u.rep_name : ''}`));
   L.push(`Số liệu thầu ngày ${dmy(TQ_ASOF)}`);
   return L.join('\n');
 }
@@ -2674,8 +2675,8 @@ function tqTip(o, ratio){
 function tqChip(x, ratio){
   const o = tqOf(x); if (!o) return '';
   const up = o.upE.length ? ` <span class="tqu">◇ +${tqN(o.upAll)}</span>` : '';
-  if (!o.pk.length) return `<button type="button" class="tqc up" data-tq="${esc(o.k)}" data-tip="${esc(tqTip(o, ratio))}">◇ Quota dự kiến +${tqN(o.upAll)}</button>`;
-  return `<button type="button" class="tqc ${o.st}" data-tq="${esc(o.k)}" data-tip="${esc(tqTip(o, ratio))}">${o.rem > 0 ? 'Quota còn ' + tqN(o.rem) : o.st === 'noq' ? 'Hết hạn thầu' : 'Hết quota'}${o.rr !== null && o.act.length ? ' · RR ' + tqRR(o.rr) : ''}${up}</button>`;
+  if (!o.pk.length) return `<button type="button" class="tqc up" data-tq="${esc(o.k)}" data-tip="${esc(tqTip(o, ratio))}">◇ Upcoming +${tqN(o.upAll)}</button>`;
+  return `<button type="button" class="tqc ${o.st}" data-tq="${esc(o.k)}" data-tip="${esc(tqTip(o, ratio))}">${o.rem > 0 ? 'Remaining ' + tqN(o.rem) : o.st === 'noq' ? 'Hết hạn thầu' : 'Hết quota'}${o.rr !== null && o.act.length ? ' · RR ' + tqRR(o.rr) : ''}${up}</button>`;
 }
 const tqStChip = st => `<span class="tqs ${st}" data-tip="${esc(TQS[st][1])}">${TQS[st][0]}</span>`;
 // MR được nhập quota dự kiến cho mã KH có trong danh sách của mình; admin nhập cho mọi mã
@@ -2686,19 +2687,19 @@ function tqDialog(k){
   let o = k ? TQ.get(k) : null;
   const myCodes = [...new Map(D.mapping.filter(m => isAdmin() || m.rep_name === ME.rep_name).map(m => [m.cust_code, m.cust_name]))].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
   const skus = D.prices.filter(p => !p.launch && vTeams().includes(p.team || TEAMS[0])).map(p => p.sku);
-  const pkT = o && o.pk.length ? `<div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l">Gói</th><th>Quota</th><th>Hiệu lực</th><th>Hết hạn</th><th>Đã dùng</th><th>Còn lại</th><th data-tip="% quota đã dùng / % thời gian đã qua">RR</th><th data-tip="Box mỗi tháng để dùng hết quota còn lại đúng ngày hết hạn">Cần /tháng</th><th>Dự kiến hết</th></tr></thead><tbody>
-    ${o.pk.map((p, i) => `<tr${p.expired ? ' class="muted"' : ''}><td class="l">Gói ${i + 1}${p.expired ? ' · hết hạn' : ''}</td><td>${tqN(p.q)}</td><td>${p.st ? dmy(p.st) : '–'}</td><td>${p.en ? dmy(p.en) : '–'}</td><td>${tqN(p.used)}</td><td>${tqN(p.rem)}</td><td>${tqRR(p.rr)}</td><td>${p.active && p.rem > 0 ? tqN(p.need) : '–'}</td><td>${p.active ? (p.rem <= 0 ? 'đã hết' : p.outAt && p.en && p.outAt < p.en ? tqMy(p.outAt) : 'không hết') : '–'}</td></tr>`).join('')}</tbody></table></div>` : '';
-  const upRows = o => o ? o.up.map(u => `<tr><td class="l"><span class="tqu">◇</span> ${tqN(u.qty)} box</td><td>${tqMy(u.eff)}</td><td class="l">${esc(u.kind || '')}</td><td class="l nt">${esc(u.note || '')}</td><td class="l sub">${esc(u.rep_name || '')}</td><td class="l">${u.status === 'confirmed' ? '<span class="sub">đã có trong file</span>' : 'dự kiến'}</td>
-      <td class="l">${(isAdmin() || (ME.role === 'MR' && u.rep_name === ME.rep_name && u.status !== 'confirmed')) ? `<button class="btn sm danger" data-tqdel="${u.id}">Xoá</button>` : ''}${isAdmin() && u.status !== 'confirmed' ? ` <button class="btn sm" data-tqok="${u.id}" data-tip="Gói này đã có trong file Tender: không cộng vào quota dự kiến nữa">Đã có trong file</button>` : ''}</td></tr>`).join('') : '';
+  const pkT = o && o.pk.length ? `<div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l">Gói</th><th>Winning Quota</th><th>Hiệu lực</th><th>Hết hạn</th><th>Đã dùng</th><th>Remaining Quota</th><th data-tip="% quota đã dùng / % thời gian đã qua">RR</th><th data-tip="Box/tháng cần dùng để utilize hết Remaining Quota trước hạn thầu (RR = 1)">Cần dùng /th</th><th data-tip="Theo tốc độ đã dùng TB">Est. hết quota</th></tr></thead><tbody>
+    ${o.pk.map((p, i) => `<tr${p.expired ? ' class="muted"' : ''}><td class="l">Gói ${i + 1}${p.expired ? ' · hết hạn' : ''}</td><td>${tqN(p.q)}</td><td>${p.st ? dmy(p.st) : '–'}</td><td>${p.en ? dmy(p.en) : '–'}</td><td>${tqN(p.used)}</td><td>${tqN(p.rem)}</td><td>${tqRR(p.rr)}</td><td>${p.active && p.rem > 0 ? tqN(p.need) : '–'}</td><td>${p.active ? (p.rem <= 0 ? 'đã hết' : p.outAt && p.en && p.outAt < p.en ? tqMy(p.outAt) : 'sau hạn thầu') : '–'}</td></tr>`).join('')}</tbody></table></div>` : '';
+  const upRows = o => o ? o.up.map(u => `<tr><td class="l"><span class="tqu">◇</span> ${tqN(u.qty)} box</td><td>${tqMy(u.eff)}</td><td class="l">${esc(u.kind || '')}</td><td class="l nt">${esc(u.note || '')}</td><td class="l sub">${esc(u.rep_name || '')}</td><td class="l">${u.status === 'confirmed' ? '<span class="sub">đã có trong file</span>' : 'chờ về'}</td>
+      <td class="l">${(isAdmin() || (ME.role === 'MR' && u.rep_name === ME.rep_name && u.status !== 'confirmed')) ? `<button class="btn sm danger" data-tqdel="${u.id}">Xoá</button>` : ''}${isAdmin() && u.status !== 'confirmed' ? ` <button class="btn sm" data-tqok="${u.id}" data-tip="Gói này đã có trong file Tender: không cộng vào Upcoming Quota nữa">Đã có trong file</button>` : ''}</td></tr>`).join('') : '';
   const canAdd = o ? tqCanEdit(o.code) : myCodes.length > 0;
   const now = new Date();
   const nextM = now.getMonth() === 11 ? `${now.getFullYear() + 1}-01` : `${now.getFullYear()}-${two(now.getMonth() + 2)}`;
   const reps = o ? tqReps(o.code) : [];
-  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0">${o ? esc(o.name || o.code) : 'Thêm quota dự kiến'}</h3><div class="sub">${o ? `${esc(o.code)} · ${esc(o.sku)} · số liệu ${dmy(TQ_ASOF)}` : ''}</div></div><div class="acts" style="margin:0"><button class="btn sm" data-a="close">Đóng</button></div></div>
-    ${o && o.pk.length ? `<div class="bvd-k">${[['Quota còn lại', tqN(o.rem) + ' box'], ['RR', tqRR(o.rr)], ['Cần /tháng (RR 1)', o.rem > 0 ? tqN(o.need) : '–'], ['Tốc độ hiện tại', o.pace ? tqN(o.pace) + '/tháng' : '–'], ['Dự kiến hết', o.rem <= 0 ? 'đã hết' : o.outAt && o.enMax && o.outAt < o.enMax ? tqMy(o.outAt) : 'không hết trước hạn']].map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('')}</div>${pkT}` : ''}
-    <h4 style="margin-top:12px">◇ Quota dự kiến</h4>
-    ${o && o.up.length ? `<div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l">Số lượng</th><th>Hiệu lực từ</th><th class="l">Loại</th><th class="l">Ghi chú</th><th class="l">MR</th><th class="l">Trạng thái</th><th></th></tr></thead><tbody>${upRows(o)}</tbody></table></div>` : '<div class="sub">Chưa có quota dự kiến.</div>'}
-    ${canAdd ? `<div class="tqf"><b>Thêm quota dự kiến</b>
+  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0">${o ? esc(bvName(o.name || o.code)) : 'Thêm Upcoming Quota'}</h3><div class="sub">${o ? `${esc(o.code)} · ${esc(o.sku)} · số liệu ${dmy(TQ_ASOF)}` : ''}</div></div><div class="acts" style="margin:0"><button class="btn sm" data-a="close">Đóng</button></div></div>
+    ${o && o.pk.length ? `<div class="bvd-k">${[['Remaining Quota', tqN(o.rem) + ' box'], ['RR', tqRR(o.rr)], ['Đã dùng TB /th', o.pace ? tqN(o.pace) : '–'], ['Cần dùng /th', o.rem > 0 ? tqN(o.need) : '–'], ['Est. hết quota', o.rem <= 0 ? 'đã hết' : o.outAt && o.enMax && o.outAt < o.enMax ? tqMy(o.outAt) : 'sau hạn thầu']].map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('')}</div>${pkT}` : ''}
+    <h4 style="margin-top:12px">◇ Upcoming Quota</h4>
+    ${o && o.up.length ? `<div class="tw" style="max-height:none"><table class="t"><thead><tr><th class="l">Số lượng</th><th>Hiệu lực từ</th><th class="l">Loại</th><th class="l">Ghi chú</th><th class="l">MR</th><th class="l">Trạng thái</th><th></th></tr></thead><tbody>${upRows(o)}</tbody></table></div>` : '<div class="sub">Chưa có Upcoming Quota.</div>'}
+    ${canAdd ? `<div class="tqf"><b>Thêm Upcoming Quota</b>
       ${o ? '' : `<label class="fl wide">Account <select id="tq-c">${myCodes.map(([c, n]) => `<option value="${esc(c)}">${esc(n)} · ${esc(c)}</option>`).join('')}</select></label><label class="fl">SKU <select id="tq-s">${skus.map(s => `<option>${esc(s)}</option>`).join('')}</select></label>`}
       <label class="fl">Số box <input id="tq-q" inputmode="numeric" placeholder="vd 3,000" style="width:110px"></label>
       <label class="fl">Hiệu lực từ <input id="tq-m" type="month" value="${nextM}"></label>
@@ -2713,18 +2714,18 @@ function tqDialog(k){
   bg.addEventListener('click', async e => {
     const t = e.target; if (t === bg || t.dataset.a === 'close') return bg.remove();
     try {
-      if (t.dataset.tqdel){ if (!await confirmBox('Xoá quota dự kiến này?')) return; await STORE.deleteUpcoming(+t.dataset.tqdel); return done('Đã xoá quota dự kiến'); }
+      if (t.dataset.tqdel){ if (!await confirmBox('Xoá Upcoming Quota này?')) return; await STORE.deleteUpcoming(+t.dataset.tqdel); return done('Đã xoá Upcoming Quota'); }
       if (t.dataset.tqok){ await STORE.setUpcomingStatus(+t.dataset.tqok, 'confirmed'); return done('Đã đánh dấu: gói đã có trong file Tender'); }
       if (t.id === 'tq-add'){
         const code = o ? o.code : $('#tq-c', bg).value, sku = o ? o.sku : $('#tq-s', bg).value, qty = Math.round(num(String($('#tq-q', bg).value).replace(/[^\d.]/g, ''))), m = $('#tq-m', bg).value;
         if (!code || !sku) return $('#tq-e', bg).textContent = 'Chọn account và SKU';
-        if (!(qty > 0)) return $('#tq-e', bg).textContent = 'Nhập số box quota dự kiến';
+        if (!(qty > 0)) return $('#tq-e', bg).textContent = 'Nhập số box Upcoming Quota';
         if (!/^\d{4}-\d{2}$/.test(m)) return $('#tq-e', bg).textContent = 'Chọn tháng hiệu lực';
         const rep = isAdmin() ? (($('#tq-r', bg) && $('#tq-r', bg).value) || tqReps(code)[0] || ME.rep_name) : ME.rep_name;
         const name = (o && o.name) || D.mapping.find(x => x.cust_code === code)?.cust_name || code;
         t.disabled = true;
         await STORE.saveUpcoming({cust_code: code, cust_name: name, sku, qty, eff_month: m + '-01', kind: $('#tq-k', bg).value, note: norm($('#tq-n', bg).value) || null, rep_name: rep, team: SKU_TEAM.get(sku) || TEAMS[0], status: 'expected'});
-        return done(`Đã thêm ◇ quota dự kiến ${nf0.format(qty)} box`);
+        return done(`Đã thêm ◇ Upcoming Quota ${nf0.format(qty)} box`);
       }
     } catch(err){ t.disabled = false; $('#tq-e', bg).textContent = 'Lỗi: ' + err.message; }
   });
@@ -2747,35 +2748,35 @@ function tqPanelHtml(units, F){
   const cnt = k => units.filter(u => u.o.pk.length && u.o.st === k).length, upN = units.filter(u => u.o.upE.length), overN = units.filter(u => u.over).length;
   const remBox = units.reduce((t, u) => t + u.o.rem, 0), remV = units.reduce((t, u) => t + u.o.rem * (priceOf(u.o.sku, 'Tender') || 0), 0);
   const k = (key, l, v, d, cls = '') => `<button type="button" class="kpi tqk ${cls} ${F === key ? 'on' : ''}" data-tqf="${key}"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></button>`;
-  return `<div class="tqkg">${k('all', 'Gói đang theo dõi', units.filter(u => u.o.act.length).length + ' <span class="u">mã × SKU</span>', `quota còn ${tqN(remBox)} box · ~${big(remV)}`)}
+  return `<div class="tqkg">${k('all', 'Gói đang theo dõi', units.filter(u => u.o.act.length).length + ' <span class="u">mã × SKU</span>', `Remaining Quota ${tqN(remBox)} box · ~${big(remV)}`)}
     ${k('out', 'Out of quota / hết hạn', cnt('out') + cnt('noq'), '', 'bad')}${k('fast', 'Hết trước hạn (RR > 1)', cnt('fast'), '', 'mid')}
-    ${k('exp', 'Hết hạn ≤ 90 ngày', cnt('exp'), '')}${k('slow', 'RR < 0.8', cnt('slow'), '')}
-    ${k('over', 'FC vượt quota', overN, '', overN ? 'bad' : '')}${k('up', '◇ Quota dự kiến', upN.length, `${tqN(upN.reduce((t, u) => t + u.o.upAll, 0))} box`)}</div>`;
+    ${k('exp', 'Hết hạn thầu ≤ 90 ngày', cnt('exp'), '')}${k('slow', 'RR < 0.8', cnt('slow'), '')}
+    ${k('over', 'FC vượt quota', overN, '', overN ? 'bad' : '')}${k('up', '◇ Upcoming Quota', upN.length, `${tqN(upN.reduce((t, u) => t + u.o.upAll, 0))} box`)}</div>`;
 }
 function tqTableHtml(units, F, opt = {}){
   const pass = u => F === 'all' ? true : F === 'out' ? ['out', 'noq'].includes(u.o.st) && u.o.pk.length : F === 'over' ? u.over : F === 'up' ? u.o.upE.length > 0 : u.o.pk.length && u.o.st === F;
   const l = units.filter(pass).filter(u => !opt.q || lc(u.o.name + ' ' + u.o.code + ' ' + u.o.sku + ' ' + u.mg).includes(lc(opt.q)));
   const S = {risk: (a, b) => TQ_ORD.indexOf(a.o.st) - TQ_ORD.indexOf(b.o.st) || (b.over - a.over) || a.o.rem - b.o.rem, rem: (a, b) => b.o.rem - a.o.rem, end: (a, b) => (a.o.en || 9e15) - (b.o.en || 9e15), name: (a, b) => String(a.o.name).localeCompare(String(b.o.name)) || a.o.sku.localeCompare(b.o.sku)};
   l.sort(S[opt.sort] || S.risk); const shown = l.slice(0, opt.n || 40), Q = P[4].label;
-  return `<div class="tw"><table class="t tqt"><thead><tr><th class="l stick">Account · SKU</th><th>Quota</th><th>Hết hạn</th><th>Còn lại</th><th data-tip="% quota đã dùng / % thời gian đã qua">RR</th><th data-tip="Box mỗi tháng để dùng hết quota còn lại đúng ngày hết hạn (RR = 1)">Cần /tháng</th><th data-tip="Tốc độ dùng quota hiện tại">Đang /tháng</th><th data-tip="Theo tốc độ hiện tại">Dự kiến hết</th>
-    <th data-tip="Box FC các tháng còn mở của ${Q} (tháng đang chạy: phần sau ngày dữ liệu)">FC còn lại ${Q}</th><th data-tip="RR cuối ${Q} nếu FC về đủ">RR sau FC</th><th>◇ Dự kiến</th><th class="l">Trạng thái</th>${opt.rep ? '<th class="l">MR</th>' : ''}</tr></thead><tbody>
+  return `<div class="tw"><table class="t tqt"><thead><tr><th class="l stick">Account · SKU</th><th>Winning Quota</th><th>Hết hạn</th><th>Remaining Quota</th><th data-tip="% quota đã dùng / % thời gian đã qua">RR</th><th data-tip="Box/tháng đã dùng trung bình từ ngày bắt đầu gói thầu">Đã dùng TB /th</th><th data-tip="Box/tháng cần dùng để utilize hết Remaining Quota trước hạn thầu (RR = 1)">Cần dùng /th</th><th data-tip="Ngày hết quota nếu giữ tốc độ đã dùng TB">Est. hết quota</th>
+    <th data-tip="Box FC các tháng còn mở của ${Q} (tháng đang chạy: phần sau ngày dữ liệu)">FC remain ${Q}</th><th data-tip="RR cuối ${Q} nếu FC về đủ">RR sau FC</th><th data-tip="Upcoming Quota MR nhập (thầu mới, MSBS 30%, gia hạn)">◇ Upcoming</th><th class="l">Trạng thái</th>${opt.rep ? '<th class="l">MR</th>' : ''}</tr></thead><tbody>
     ${shown.map(u => { const o = u.o, has = o.pk.length > 0;
-      return `<tr class="clk" data-tq="${esc(o.k)}"><td class="l stick">${esc(bvName(o.name || o.code))} <span class="sub">${esc(o.code)}${u.mg ? ' · ' + esc(bvName(u.mg)) : ''}${o.pk.length > 1 ? ` · ${o.pk.length} gói` : ''}</span><div class="sub">${esc(o.sku)}</div></td>
+      return `<tr class="clk" data-tq="${esc(o.k)}"><td class="l stick"><div class="tqa" data-tip="Mã KH ${esc(o.code)}">${esc(bvName(o.name || u.mg || o.code))}</div><div class="tqsk" data-tip="${esc(o.sku)}">${esc(skuShort(o.sku))}${o.pk.length > 1 ? ` · ${o.pk.length} gói` : ''}</div></td>
         <td>${has ? tqN(o.quota) : '–'}</td><td>${o.en ? dmy(o.en) : '–'}</td><td><b>${has ? tqN(o.rem) : '–'}</b></td><td class="${o.rr > 1 ? 'tqhot' : o.rr !== null && o.rr < 0.8 ? 'tqlow' : ''}">${has && o.act.length ? tqRR(o.rr) : '–'}</td>
-        <td>${o.act.length && o.rem > 0 ? tqN(o.need) : '–'}</td><td>${o.pace ? tqN(o.pace) : '–'}</td><td>${!has ? '–' : o.rem <= 0 ? 'đã hết' : o.outAt && o.enMax && o.outAt < o.enMax ? tqMy(o.outAt) : 'không hết'}</td>
-        <td${u.over ? ' class="tqhot" data-tip="FC vượt quota còn lại + ◇ dự kiến (theo ratio)"' : ''}>${u.rs.length ? tqN(u.open) : '–'}</td><td>${u.rs.length && has ? tqRR(u.rrFc) : '–'}</td>
-        <td>${o.upE.length ? `<span class="tqu">◇ +${tqN(o.upAll)}</span><div class="sub">từ ${tqMy(o.upE[0].eff)}</div>` : '–'}</td><td class="l">${has ? tqStChip(o.st) : '<span class="tqs up">Chỉ có dự kiến</span>'}${u.over ? ' <span class="tqs bad">FC vượt</span>' : ''}</td>${opt.rep ? `<td class="l sub wr">${esc(u.reps.join(', '))}</td>` : ''}</tr>`; }).join('') || `<tr><td class="l sub" colspan="13">Không có gói thầu nào${F !== 'all' ? ' theo bộ lọc này' : ''}.</td></tr>`}</tbody></table></div>
+        <td>${o.pace ? tqN(o.pace) : '–'}</td><td>${o.act.length && o.rem > 0 ? tqN(o.need) : '–'}</td><td>${!has ? '–' : o.rem <= 0 ? 'đã hết' : o.outAt && o.enMax && o.outAt < o.enMax ? tqMy(o.outAt) : 'sau hạn thầu'}</td>
+        <td${u.over ? ' class="tqhot" data-tip="FC vượt Remaining Quota + ◇ Upcoming (theo ratio)"' : ''}>${u.rs.length ? tqN(u.open) : '–'}</td><td>${u.rs.length && has ? tqRR(u.rrFc) : '–'}</td>
+        <td>${o.upE.length ? `<span class="tqu">◇ +${tqN(o.upAll)}</span><div class="sub">từ ${tqMy(o.upE[0].eff)}</div>` : '–'}</td><td class="l">${has ? tqStChip(o.st) : '<span class="tqs up">Chỉ có Upcoming</span>'}${u.over ? ' <span class="tqs bad">FC vượt</span>' : ''}</td>${opt.rep ? `<td class="l sub wr">${esc(u.reps.join(', '))}</td>` : ''}</tr>`; }).join('') || `<tr><td class="l sub" colspan="13">Không có gói thầu nào${F !== 'all' ? ' theo bộ lọc này' : ''}.</td></tr>`}</tbody></table></div>
     <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} mã × SKU · box · số liệu ${dmy(TQ_ASOF)}</span>${l.length > shown.length ? '<button class="btn sm" data-tqmore>Xem thêm</button>' : ''}</div>`;
 }
 // Khung Tender dùng chung: tab Tender (RFFM / admin) và thẻ Tender ở Dashboard của MR
 function tqMount(el, rows, opt = {}){
   const units = tqUnits(rows, opt), st = opt.state;
-  if (!TQ.size){ el.innerHTML = `<div class="card"><h3>Tender quota</h3><div class="sub">${isAdmin() ? 'Chưa có dữ liệu thầu: nạp file Tender Data ở Admin → Kỳ & nạp dữ liệu.' : 'Admin chưa nạp file Tender Data.'}</div>${opt.mine ? '<button class="btn sm" data-tqnew style="margin-top:8px">+ Quota dự kiến</button>' : ''}</div>`; }
+  if (!TQ.size){ el.innerHTML = `<div class="card"><h3>Tender quota</h3><div class="sub">${isAdmin() ? 'Chưa có dữ liệu thầu: nạp file Tender Data ở Admin → Kỳ & nạp dữ liệu.' : 'Admin chưa nạp file Tender Data.'}</div>${opt.mine ? '<button class="btn sm" data-tqnew style="margin-top:8px">+ Upcoming Quota</button>' : ''}</div>`; }
   else el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:10px"><h3 style="margin:0">Tender quota${opt.title ? ' · ' + esc(opt.title) : ''}</h3><span class="grow"></span>
-      <input type="search" data-tqq placeholder="Tìm BV / mã / SKU" value="${esc(st.q || '')}"><select data-tqs>${[['risk', 'Cần chú ý trước'], ['end', 'Hết hạn sớm nhất'], ['rem', 'Còn lại nhiều nhất'], ['name', 'Tên A–Z']].map(([k, l]) => `<option value="${k}" ${k === st.sort ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      <button class="btn sm" data-tqnew>+ Quota dự kiến</button></div>
+      <input type="search" data-tqq placeholder="Tìm BV / mã / SKU" value="${esc(st.q || '')}"><select data-tqs>${[['risk', 'Cần chú ý trước'], ['end', 'Hết hạn sớm nhất'], ['rem', 'Remaining Quota nhiều nhất'], ['name', 'Tên A–Z']].map(([k, l]) => `<option value="${k}" ${k === st.sort ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="btn sm" data-tqnew>+ Upcoming Quota</button></div>
     ${tqPanelHtml(units, st.f || 'all')}<div data-tqtb>${tqTableHtml(units, st.f || 'all', {q: st.q, sort: st.sort, n: st.n, rep: opt.rep})}</div>
-    <div class="sub" style="margin-top:6px">RR = % quota đã dùng / % thời gian thầu. ◇ = quota dự kiến.</div></div>`;
+    <div class="sub" style="margin-top:6px">RR = % quota đã dùng / % thời gian thầu. ◇ = Upcoming Quota.</div></div>`;
   const redraw = () => { const tb = $('[data-tqtb]', el); if (tb) tb.innerHTML = tqTableHtml(units, st.f || 'all', {q: st.q, sort: st.sort, n: st.n, rep: opt.rep}); };
   el.onclick = e => { const t = e.target;
     const f = t.closest('[data-tqf]'); if (f){ st.f = f.dataset.tqf === st.f ? 'all' : f.dataset.tqf; st.n = 40; return tqMount(el, rows, opt); }
@@ -2823,8 +2824,8 @@ function segTableHtml(units, mode, o){   // o: {sort, n, rep (cột MR), seg (c�
   const V = SEGV[mode], l = [...units].sort((SEG_SORT[o.sort] || SEG_SORT.fcv)[1]), tot = units.reduce((t, x) => t + x.fcv, 0), shown = l.slice(0, o.n || 20);
   const other = x => mode === 'type' ? [...x.chs].sort(chSort).map(c => c === 'Tender' ? 'Tender' : c).join(' + ') : typeLabel(accType(x));
   const T = V.tgt;
-  return `<div class="tw"><table class="t sgt"><thead><tr><th>#</th><th class="l stick">Account</th>${o.seg ? `<th class="l dt">${V.lab}</th>` : ''}<th class="l dt">${mode === 'type' ? 'Kênh' : 'Type BV'}</th>${o.rep ? '<th class="l dt">MR</th>' : ''}<th>${P[3].label}</th><th data-tip="Act. ${P[4].label} đến ${ASOF_DM}">QTD</th>${T ? '<th>Target</th>' : ''}<th>FC</th><th data-tip="Tỷ trọng FC trong nhóm đang xem">% FC</th>${T ? '<th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th>' : ''}<th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th>${T ? '<th class="l">Rủi ro</th>' : ''}</tr></thead><tbody>
-    ${shown.map((x, i) => `<tr class="clk" data-bv="${esc(x.code)}"><td class="sub">${i + 1}</td><td class="l stick">${esc(bvName(x.name))} <span class="sub">${esc(x.code)}${x.codes.size > 1 ? ` · ${x.codes.size} mã` : ''}</span><span class="sub mt">${esc([o.seg ? sgName(mode, x.seg) : '', other(x), o.rep ? [...x.reps].join(', ') : ''].filter(Boolean).join(' · '))}</span></td>${o.seg ? `<td class="l sub dt">${esc(sgName(mode, x.seg))}</td>` : ''}<td class="l sub dt">${esc(other(x) || '–')}</td>${o.rep ? `<td class="l sub wr dt">${esc([...x.reps].join(', '))}</td>` : ''}<td>${tr(x.act[3])}</td><td>${tr(x.act[4])}</td>${T ? `<td>${tr(x.tgt)}</td>` : ''}<td>${tr(x.fcv)}</td><td class="sub">${tot ? pct(x.fcv / tot) : '–'}</td>${T ? `<td>${achHtml(x.ach)}</td><td>${gapHtml(x.gap)}</td>` : ''}<td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td>${T ? `<td class="l" ${x.sig.length ? `data-tip="${esc(x.sig.map(s => s.t).join('\n'))}"` : ''}>${lvChip(x.level)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="14" class="l sub">Không có account.</td></tr>`}</tbody></table></div>
+  return `<div class="tw"><table class="t sgt"><thead><tr><th>#</th><th class="l stick">Account</th>${o.seg ? `<th class="l dt">${V.lab}</th>` : ''}<th class="l dt">${mode === 'type' ? 'Kênh' : 'Type BV'}</th>${o.rep ? '<th class="l dt">MR</th>' : ''}<th>${P[3].label}</th><th data-tip="Act. ${P[4].label} đến ${ASOF_DM}">QTD</th>${T ? '<th>Target</th>' : ''}<th>FC</th><th data-tip="% đóng góp vào FC của nhóm đang xem">%Contri</th>${T ? '<th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th>' : ''}<th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th>${T ? '<th class="l">Rủi ro</th>' : ''}</tr></thead><tbody>
+    ${shown.map((x, i) => `<tr class="clk" data-bv="${esc(x.code)}"><td class="sub">${i + 1}</td><td class="l stick"><span data-tip="Mã KH ${esc([...x.codes].join(', '))}">${esc(bvName(x.name))}</span><span class="sub mt">${esc([o.seg ? sgName(mode, x.seg) : '', other(x), o.rep ? [...x.reps].join(', ') : ''].filter(Boolean).join(' · '))}</span></td>${o.seg ? `<td class="l sub dt">${esc(sgName(mode, x.seg))}</td>` : ''}<td class="l sub dt">${esc(other(x) || '–')}</td>${o.rep ? `<td class="l sub wr dt">${esc([...x.reps].join(', '))}</td>` : ''}<td>${tr(x.act[3])}</td><td>${tr(x.act[4])}</td>${T ? `<td>${tr(x.tgt)}</td>` : ''}<td>${tr(x.fcv)}</td><td class="sub">${tot ? pct(x.fcv / tot) : '–'}</td>${T ? `<td>${achHtml(x.ach)}</td><td>${gapHtml(x.gap)}</td>` : ''}<td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td>${T ? `<td class="l" ${x.sig.length ? `data-tip="${esc(x.sig.map(s => s.t).join('\n'))}"` : ''}>${lvChip(x.level)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="14" class="l sub">Không có account.</td></tr>`}</tbody></table></div>
     <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · tr VND</span>${l.length > shown.length ? `<button class="btn sm" data-sgmore>Xem thêm</button>` : ''}</div>`;
 }
 function dashTQ(c){ tqMount(c.el, c.sel, {state: VIEW.tqSt, rep: !VIEW.dRep, brand: VIEW.dBrand, onlyRows: !!VIEW.dRep, title: VIEW.dRep}); }
@@ -2833,7 +2834,7 @@ function dashSeg(c){
   const keys = [...V.keys, ''].filter(k => units.some(o => o.seg === k)), cur = keys.includes(VIEW.sgKey) ? VIEW.sgKey : keys[0] ?? '', us = units.filter(o => o.seg === cur);
   if (!segSorts(mode).includes(VIEW.sgSort)) VIEW.sgSort = 'fcv';
   const card = k => { const xs = units.filter(o => o.seg === k), g = agg(xs.flatMap(o => o.rows)), top = [...xs].sort((x, y) => y.fcv - x.fcv).slice(0, 2), pr = pareto(xs);
-    return `<button type="button" class="kpi sgk ${k === cur ? 'on' : ''}" data-sgk="${esc(k)}"><div class="l">${esc(sgName(mode, k))}</div><div class="v">${big(g.fcv)} <span class="u">FC · ${pct(g.fcv / tot)}</span></div>
+    return `<button type="button" class="kpi sgk ${k === cur ? 'on' : ''}" data-sgk="${esc(k)}"><div class="l">${esc(sgName(mode, k))}</div><div class="v">${big(g.fcv)} <span class="u">FC · %Contri ${pct(g.fcv / tot)}</span></div>
       <div class="d">${xs.length} account${V.tgt && g.tgt ? ` · %Ach ${pct(g.ach)}` : ''} · Gr LYSP ${grHtml(g.gLy)} · Gr ${P[3].label} ${grHtml(g.gQ)}</div><div class="d">${pr.n}/${pr.of} account = 80% FC · top: ${top.map(o => esc(bvName(o.name))).join(', ')}</div></button>`; };
   const pr = pareto(us);
   c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:10px"><h3 style="margin:0">Top account theo ${V.lab}</h3><span class="grow"></span>
@@ -2867,7 +2868,7 @@ function bvDetail(code){
   const fil = r => (!VIEW.dBrand || r.brand === VIEW.dBrand) && (!VIEW.dCh || (r.channel || '(chưa gán)') === VIEW.dCh);
   const rows = ROWS.filter(r => (r.mc || r.cust_code) === code && fil(r)); const o = accAnalysis(rows)[0]; if (!o) return; const multi = o.codes.size > 1;
   const mini = (l, v, d) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d || '&nbsp;'}</div></div>`;
-  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0">${esc(o.name)}</h3><div class="sub">${esc([...o.codes].join(', '))} · ${esc(typeLabel(accType(o)))} · ${esc([...o.chs].sort(chSort).map(chLabel).join(', ') || 'chưa gán kênh')} · MR: ${esc([...o.reps].join(', '))}${VIEW.dBrand || VIEW.dCh ? ` · đang lọc ${esc([VIEW.dBrand, VIEW.dCh].filter(Boolean).join(', '))}` : ''}</div></div><div class="acts" style="margin:0">${lvChip(o.level)}<button class="btn sm" data-a="close">Đóng</button></div></div>
+  const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0" data-tip="Mã KH ${esc([...o.codes].join(', '))}">${esc(bvName(o.name))}</h3><div class="sub">${esc(typeLabel(accType(o)))} · ${esc([...o.chs].sort(chSort).map(chLabel).join(', ') || 'chưa gán kênh')} · MR: ${esc([...o.reps].join(', '))}${VIEW.dBrand || VIEW.dCh ? ` · đang lọc ${esc([VIEW.dBrand, VIEW.dCh].filter(Boolean).join(', '))}` : ''}</div></div><div class="acts" style="margin:0">${lvChip(o.level)}<button class="btn sm" data-a="close">Đóng</button></div></div>
     <div class="bvd-k">${mini(`Target ${P[4].label}`, big(o.tgt))}${mini(`FC ${P[4].label}`, big(o.fcv), o.tgt ? achHtml(o.ach) : 'không có target')}${mini('Act. QTD', big(o.qtd), `đến ${ASOF_DM}`)}${mini('TB 2Q', big(o.pace), o.vsPace !== null ? `FC ${o.vsPace >= 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(o.vsPace))}` : o.base < RISK.mat ? 'ít sales 2Q gần nhất' : '')}${mini(`LYSP · ${P[0].label}`, big(o.ly), `Gr ${grHtml(o.gLy)}`)}</div>
     ${o.sig.length ? `<div class="bvd-s">${sigHtml(o)}${topicHtml(o)}</div>` : ''}
     <div class="grid2"><div><h4>Sales by quarter</h4><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div>${qChartHtml(o, 170)}</div>
@@ -3430,10 +3431,10 @@ function buildExport(ExcelJS){
   // Tender quota (bản 4.14): từng gói thầu + ◇ quota dự kiến
   const tqs = [...TQ.values()].filter(o => vTeams().includes(SKU_TEAM.get(o.sku) || TEAMS[0]));
   if (tqs.length){ const tw = wb.addWorksheet('Tender quota', {views: [{state: 'frozen', ySplit: 1}]});
-    tw.addRow(['Mã KH', 'Tên KH', 'SKU', 'Loại', 'Quota (box)', 'Hiệu lực từ', 'Hết hạn', 'Đã dùng', 'Còn lại', 'RR', 'Cần /tháng (RR 1)', 'Trạng thái mã × SKU', 'Ghi chú', 'MR']); header(tw.getRow(1), 30);
+    tw.addRow(['Mã KH', 'Tên KH', 'SKU', 'Loại', 'Winning Quota (box)', 'Hiệu lực từ', 'Hết hạn', 'Đã dùng', 'Remaining Quota', 'RR', 'Cần dùng /th (RR 1)', 'Trạng thái mã × SKU', 'Ghi chú', 'MR']); header(tw.getRow(1), 30);
     for (const o of tqs.sort((a, b) => String(a.name).localeCompare(String(b.name)) || a.sku.localeCompare(b.sku))){
       o.pk.forEach((p, i) => tw.addRow([codeVal(o.code), o.name, o.sku, `Gói ${i + 1}${p.expired ? ' (hết hạn)' : ''}`, p.q, p.st, p.en, p.used, p.rem, p.rr === null ? null : +p.rr.toFixed(2), p.active && p.rem > 0 && p.need ? Math.round(p.need) : null, o.pk.length ? TQS[o.st][0] : '', '', tqReps(o.code).join(', ')]));
-      o.up.forEach(u => tw.addRow([codeVal(o.code), o.name, o.sku, u.status === 'confirmed' ? '◇ Dự kiến (đã có trong file)' : '◇ Dự kiến', num(u.qty), u.eff, null, null, null, null, null, u.kind || '', u.note || '', u.rep_name || '']));
+      o.up.forEach(u => tw.addRow([codeVal(o.code), o.name, o.sku, u.status === 'confirmed' ? '◇ Upcoming (đã có trong file)' : '◇ Upcoming', num(u.qty), u.eff, null, null, null, null, null, u.kind || '', u.note || '', u.rep_name || '']));
     }
     [12, 40, 26, 22, 12, 12, 12, 11, 11, 7, 12, 16, 30, 22].forEach((w, i) => tw.getColumn(i + 1).width = w); [5, 8, 9, 11].forEach(i => tw.getColumn(i).numFmt = BOX); [6, 7].forEach(i => tw.getColumn(i).numFmt = 'dd/mm/yyyy'); tw.getColumn(10).numFmt = '0.00'; }
   return {wb, name: `FC_Sale_${expTeam().replace(/\W+/g, '_')}_HCM_${CUR.replace("'", '')}_${now.toISOString().slice(0, 10)}.xlsx`};

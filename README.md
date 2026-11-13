@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.15.2 (13/11/2026) — Bảng Tender theo thuật ngữ file Tender Data, bỏ mã KH khỏi bảng
+
+- Tender: Quota → Winning Quota, Còn lại → Remaining Quota, Đang /tháng → Đã dùng TB /th, Cần /tháng → Cần dùng /th (để utilize hết trước hạn thầu, RR = 1), Dự kiến hết → Est. hết quota ("sau hạn thầu" khi không hết), FC còn lại → FC remain, ◇ Dự kiến → ◇ Upcoming Quota. Chip FC Input: "Remaining 7,837 · RR 1.2". Tên BV đậm, SKU ngắn (Xa20, Adalat LA 30) bên dưới.
+- Mọi bảng xem (FC Input, Dashboard, New launch, Tender, chi tiết BV, Risk): chỉ ghi tên BV, mã KH xem khi rê chuột vào tên. Bảng Admin và file Excel giữ mã KH.
+- % FC → %Contri (By channel, By type BV, Top account).
+
 ## Database bản 11 (13/11/2026) — Cả team cùng vào không bị đơ
 
 - Load test (database test riêng, dữ liệu cỡ team thật, server giới hạn 1 nhân CPU): với bản 10, 20 MR đăng nhập cùng lúc phải chờ 17–18 s mới tải xong, có request lỗi 504; 20 MR mở bằng trình duyệt thật thì 5 người không vào được. Nguyên nhân: điều kiện quyền (RLS) `is_admin()`, `is_member()` được tính lại cho từng dòng dữ liệu.
