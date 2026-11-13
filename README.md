@@ -2,6 +2,17 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Database bản 11 (13/11/2026) — Cả team cùng vào không bị đơ
+
+- Load test (database test riêng, dữ liệu cỡ team thật, server giới hạn 1 nhân CPU): với bản 10, 20 MR đăng nhập cùng lúc phải chờ 17–18 s mới tải xong, có request lỗi 504; 20 MR mở bằng trình duyệt thật thì 5 người không vào được. Nguyên nhân: điều kiện quyền (RLS) `is_admin()`, `is_member()` được tính lại cho từng dòng dữ liệu.
+- `migration_v11.sql`: tính các hàm quyền 1 lần cho mỗi truy vấn, kiểm tra "dòng của MR" bằng danh sách mapping của MR. **Không đổi quyền**: đã so số dòng + checksum từng bảng của 22 tài khoản test, giống hệt bản 10; MR vẫn không ghi được dòng của MR khác, không ghi khi kỳ đã khoá.
+- Kết quả: 20 MR cùng đăng nhập 1.3 s, 40 MR 2–2.6 s, 80 MR 3.6–4.6 s, 150 MR 7.5–9.4 s, không lỗi. Lưu FC p50 ~60 ms ở 20 người. Trên Supabase thật, 1 lần tải dữ liệu của MR nhiều dòng nhất: 920 ms → 14 ms (thời gian database).
+- Đã chạy trên app thật 13/11/2026 (migration `v11_rls_fast`). Cài mới: `schema.sql` đã gồm bản 11.
+
+## Nâng cấp từ bản 10 (đang chạy)
+
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v11.sql` → **Run**. Kết quả cuối file: `db_version = 11`. Không đổi dữ liệu, không đổi quyền.
+
 ## Phiên bản 4.15.1 (13/11/2026) — Bảng dashboard trên điện thoại dọc
 
 - Cột tên dính bên trái (Account, MR) chỉ chiếm tối đa ~40% màn hình, tên dài xuống dòng → thấy được các cột số khi vuốt ngang.
