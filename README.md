@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.14 (13/11/2026) — Tender quota, gọn nhãn
+
+- **Tender quota** (cần chạy `migration_v10.sql`): admin nạp file **Tender Data** export ở Admin → Kỳ & nạp dữ liệu (thay toàn bộ, chỉ giữ mã KH có trên app, ngày số liệu lấy theo tên file).
+  - Mỗi gói: quota, hiệu lực, đã dùng, còn lại, RR (% quota đã dùng / % thời gian thầu), cần / tháng để dùng hết trước hạn (RR = 1), tốc độ hiện tại, tháng dự kiến hết quota. Mã × SKU cộng các gói còn hiệu lực.
+  - Trạng thái: Out of quota · Hết hạn thầu · Hết trước hạn (RR > 1) · Sắp hết hạn (≤ 90 ngày) · RR < 0.8 · Ổn.
+  - **FC Input:** chip "Quota còn … · RR …" ở dòng SKU có thầu. FC các tháng còn mở > (quota còn lại + ◇ dự kiến hiệu lực trong quý) × ratio → cờ "FC vượt quota", phải chọn lý do mới submit.
+  - **◇ Quota dự kiến:** MR nhập cho account của mình (thầu mới, MSBS 30%, gia hạn: số box, tháng hiệu lực, ghi chú), admin nhập cho mọi account và bấm "Đã có trong file" khi file Tender có gói đó. Hiện ◇ ở chip, bảng Tender, file Excel.
+  - **Dashboard:** tab Tender (RFFM / admin) và thẻ Tender quota ở Dashboard của MR: thẻ đếm theo trạng thái, bảng mã × SKU (còn lại, RR, cần / tháng, dự kiến hết, FC còn lại quý, RR sau FC, ◇), bấm dòng xem từng gói. Excel có sheet Tender quota.
+- **Gọn nhãn:** bỏ "mã gốc", "merge …", "n mã", type BV cạnh mã KH ở FC Input; bỏ "(merge code)" trong cảnh báo; bỏ các dòng giải thích dưới bảng By channel, By type BV, Forecast, Top account, By account, New launch; chi tiết BV chỉ ghi các mã KH.
+
 ## Phiên bản 4.13 (13/11/2026) — Giá theo kênh, dashboard MR mới, Top account
 
 - **Giá / box theo kênh** (cần chạy `migration_v9.sql`): mỗi SKU có Giá chung + giá riêng Tender / Self-pay / Clinic (để trống = Giá chung). FC (VND) = box × giá của kênh account.
