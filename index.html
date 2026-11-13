@@ -1034,7 +1034,7 @@ class DemoStore {
   }
   async proposeMapping(row){ const n = this.stampAdd({...row, id: this.db.nextId++}); this.db.mapping.push(n); this.persist(); return n; }
   // Như trigger stamp_mapping (DB bản 14): người không phải admin thêm dòng → tự add, ghi người + giờ add
-  stampAdd(r){ if ((ME_REAL || ME)?.role !== 'ADMIN') r.self_add = true; if (r.self_add) Object.assign(r, {added_by: this.user, added_at: nowIso()}); return r; }
+  stampAdd(r){ if ('self_add' in r || (ME_REAL || ME)?.role !== 'ADMIN') r.self_add = isSelfAdd(r.rep_name); if (r.self_add) Object.assign(r, {added_by: this.user, added_at: nowIso()}); return r; }
   async approveMapping(ids){ const s = new Set(ids); this.db.mapping.forEach(m => { if (s.has(m.id)) m.status = 'active'; }); this.persist(); }
   async updateMappingRow(id, patch){ const r = this.db.mapping.find(x => x.id === id); Object.assign(r, patch); this.persist(); }
   async deleteMappingRows(ids){ const s = new Set(ids); this.db.mapping = this.db.mapping.filter(r => !s.has(r.id)); this.persist(); }
@@ -1996,7 +1996,7 @@ function onReviewClick(e){
 }
 function proposeDialog(rep, pre = {}){
   const pt = teamOfRep(rep), pl = D.prices.filter(p => (p.team || TEAMS[0]) === pt && !p.launch);   // SKU có target của team MR (New launch thêm ở FC Input → New launch)
-  const bg = modal(`<h3>Đề xuất account / SKU cho ${esc(rep)}</h3><div class="sub">Dùng cho account mới, SKU mới hoặc account chuyển về mình. Sản phẩm New launch (chưa có target): thêm BV ở FC Input → New launch. ${isAdmin() ? 'Admin: dòng được thêm ngay.' : 'Bạn nhập FC được ngay; admin duyệt để thành dòng chính thức.'}${selfOn() ? ' Dòng có nhãn <span class="chip sa">tự add</span>.' : ''}</div>
+  const bg = modal(`<h3>Đề xuất account / SKU cho ${esc(rep)}</h3><div class="sub">Dùng cho account mới, SKU mới hoặc account chuyển về mình. Sản phẩm New launch (chưa có target): thêm BV ở FC Input → New launch. ${isAdmin() ? 'Admin: dòng được thêm ngay.' : 'Bạn nhập FC được ngay; admin duyệt để thành dòng chính thức.'}${selfOn() && isSelfAdd(rep) ? ' Dòng có nhãn <span class="chip sa">tự add</span>.' : ''}</div>
     <div class="f">${accFieldsHtml('pp', pre)}<label class="sub" for="pp-sku">SKU</label><select id="pp-sku">${(pl.length ? pl : D.prices).map(p => `<option>${esc(p.sku)}</option>`).join('')}</select>
     <input id="pp-ratio" type="number" min="1" max="100" value="100" placeholder="Ratio % của bạn (1–100)" aria-label="Ratio %">
     <textarea id="pp-note" rows="2" placeholder="Lý do đề xuất (bắt buộc), vd: thầu mới, first order est. T12" aria-label="Lý do đề xuất"></textarea></div>
@@ -2006,7 +2006,7 @@ function proposeDialog(rep, pre = {}){
     const v = AF.read(), sku = $('#pp-sku', bg).value, rt = num($('#pp-ratio', bg).value) / 100, note = norm($('#pp-note', bg).value); const m = $('#pp-m', bg);
     const bad = AF.error(); if (bad) return m.textContent = bad; if (!sku) return m.textContent = 'Chọn SKU.'; if (!note) return m.textContent = 'Cần ghi lý do đề xuất.'; if (!(rt > 0 && rt <= 1)) return m.textContent = 'Ratio từ 1 đến 100%.';
     if (D.mapping.some(x => x.rep_name === rep && x.cust_code === v.code && x.sku === sku)) return m.textContent = 'Dòng này đã có.';
-    const pr = D.prices.find(p => p.sku === sku); const row = {team: pt, rep_name: rep, cust_code: v.code, cust_name: v.name, brand: pr?.brand || brandOf(sku), sku, ratio: rt, channel: null, status: isAdmin() ? 'active' : 'proposed', proposed_by: ME.email, proposed_note: note, ...selfCols(v)};
+    const pr = D.prices.find(p => p.sku === sku); const row = {team: pt, rep_name: rep, cust_code: v.code, cust_name: v.name, brand: pr?.brand || brandOf(sku), sku, ratio: rt, channel: null, status: isAdmin() ? 'active' : 'proposed', proposed_by: ME.email, proposed_note: note, ...selfCols(v, rep)};
     try { if (isAdmin()) await (selfOn() ? STORE.addMappingRows([row]) : STORE.upsertMapping([row], false)); else await STORE.proposeMapping(row); bg.remove(); toast(isAdmin() ? 'Đã thêm dòng' : 'Đã gửi đề xuất, nhập FC được ngay'); VIEW.fcFlt = 'active'; VIEW.fcMode = 'im'; VIEW.tab = 'fc'; await reload(); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
 }
 
@@ -2022,7 +2022,9 @@ const isPhone = s => /^0\d{8,10}$/.test(String(s ?? ''));
 const codeKind = c => isPhone(c) ? 'SĐT' : /^NEW-/.test(c) ? 'mã tạm' : 'mã KH';
 const codeVis = c => isPhone(c) ? String(c).replace(/^(\d{4})(\d{3})(\d+)$/, '$1 $2 $3') : c;
 const fold = s => lc(nlAscii(s)).replace(/\s+/g, ' ').trim();
-const selfCols = v => selfOn() ? {self_add: true, ...(v.address ? {address: v.address} : {})} : {};
+// Tự add = người phụ trách tự thêm dòng của mình bằng tool (kể cả admin có FC); admin thêm cho MR khác = allocate (như trigger stamp_mapping)
+const isSelfAdd = rep => { const u = ME_REAL || ME; return u.role !== 'ADMIN' || rep === u.rep_name; };
+const selfCols = (v, rep) => selfOn() ? {self_add: isSelfAdd(rep), ...(v.address ? {address: v.address} : {})} : {};
 function saTip(x){ const w = memName(x.added_by); return `MR tự add trên app${w ? ' · ' + w : ''}${x.added_at ? ' · ' + ddmm(x.added_at) : ''}${x.cust_code ? ` · ${codeKind(x.cust_code)} ${codeVis(x.cust_code)}` : ''}${x.address ? '\nĐịa chỉ: ' + x.address : ''}`; }
 const saChip = x => x && x.self_add ? `<span class="chip sa" data-tip="${esc(saTip(x))}">tự add</span>` : '';
 // Ô Code + Tên PK / BV (+ địa chỉ) dùng chung cho Thêm BV (New launch) và Đề xuất account
@@ -2383,7 +2385,7 @@ function nlAddDialog(rep, team, pre = {}){
   let seg = null, segAuto = true;
   const setSeg = (sg, auto) => { seg = sg; segAuto = !!auto; $$('[data-sp]', bg).forEach(b => b.setAttribute('aria-checked', String(b.dataset.sp === sg))); };
   const fillRep = () => { const sk = nlSkus([teamOfRep(cur)]);
-    $('#nl-intro', bg).innerHTML = `BV, phòng khám ${team ? esc(cur) : 'bạn'} dự kiến có đơn ${esc(nlBrands([teamOfRep(cur)]))} trong ${P[4].label}. Thêm xong nhập FC ngay ở bảng.${selfOn() ? ' Dòng có nhãn <span class="chip sa">tự add</span>.' : ''}`;
+    $('#nl-intro', bg).innerHTML = `BV, phòng khám ${team ? esc(cur) : 'bạn'} dự kiến có đơn ${esc(nlBrands([teamOfRep(cur)]))} trong ${P[4].label}. Thêm xong nhập FC ngay ở bảng.${selfOn() && isSelfAdd(cur) ? ' Dòng có nhãn <span class="chip sa">tự add</span>.' : ''}`;
     $('#nl-skus', bg).innerHTML = sk.map(p => `<label class="ck"><input type="checkbox" value="${esc(p.sku)}" checked><span><b>${esc(nlSku(p.sku))}</b><span class="sub">${esc(p.sku)}${p.price ? '' : ' · chưa có giá'}</span></span></label>`).join(''); };
   fillRep();
   const AF = accFields(bg, 'nla', {rep: cur, code: pre.code, name: pre.name, onHit: (hit, v) => { const sg = (hit && hit.segment) || segKnown(v.code) || (v.phone && !hit ? 'clinic' : null); if (sg && (segAuto || !seg)) setSeg(sg, true); }});
@@ -2398,7 +2400,7 @@ function nlAddDialog(rep, team, pre = {}){
     if (!skus.length) return m.textContent = 'Chọn ít nhất 1 SKU.';
     const have = new Set(D.mapping.filter(x => x.rep_name === cur && x.cust_code === v.code).map(x => x.sku)), add = skus.filter(s2 => !have.has(s2));
     if (!add.length) return m.textContent = `${v.name} đã có các SKU này trong New launch của ${cur}.`;
-    const rows = add.map(sku => { const p = D.prices.find(x => x.sku === sku) || {}; return {team: p.team || teamOfRep(cur), rep_name: cur, cust_code: v.code, cust_name: v.name, brand: p.brand || brandOf(sku), sku, ratio: 1, channel: null, status: 'active', segment: seg, ...selfCols(v)}; });
+    const rows = add.map(sku => { const p = D.prices.find(x => x.sku === sku) || {}; return {team: p.team || teamOfRep(cur), rep_name: cur, cust_code: v.code, cust_name: v.name, brand: p.brand || brandOf(sku), sku, ratio: 1, channel: null, status: 'active', segment: seg, ...selfCols(v, cur)}; });
     const btn = e.target; btn.disabled = true;
     try { await STORE.addMappingRows(rows);
       // Cùng BV đã có ở New launch của MR với kênh khác: đồng bộ kênh mới chọn
@@ -3549,6 +3551,16 @@ function viewDash(){
 async function readWorkbook(file, sheets){ await getXLSX(); return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = e => { try { res(XLSX.read(new Uint8Array(e.target.result), {type: 'array', cellDates: false, ...(sheets ? {sheets} : {})})); } catch(err){ rej(err); } }; fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
 function sheetRows(ws){ return XLSX.utils.sheet_to_json(ws, {header: 1, raw: true, defval: null, blankrows: false}); }
 function findHeader(rows, mustHave){ for (let i = 0; i < Math.min(rows.length, 30); i++){ const r = (rows[i] || []).map(lc); if (mustHave.every(h => r.includes(lc(h)))) return i; } return -1; }
+// Địa chỉ khách hàng trong raw (bản 4.21): 1 cột địa chỉ đầy đủ (Customer Address, Ship-to Address, Địa chỉ…),
+// không có thì ghép các cột Street / Ward / District / City / Province. Trả {cols: tên cột dùng, of(row): địa chỉ}
+function addrCols(hdr){
+  const h = hdr.map(x => fold(String(x ?? ''))), ok = x => x && !/mail|ip address|web|code|ma /.test(x);
+  const score = x => /address|dia chi/.test(x) ? (/customer|khach|ship|sold|deliver|giao/.test(x) ? 3 : /full|day du/.test(x) ? 2 : 1) : 0;
+  let best = -1; h.forEach((x, i) => { if (ok(x) && score(x) && (best < 0 || score(x) > score(h[best]))) best = i; });
+  const pick = best >= 0 ? [best] : ['street|so nha|duong', 'ward|phuong|xa', 'district|quan|huyen', 'city|province|tinh|thanh pho']
+    .map(re => h.findIndex(x => ok(x) && new RegExp(`(^|[^a-z])(${re})([^a-z]|$)`).test(x) && !/group|channel|region|area|vung|trang/.test(x))).filter((i, k, a) => i >= 0 && a.indexOf(i) === k);
+  return {cols: pick.map(i => norm(hdr[i])), of: r => pick.map(i => norm(r[i])).filter(Boolean).join(', ')};
+}
 function colIdx(hdr, names){ const h = hdr.map(lc); for (const n of names){ const i = h.indexOf(lc(n)); if (i >= 0) return i; } return -1; }
 function findSheet(wb, prefer, mustHave){ for (const n of [...prefer, ...wb.SheetNames]){ if (!wb.Sheets[n]) continue; const rows = sheetRows(wb.Sheets[n]); const hi = findHeader(rows, mustHave); if (hi >= 0) return {rows, hi, hdr: rows[hi]}; } return null; }
 
@@ -3589,8 +3601,8 @@ async function importSales(file, log, team = TEAMS[0]){
   const wb = await readWorkbook(file); const f = findSheet(wb, [], ['Customer Code', 'Net Sales Value', 'Year']);
   if (!f) throw new Error('Không tìm thấy dòng tiêu đề có Customer Code, Net Sales Value, Year');
   const h = f.hdr; const c = {code: colIdx(h, ['Customer Code']), name: colIdx(h, ['Customer Name']), sku: colIdx(h, ['SKU_Name', 'SKU']), val: colIdx(h, ['Net Sales Value']), qty: colIdx(h, ['Commercial Quantity', 'Quantity']), y: colIdx(h, ['Year']), m: colIdx(h, ['Month']), q: colIdx(h, ['Quarter']), date: colIdx(h, ['Invoice Confirmed Date', 'Invoice Date']), rep: colIdx(h, ['REP Name']), team: colIdx(h, ['REP Group']),
-    ch: colIdx(h, ['Customer Local Group 1 Desc', 'Channel_name', 'Channel name']), g2: colIdx(h, ['Customer Local Group 2 Desc']), g3: colIdx(h, ['Customer Local Group 3 Desc']),
-    addr: colIdx(h, ['Customer Address', 'Ship-to Address', 'Ship To Address', 'Address', 'Địa chỉ', 'Dia chi', 'Street'])};   // địa chỉ (bản 4.21, nếu raw có) cho tra cứu địa bàn
+    ch: colIdx(h, ['Customer Local Group 1 Desc', 'Channel_name', 'Channel name']), g2: colIdx(h, ['Customer Local Group 2 Desc']), g3: colIdx(h, ['Customer Local Group 3 Desc'])};
+  const AD = addrCols(h);   // địa chỉ khách hàng (bản 4.21) cho Tra cứu địa bàn
   if (c.sku < 0) throw new Error('Thiếu cột SKU_Name'); if (c.m < 0 && c.date < 0) throw new Error('Thiếu cột Month (hoặc Invoice Confirmed Date)');
   // Chỉ lấy SKU của team đang nạp (bảng giá + danh sách account của team); dữ liệu team khác giữ nguyên
   const skus = teamSkus(team); if (!skus.size) throw new Error(`Chưa có SKU nào của team ${teamName(team)}: chọn Team ${teamName(team)} ở header rồi nạp Bảng giá (bước 1) hoặc danh sách account (bước 2) trước.`);
@@ -3600,7 +3612,7 @@ async function importSales(file, log, team = TEAMS[0]){
     const r = f.rows[i]; const y = num(r[c.y]); const dt = c.date >= 0 ? excelDate(r[c.date]) : null; const mo = c.m >= 0 && num(r[c.m]) ? num(r[c.m]) : (dt ? dt.getMonth() + 1 : 0);
     if (!r[c.code] || !y || !mo){ skip++; continue; } n++;
     if (dt && (!maxD || dt > maxD)) maxD = dt;
-    { const cc = norm(r[c.code]); if (cc){ const o = cust.get(cc) || {cust_code: cc}; o.cust_name = norm(r[c.name]) || o.cust_name; if (c.ch >= 0 && r[c.ch]) o.channel = norm(r[c.ch]); if (c.g2 >= 0 && r[c.g2]) o.cust_group = norm(r[c.g2]); if (c.g3 >= 0 && r[c.g3]) o.sector = norm(r[c.g3]); if (c.addr >= 0) o.address = norm(r[c.addr]) || o.address || ''; cust.set(cc, o); } }   // danh mục khách hàng (mọi SKU)
+    { const cc = norm(r[c.code]); if (cc){ const o = cust.get(cc) || {cust_code: cc}; o.cust_name = norm(r[c.name]) || o.cust_name; if (c.ch >= 0 && r[c.ch]) o.channel = norm(r[c.ch]); if (c.g2 >= 0 && r[c.g2]) o.cust_group = norm(r[c.g2]); if (c.g3 >= 0 && r[c.g3]) o.sector = norm(r[c.g3]); if (AD.cols.length) o.address = AD.of(r) || o.address || ''; cust.set(cc, o); } }   // danh mục khách hàng (mọi SKU)
     const sku = norm(r[c.sku]); if (!skus.has(sku)) continue;
     const code = norm(r[c.code]); const v = num(r[c.val]); const qn = c.qty >= 0 ? num(r[c.qty]) : 0; const k = `${code}|${sku}|${y}|${mo}`; const o = ag.get(k) || [0, 0]; o[0] += v; o[1] += qn; ag.set(k, o);
     const isTeam = c.team < 0 || lc(r[c.team]) === tfl; const qk = y * 4 + Math.floor((mo - 1) / 3) + 1;
@@ -3614,7 +3626,7 @@ async function importSales(file, log, team = TEAMS[0]){
   if (maxD){ await STORE.saveTeam(team, {data_as_of: isoDate(maxD)}); if (team === TEAMS[0]) await STORE.saveSettings({data_as_of: isoDate(maxD)}); }
   let custTxt = '';
   if (cust.size && (MODE === 'demo' || D.dbv >= 7)){ const list = [...cust.values()].map(o => ({...o, segment: segOf(o.channel, o.cust_group, o.sector)})); const cn = k => list.filter(o => o.segment === k).length, chn = k => list.filter(o => chOfRaw(o, o.segment) === k).length;
-    try { await STORE.saveCustomers(list); custTxt = `\nDanh mục khách hàng: ${nf0.format(list.length)} mã. Type: BV công ${cn('gov')} · BV tư ${cn('priv')} · Clinic ${cn('clinic')}. Kênh: Tender ${chn('Tender')} · Self-pay ${chn('Self-pay')} · Clinic ${chn('Clinic')}.`; } catch(e){ custTxt = `\nChưa lưu được danh mục khách hàng: ${e.message}`; } }
+    try { await STORE.saveCustomers(list); const nAd = list.filter(o => o.address).length; custTxt = `\nDanh mục khách hàng: ${nf0.format(list.length)} mã. ${AD.cols.length ? `Địa chỉ (cột ${AD.cols.join(' + ')}): ${nf0.format(nAd)} mã.` : 'Raw không có cột địa chỉ (Customer Address / Địa chỉ…): Tra cứu chưa hiện địa chỉ.'} Type: BV công ${cn('gov')} · BV tư ${cn('priv')} · Clinic ${cn('clinic')}. Kênh: Tender ${chn('Tender')} · Self-pay ${chn('Self-pay')} · Clinic ${chn('Clinic')}.`; } catch(e){ custTxt = `\nChưa lưu được danh mục khách hàng: ${e.message}`; } }
   log(`Đọc ${nf0.format(n)} dòng (bỏ ${skip} dòng Total/trống). Lưu ${nf0.format(rows.length)} dòng (khách × SKU × tháng).${maxD ? ` Sales đến ${dmy(maxD)}.` : ''}\nSales team ${tf}: ${[...qt].sort((x, y) => x[0] - y[0]).map(([k, val]) => `${qlabel(Math.floor((k - 1) / 4), (k - 1) % 4 + 1)} ${big(val)}`).join(' · ')}${custTxt}`);
 }
 /* Tự trừ sales mới vào FC (giữ FC quý): chụp FC quý (box) từng dòng trước khi nạp raw sales; nạp xong, phần sales

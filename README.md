@@ -5,9 +5,9 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 ## Phiên bản 4.21 (13/11/2026) — Địa bàn tự add, tra cứu ai phụ trách
 - **Thêm địa bàn mới** (FC Input → New launch → ＋ Thêm BV / phòng khám, và In-market → ＋ Đề xuất account/SKU): điền **Code** (mã KH; chưa có mã thì SĐT phòng khám / BS, gõ có dấu cách, dấu chấm, +84 đều được, app lưu dạng 0903456789) + **Tên PK / BV**; địa chỉ không bắt buộc. Gõ mã có trong raw thì app tự điền tên, địa chỉ, type BV. Code lạ không phải SĐT (9–11 số) và không có trong raw thì báo lỗi.
 - Ngay khi gõ, app kiểm tra **đã có ai phụ trách** code / tên đó (cả team, kể cả account gộp): "⚠ Đã có Lê Minh Chi phụ trách" hoặc "✓ SĐT mới, chưa ai phụ trách". Vẫn thêm được nếu cùng phụ trách (địa bàn chung).
-- **Nhãn "tự add"** (viền xanh nét đứt) ở dòng MR tự thêm trên app; rê chuột: ai add, ngày, mã / SĐT, địa chỉ. Lọc nhanh: In-market → ô lọc "Địa bàn tự add", New launch → ô type BV "Địa bàn tự add", Admin → Phân bổ account → "Địa bàn tự add". Dòng cũ: đề xuất của MR và BV New launch MR đã thêm được gắn nhãn sẵn. Dòng admin nạp từ file không có nhãn.
+- **Nhãn "tự add"** (viền xanh nét đứt) chỉ ở dòng người phụ trách **tự thêm bằng tool** (Thêm BV New launch, Đề xuất account), kể cả admin có FC tự thêm dòng của mình; rê chuột: ai add, ngày, mã / SĐT, địa chỉ. Account từ raw / danh sách allocate, hoặc admin thêm cho MR khác = được allocate, không có nhãn. Mọi dòng đang có trước 13/11 là allocate. Lọc nhanh: In-market → ô lọc "Địa bàn tự add", New launch → ô type BV "Địa bàn tự add", Admin → Phân bổ account → "Địa bàn tự add".
 - **🔎 Tra cứu** (header, mọi người): gõ mã KH / SĐT / tên PK, BV (không dấu được) → code, tên, địa chỉ, type, người phụ trách (team, brand, tự add). Chưa ai phụ trách → "Chưa có ai phụ trách · bạn có muốn add new không?" + nút ＋ Add New launch / Đề xuất In-market (MR và admin; RFFM, CFO chỉ xem). Không hiện số sales.
-- Nạp raw sales: có cột địa chỉ (Customer Address / Address / Địa chỉ…) thì app lưu vào danh mục khách hàng để tra cứu.
+- **Địa chỉ từ raw sales:** admin nạp lại raw (Admin → Nạp dữ liệu → Raw sales), app lấy cột địa chỉ (Customer Address, Ship-to Address, Địa chỉ…; không có thì ghép Street / Ward / District / Province) vào danh mục khách hàng để Tra cứu hiện địa chỉ. Nhật ký nạp ghi lấy từ cột nào, bao nhiêu mã có địa chỉ.
 
 ## Phiên bản 4.20 + Database bản 14 (13/11/2026) — Admin có FC, ghi chú đồng đội
 - **Admin có FC (anh Kha, anh Chung) tính như MR** khi nộp FC tuần: CFO, RFFM thấy trong tab FC tuần của team mình có dòng FC.
@@ -19,8 +19,9 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 
 ## Nâng cấp từ bản 13 (đang chạy)
 
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v14.sql` → **Run**. Kết quả cuối file: `db_version = 14`, số người nộp FC tuần từng team.
-2. Bấm **Làm mới** trên app. Trước khi chạy, app vẫn dùng được: chưa có ghi chú cả team, nhãn tự add, Tra cứu.
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v14.sql` → **Run**. Kết quả cuối file: `db_version = 14` (cột số người nộp tuần ra NULL khi chạy ở SQL Editor là bình thường). App thật đã chạy 13/11 20:40.
+2. Chạy tiếp `migration_v14_1.sql` (sửa nhãn tự add: gỡ nhãn ở mọi dòng đang có, chỉ dòng tự thêm bằng tool mới có nhãn). Kết quả: `dong_tu_add = 0`.
+3. Bấm **Làm mới** trên app. Nạp lại raw sales để có địa chỉ cho Tra cứu.
 
 ## Phiên bản 4.19.1 (13/11/2026) — Merge code: target, %Ach, Gr hiện ở mã có sales
 - FC Input (từng MR và Cả team): account gộp nhiều mã (merge code) trước đây luôn hiện target / %Ach / Gr / lý do của cả account ở mã gốc (thường là mã Khoa Dược). Nhiều BV có mã Khoa Dược không có sales, mọi sales nằm ở mã NTBV (vd BV Từ Dũ), nên dòng không có sales lại hiện Gr, dòng có sales thì không.

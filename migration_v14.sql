@@ -5,7 +5,8 @@
 --  · fc_entries.note_by / note_at: server ghi ai điền ghi chú, lúc nào (chỉ khi ghi chú đổi), client không sửa được.
 --  · fc_notes: ghi chú theo account × SKU của người không có dòng FC ở đó (admin / RFFM nhập ở "Cả team"),
 --      mỗi người 1 ghi chú / dòng, ghi tên người điền. MR đọc được ghi chú ở mã KH mình phụ trách.
---  · mapping.self_add / added_by / added_at / address: nhãn "tự add" cho dòng MR tự thêm trên app (server ghi, MR không sửa được).
+--  · mapping.self_add / added_by / added_at / address: nhãn "tự add" cho dòng người phụ trách tự thêm bằng tool trên app
+--      (server ghi, MR không sửa được). Dòng đang có = được allocate, không gắn nhãn.
 --  · find_account(q): tra cứu mã KH / SĐT / tên PK, BV (không dấu) → code, tên, địa chỉ, ai phụ trách. Không có doanh số.
 -- Không đổi quyền cũ. Chạy được nhiều lần.
 -- =====================================================================
@@ -80,19 +81,21 @@ alter table public.mapping add column if not exists added_at timestamptz;
 alter table public.mapping add column if not exists address text;
 alter table public.customers add column if not exists address text;   -- từ raw sales nếu có cột địa chỉ
 
+-- Tự add = người phụ trách tự thêm dòng của mình bằng tool trên app (Thêm BV New launch / Đề xuất account), kể cả admin có FC.
+-- Dòng nạp từ raw / danh sách allocate, hoặc admin thêm cho MR khác = được allocate, không có nhãn.
 create or replace function public.stamp_mapping() returns trigger
   language plpgsql security definer set search_path = public as $$
 begin
   if new.status = 'proposed' and new.proposed_by is null then new.proposed_by := my_email(); end if;
-  if my_email() <> '' and not public.is_admin() then new.self_add := true; end if;   -- MR chỉ thêm được qua app
+  if my_email() <> '' then
+    if not public.is_admin() then new.self_add := true;                                   -- MR chỉ thêm được dòng của mình qua tool
+    elsif new.rep_name is distinct from public.my_rep() then new.self_add := false; end if;   -- admin thêm cho MR khác = allocate
+  end if;
   if new.self_add and my_email() <> '' then new.added_by := my_email(); new.added_at := now(); end if;
   return new;
 end $$;
 
--- Dòng cũ: đề xuất của MR + New launch (BV MR thêm trên app) là tự add
-update public.mapping m set self_add = true, added_by = coalesce(m.added_by, m.proposed_by), added_at = coalesce(m.added_at, m.created_at)
-where not m.self_add and (m.status = 'proposed' or m.proposed_by is not null
-  or exists (select 1 from public.prices p where p.sku = m.sku and p.launch));
+-- Dòng đang có (raw / danh sách allocate) giữ self_add = false: chỉ dòng tự add từ bản này trở đi mới có nhãn.
 
 -- MR không sửa được nhãn / người add (admin sửa được)
 create or replace function public.keep_add_stamp() returns trigger
