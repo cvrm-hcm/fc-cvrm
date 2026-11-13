@@ -8,6 +8,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - "FC của tôi" giữ như cũ, dòng địa bàn chung có chip "chung"; đồng nghiệp nhập giùm thì ghi "nhập giùm: tên · giờ". Địa bàn 1 mình: MR tự nhập, tự submit.
 - Số đồng nghiệp nhập giùm KHÔNG làm FC của MR thành "có sửa sau submit" (user chốt 13/11). FC của 1 MR đã được duyệt hoặc kỳ đã khoá → ô địa bàn chung chỉ xem.
 - `migration_v12.sql`: MR đọc thêm mapping / FC / target / trạng thái submit của đồng nghiệp, chỉ ở account × SKU mình cũng phụ trách; ghi FC giùm ở các dòng đó khi kỳ mở và FC đồng nghiệp chưa duyệt. Đã chạy trên app thật 13/11 (migration `v12_shared_territory_fc`): 17 MR, 15 MR có địa bàn chung, không MR nào thấy dòng ngoài địa bàn chung.
+- Dashboard của MR chia tab như RFFM: **Overview** (KPI, việc cần xử lý, chart quý / tháng, New launch) · **By brand** · **By channel** (kênh + type BV) · **By account** · **Tender** (quota thầu các account của MR).
 - Bảng New launch By BV: chỉ 1 SKU thì bỏ cột SKU (trùng FC box). Dòng Total / Grand Total luôn hiện ở đáy khung bảng khi cuộn. Top account bỏ cột Kênh, MR.
 
 ## Phiên bản 4.16 (13/11/2026) — Bấm tiêu đề cột để sắp xếp

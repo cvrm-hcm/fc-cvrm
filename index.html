@@ -2949,11 +2949,11 @@ function viewDash(){
   const segN = k => accs.filter(o => o.seg === k).length, segs = ['', ...SEGV.type.keys, ''].filter((k, i) => i === 0 || (k && segN(k)) || (i > 0 && !k && accs.some(o => !o.seg)));
   if (VIEW.accSeg && !segs.includes(VIEW.accSeg)) VIEW.accSeg = '';
   if (!segSorts('type').includes(VIEW.accSort)) VIEW.accSort = 'gap';
-  v.innerHTML = `
-    <div class="bar filters"><h2 style="margin:0">Dashboard của tôi · ${P[4].label}</h2><span class="grow"></span>
-      <label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
-      <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label></div>
-    ${kpiBlocks(a, {tgtNote: `${accs.length} account · ${a.n} dòng account × SKU`, third: mine})}
+  // Bản 4.17: Dashboard MR chia tab như RFFM — Overview · By brand · By channel · By account · Tender
+  const hasTq = tqUnits(sel, {onlyRows: true, brand: VIEW.dBrand}).length > 0;
+  const MT = [['ov', 'Overview'], ['brand', '<span class="lg">By brand</span><span class="sm">Brand</span>'], ['ch', '<span class="lg">By channel</span><span class="sm">Channel</span>'], ['acc', '<span class="lg">By account</span><span class="sm">Account</span>'], ['tq', 'Tender']];
+  const T = MT.some(x => x[0] === VIEW.mTab) ? VIEW.mTab : 'ov';
+  const body = T === 'ov' ? `${kpiBlocks(a, {tgtNote: `${accs.length} account · ${a.n} dòng account × SKU`, third: mine})}
     <div class="att mra">
       ${todo('k-risk', 'Account dưới target', under, 'account', `gap tổng ${big(under.reduce((t, o) => t + o.short, 0))}`, o => `<span class="gap neg">−${big(o.short)}</span>`, 'Không có')}
       ${todo('', 'FC cao hơn TB 2Q', opt, 'account', `cao hơn ${big(opt.reduce((t, o) => t + o.over, 0))}`, o => `+${big(o.over)}`, 'Không có')}
@@ -2962,23 +2962,29 @@ function viewDash(){
     <div class="grid2">
       <div class="card"><h3>Sales by quarter</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND.</div></div>
       <div class="card"><h3>By month ${P[4].label}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act. / đơn đã lên</span><span><i style="background:var(--s2)"></i>FC remain</span></div><div id="ch-m"></div></div>
-    </div>
-    ${dimTableHtml('brand', sel)}
-    <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By account</h3>
+    </div>${nlMineCard()}`
+    : T === 'brand' ? dimTableHtml('brand', sel)
+    : T === 'ch' ? dimTableHtml('channel', sel) + dimTableHtml('atype', sel)
+    : T === 'acc' ? `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By account</h3>
       <span class="flt" style="margin:0">${segs.map(k => `<button class="fchip ${k === (VIEW.accSeg || '') && (k || !VIEW.accSeg) ? 'on' : ''}" data-aseg="${esc(k)}">${k ? esc(typeLabel(k)) : (segs.indexOf(k) ? 'Chưa phân loại' : 'Tất cả')} <span class="sub">${k ? segN(k) : accs.length}</span></button>`).join('')}</span>
       <span class="grow"></span><input type="search" id="a-q" placeholder="Tìm account" value="${esc(VIEW.accQ)}">
-      <select id="a-s">${segSorts('type').map(k => `<option value="${k}" ${k === VIEW.accSort ? 'selected' : ''}>${SEG_SORT[k][0]}</option>`).join('')}</select></div><div id="acc-tbl"></div>
-</div>
-    <div id="d-tq"></div>
-    ${dimTableHtml('atype', sel)}${dimTableHtml('channel', sel)}${nlMineCard()}`;
-  if (tqUnits(sel, {onlyRows: true, brand: VIEW.dBrand}).length) tqMount($('#d-tq'), sel, {state: VIEW.tqSt, rep: false, brand: VIEW.dBrand, onlyRows: true, mine: true});   // thẻ Tender: chỉ khi MR có account có thầu
-  $('#d-gofc').onclick = e => { e.preventDefault(); VIEW.tab = 'fc'; render(); };
+      <select id="a-s">${segSorts('type').map(k => `<option value="${k}" ${k === VIEW.accSort ? 'selected' : ''}>${SEG_SORT[k][0]}</option>`).join('')}</select></div><div id="acc-tbl"></div></div>`
+    : `<div id="d-tq">${hasTq ? '' : '<div class="card"><h3>Tender quota</h3><div class="sub">Không có account nào của bạn có gói thầu trong file Tender Data.</div></div>'}</div>`;
+  v.innerHTML = `
+    <div class="bar filters"><h2 style="margin:0">Dashboard của tôi · ${P[4].label}</h2><span class="grow"></span>
+      <label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
+      <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label></div>
+    <div class="dnav" role="tablist">${MT.map(([k, l]) => `<button role="tab" data-mt="${k}" class="${T === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div id="dt">${body}</div>`;
+  $$('[data-mt]').forEach(b => b.onclick = () => { VIEW.mTab = b.dataset.mt; viewDash(); });
+  if (T === 'tq' && hasTq) tqMount($('#d-tq'), sel, {state: VIEW.tqSt, rep: false, brand: VIEW.dBrand, onlyRows: true, mine: true});
+  $('#d-gofc') && ($('#d-gofc').onclick = e => { e.preventDefault(); VIEW.tab = 'fc'; render(); });
   $('#d-gonl') && ($('#d-gonl').onclick = e => { e.preventDefault(); VIEW.fcMode = 'nl'; VIEW.tab = 'fc'; render(); });
   $('#d-b').onchange = e => { VIEW.dBrand = e.target.value; viewDash(); };
   $('#d-c').onchange = e => { VIEW.dCh = e.target.value; viewDash(); };
   v.onclick = e => { const b = e.target.closest('[data-bv]'); if (b){ e.preventDefault(); return bvDetail(b.dataset.bv); } onReviewClick(e); };
-  $('#ch-q').innerHTML = qChartHtml(a);
-  $('#ch-m').innerHTML = mChartHtml(a);
+  if (T === 'ov'){ $('#ch-q').innerHTML = qChartHtml(a); $('#ch-m').innerHTML = mChartHtml(a); }
+  if (T !== 'acc') return;
   const drawAcc = () => {
     let l = accs.filter(o => (!VIEW.accSeg || o.seg === VIEW.accSeg) && (!VIEW.accQ || lc(o.name + ' ' + [...o.codes].join(' ')).includes(lc(VIEW.accQ))));
     $('#acc-tbl').innerHTML = segTableHtml(l, 'type', {sort: VIEW.accSort, n: VIEW.accN, rep: false, seg: !VIEW.accSeg});
