@@ -175,7 +175,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 /* FC Input: Subtotal dính dưới tiêu đề bảng (desktop), thanh Subtotal dính đầu danh sách (mobile), chế độ Cả team */
 .t thead tr.stot td{position:sticky;top:var(--hh,44px);z-index:2;background:#eaf1fb;font-weight:700;border-bottom:2px solid #c6d5ec;padding:6px 8px}
 .t thead tr.stot td.stick{left:0;z-index:3;background:#eaf1fb}
-.t tr.stot .u{font-size:10.5px;font-weight:500;color:var(--ink3);margin-left:2px}
+.vu{font-size:.82em;font-weight:500;opacity:.7;margin-left:1px}
 .mstot{position:sticky;top:var(--sbh);z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;background:#eaf1fb;border:1px solid #c6d5ec;border-radius:10px;padding:7px 10px;margin-bottom:10px;font-size:12.5px;box-shadow:0 2px 6px rgba(15,30,60,.08)}
 .t td .mrs,.mcards .mrs{white-space:normal;max-width:260px;font-size:11px;line-height:1.35;margin-top:1px}
 .mcards .mrs{max-width:none;margin:1px 0 2px}
@@ -525,8 +525,8 @@ input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-all
 /* ===== Giao diện 4.8.1 ===== */
 /* laptop 1280–1400: bảng FC vừa màn hình, không cuộn ngang */
 @media (max-width:1400px) and (min-width:761px){
-  #fc-body .t td,#fc-body .t th{padding-left:6px;padding-right:6px}
-  #fc-body .t input.note{width:128px}
+  #fc-body .t td,#fc-body .t th{padding-left:5px;padding-right:5px}
+  #fc-body .t input.note{width:124px}
   #fc-body select.rs{max-width:150px}
   #fc-body .t td.stick{max-width:250px;min-width:170px}
   #fc-body .t input.box{width:58px}
@@ -664,6 +664,9 @@ const nf0 = new Intl.NumberFormat('en-US', {maximumFractionDigits: 0});
 const nf1 = new Intl.NumberFormat('en-US', {maximumFractionDigits: 1, minimumFractionDigits: 1});
 const nf2 = new Intl.NumberFormat('en-US', {maximumFractionDigits: 2, minimumFractionDigits: 2});
 const tr = v => { if (!v || Math.abs(v) < 5e4) return '–'; const m = v / 1e6; return Math.abs(m) < 100 ? nf1.format(m) : nf0.format(m); };
+// Số tiền kèm đơn vị (bản 4.15): bảng có cả box và tiền ghi 424tr cho khỏi nhầm với box
+const trU = v => { const s = tr(v); return s === '–' ? s : `${s}<span class="vu">tr</span>`; };
+const trT = v => { const s = tr(v); return s === '–' ? s : s + 'tr'; };
 const big = v => !v ? '0' : (Math.abs(v) >= 1e9 ? nf2.format(v / 1e9) + ' tỷ' : nf0.format(v / 1e6) + ' tr');
 const pct = v => { if (v === null || v === undefined || !isFinite(v)) return '–'; const x = Math.round(v * 100); return nf0.format(x === 0 ? 0 : x) + '%'; };
 const ratio = (a, b) => b ? a / b : null;
@@ -1440,11 +1443,11 @@ function monthStrip(a){
 /* Subtotal theo bộ lọc ở đầu bảng: desktop là dòng dính ngay dưới tiêu đề, mobile là thanh dính đầu danh sách. Gõ FC là số tự cập nhật. */
 let FC_VIEW = {rows: [], nAcc: 0};
 // 4 quý trước: 3 quý cũ (LYSP … Q-2) gắn class ho, mặc định ẩn để bảng vừa màn hình; nút trên thanh lọc hiện lại
-const q4 = (arr, cls = '') => arr.slice(0, 4).map((x, i) => `<td class="${cls}${i < 3 ? ' ho' : ''}">${tr(x)}</td>`).join('');
+const q4 = (arr, cls = '') => arr.slice(0, 4).map((x, i) => `<td class="${cls}${i < 3 ? ' ho' : ''}">${trU(x)}</td>`).join('');
 function stotRow(a, nAcc){ const mn = MS.map(m => mlabel(D.settings.year, m));
-  return `<td class="l stick">Subtotal <span class="sub">· ${nAcc} account</span></td>${q4(a.act)}<td>${tr(a.act[4])}</td><td>${tr(a.tgt)}</td><td class="grp"></td>`
-    + a.fcvM.map((x, i) => `<td data-tip="${esc(`${mn[i]}: ${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? `Act. + FC từ ${NEXT_DM}` : 'FC'} (tr VND)`)}">${tr(x)}<span class="u">tr</span></td>`).join('')
-    + `<td>${tr(a.fcv)}</td><td>${achHtml(a.ach)}</td><td>${grHtml(a.gLy)}</td><td>${grHtml(a.gQ)}</td><td class="l">${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}</td><td class="l sub">đã nhập ${a.filled}/${a.n} dòng</td>`; }
+  return `<td class="l stick">Subtotal <span class="sub">· ${nAcc} account</span></td>${q4(a.act)}<td>${trU(a.act[4])}</td><td>${trU(a.tgt)}</td><td class="grp"></td>`
+    + a.fcvM.map((x, i) => `<td data-tip="${esc(`${mn[i]}: ${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? `Act. + FC từ ${NEXT_DM}` : 'FC'} (tr VND)`)}">${trU(x)}</td>`).join('')
+    + `<td>${trU(a.fcv)}</td><td>${achHtml(a.ach)}</td><td>${grHtml(a.gLy)}</td><td>${grHtml(a.gQ)}</td><td class="l">${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}</td><td class="l sub">đã nhập ${a.filled}/${a.n} dòng</td>`; }
 function stotBar(a, nAcc){ return `<b>Subtotal</b><span class="sub">${nAcc} account</span><span>Target <b>${big(a.tgt)}</b></span><span>FC <b>${big(a.fcv)}</b></span>${achHtml(a.ach)}<span>Gr LYSP ${grHtml(a.gLy)}</span>${a.need ? `<span class="warn">${a.need} cần lý do</span>` : ''}`; }
 function fixStot(tb){ if (tb && tb.tHead && tb.tHead.rows[0]) tb.style.setProperty('--hh', tb.tHead.rows[0].getBoundingClientRect().height + 'px'); }
 addEventListener('resize', () => { const tb = $('#fc-body table.t'); if (tb) fixStot(tb); });
@@ -1483,9 +1486,9 @@ const tGr = (o, k) => o.tu ? (o.tlead ? o.tu[k] : null) : o[k];
 const tTip = o => o.tu ? (o.tlead ? `Tính theo merge code ${o.mc}: cộng ${o.tu.lines.length} mã (${o.tu.lines.map(x => x.cust_code).join(' + ')})` : `Tính chung ở dòng mã ${o.tu.lead.cust_code} (merge code ${o.mc})`) : '';
 function paintLine(o){ const row = $$('#fc-body [data-tl]').find(x => x.dataset.tl === o.key); if (!row) return;
   const set = (k, h) => $$(`[data-tf="${k}"]`, row).forEach(c => c.innerHTML = h);
-  set('fcv', tr(o.fcv)); set('ach', achHtml(tAch(o))); set('gly', grHtml(tGr(o, 'gLy'))); set('gq', grHtml(tGr(o, 'gQ'))); set('flag', teamFlag(o) + teamAuto(o)); set('rs', teamRs(o)); }
+  set('fcv', trU(o.fcv)); set('ach', achHtml(tAch(o))); set('gly', grHtml(tGr(o, 'gLy'))); set('gq', grHtml(tGr(o, 'gQ'))); set('flag', teamFlag(o) + teamAuto(o)); set('rs', teamRs(o)); }
 function setAgg(el, g){ const set = (f, h) => { const c = $(`[data-ag="${f}"]`, el); if (c) c.innerHTML = h; };
-  set('fcv', el.tagName === 'TR' ? tr(g.fcv) : tr(g.fcv) + ' tr'); set('ach', achHtml(g.ach)); set('gly', grHtml(g.gLy)); set('gq', grHtml(g.gQ)); }
+  set('fcv', trU(g.fcv)); set('ach', achHtml(g.ach)); set('gly', grHtml(g.gLy)); set('gq', grHtml(g.gQ)); }
 // Cả team: gộp dòng của các MR theo account × SKU → full sale account (không chia ratio)
 function teamCalc(o){
   const has = (r, i) => { const x = r.f['m' + (i + 1)]; return x !== null && x !== undefined && x !== ''; }, sum = f => o.rows.reduce((t, r) => t + num(f(r)), 0);
@@ -1603,8 +1606,8 @@ function viewFC(){
       ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất<span class="dt"> account/SKU</span></button>' : ''}
       ${mob ? '' : histBtn}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
     <div id="fc-body"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
-    <div class="sub" style="margin-top:8px">${team ? `Đơn vị: tr VND, cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}Bấm tên MR để mở FC của MR đó.`
-      : `Đơn vị: tr VND, ô nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
+    <div class="sub" style="margin-top:8px">${team ? `Cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}Bấm tên MR để mở FC của MR đó.`
+      : `Ô tháng nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
   const body = $('#fc-body');
   const LOCK = '<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   const inp = (r, i) => { const c = ck(r);
@@ -1631,8 +1634,8 @@ function viewFC(){
   const a0 = agg(rows), stot = `<tr class="stot">${stotRow(a0, FC_VIEW.nAcc)}</tr>`, sbar = `<div class="mstot">${stotBar(a0, FC_VIEW.nAcc)}</div>`;
   const head = `<tr><th class="l stick" data-tip="${SZ_TIP}">Account / SKU ↓</th>${P.slice(0, 4).map((p, i) => `<th class="${i < 3 ? 'ho' : ''}">${p.label}</th>`).join('')}<th>QTD</th><th>Target</th><th class="grp" data-tip="TB box/tháng 2 quý gần nhất">TB 2Q<br>/tháng</th>
       ${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}" data-tip="${esc(mTip(i))}">${mHead(i)}</th>`).join('')}
-      <th>FC (tr)</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
-  const accCells = g => `<td data-ag="fcv">${tr(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
+      <th>FC</th><th class="h-ach">%Ach</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr">Gr vs ${P[3].label}</th><th class="l">Lý do</th><th class="l">Note</th></tr>`;
+  const accCells = g => `<td data-ag="fcv">${trU(g.fcv)}</td><td data-ag="ach">${achHtml(g.ach)}</td><td data-ag="gly">${grHtml(g.gLy)}</td><td data-ag="gq">${grHtml(g.gQ)}</td>`;
   if (!rows.length) body.innerHTML = `<div class="card sub">Không có dòng nào${F !== 'all' || q || VIEW.fcBrand || (team && VIEW.fcTerr) ? ' theo bộ lọc này' : ''}.</div>`;
   else if (team){
     const lines = teamLines(rows); FC_VIEW.lines = new Map(lines.map(o => [o.key, o])); teamUnits(lines);
@@ -1646,18 +1649,18 @@ function viewFC(){
       .sort((x, y) => sz(y.a) - sz(x.a) || y.a.act[4] - x.a.act[4] || String(x.mn).localeCompare(String(y.mn)));
     const accLbl = (c, x) => `${x.multi ? '<span class="mgi">↳</span>' : ''}${esc(c.ls[0].cust_name)} <span class="sub">${esc(c.ls[0].cust_code)}</span> ${chChip(c.ls.find(o => o.channel)?.channel, x.multi)}`;
     const mgLbl = x => `<b>${esc(x.mn)}</b>`;
-    const tTd = o => `<td data-tip="${esc(o.tu ? tTip(o) : o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : '')}">${o.tu && !o.tlead ? '<span class="muted">·</span>' : tr(tTgt(o))}</td>`;
+    const tTd = o => `<td data-tip="${esc(o.tu ? tTip(o) : o.tgtQ ? 'Target ' + nf0.format(Math.round(o.tgtQ)) + ' box' : '')}">${o.tu && !o.tlead ? '<span class="muted">·</span>' : trU(tTgt(o))}</td>`;
     // Thẻ mobile / dòng bảng (các SKU, cộng mọi MR)
     const lineCard = o => `<div class="sku" data-tl="${esc(o.key)}"><div class="n">${esc(o.sku)}${tqChip(o)}</div><div class="mrs sub">${teamMRs(o)}</div>
-        <div class="meta"><span>${P[3].label}: ${tr(o.act[3])}</span><span>QTD: ${tr(o.act[4])}</span>${o.tu && !o.tlead ? '' : `<span${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>Target: ${tr(tTgt(o))}</span>`}<span>TB 2Q: ${o.base || '–'}/th</span><span>FC: <b data-tf="fcv">${tr(o.fcv)}</b> <span data-tf="ach">${achHtml(tAch(o))}</span></span></div>
+        <div class="meta"><span>${P[3].label}: ${trU(o.act[3])}</span><span>QTD: ${trU(o.act[4])}</span>${o.tu && !o.tlead ? '' : `<span${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>Target: ${trU(tTgt(o))}</span>`}<span>TB 2Q: ${o.base ? o.base + ' box' : '–'}/th</span><span>FC: <b data-tf="fcv">${trU(o.fcv)}</b> <span data-tf="ach">${achHtml(tAch(o))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(o.ck, i)}</span></label>${tIn(o, i)}</div>`).join('')}</div>
         <div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div><div class="nt" data-tf="rs" style="margin-top:4px">${teamRs(o)}</div>${teamNt(o) ? `<div class="nt" style="margin-top:4px">${teamNt(o)}</div>` : ''}</div>`;
-    const cardHtml = x => `<div class="acc${x.multi ? ' mgc' : ''}" ${x.multi ? `data-mgk="${esc(x.mc)}"` : `data-agk="${esc(x.codes[0].ls[0].cust_code)}"`}><div class="acc-h"><span>${x.multi ? `${esc(x.mn)}<br><span class="sub">target ${tr(x.a.tgt)} tr</span>` : accLbl(x.codes[0], x)}</span><span style="text-align:right"><span data-ag="fcv">${tr(x.a.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
-      ${x.codes.map(c => x.multi ? `<div class="mcode" data-agk="${esc(c.ls[0].cust_code)}"><div class="mcode-h"><span>${accLbl(c, x)}</span><span data-ag="fcv">${tr(c.g.fcv)} tr</span></div>${c.ls.map(lineCard).join('')}</div>` : c.ls.map(lineCard).join('')).join('')}</div>`;
-    const lineRow = o => `<tr data-tl="${esc(o.key)}"${o.tu ? ` class="${o.tlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${o.tu || o.rows[0].mg ? '&nbsp;&nbsp;' : ''}${esc(o.sku)}${tqChip(o)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${q4(o.act, 'act')}<td class="act">${tr(o.act[4])}</td>${tTd(o)}<td class="grp muted">${o.base || '–'}</td>
-          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${tr(o.fcv)}</td><td data-tf="ach"${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>${achHtml(tAch(o))}</td><td data-tf="gly">${grHtml(tGr(o, 'gLy'))}</td><td data-tf="gq">${grHtml(tGr(o, 'gQ'))}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`;
-    const accHtml = x => (x.multi ? `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick">${mgLbl(x)}</td>${q4(x.a.act)}<td>${tr(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${tr(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>` : '')
-      + x.codes.map(c => `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.ls[0].cust_code)}"><td class="l stick">${accLbl(c, x)}</td>${q4(c.g.act)}<td>${tr(c.g.act[4])}</td><td>${x.multi ? '' : tr(c.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${tr(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>` + c.ls.map(lineRow).join('')).join('');
+    const cardHtml = x => `<div class="acc${x.multi ? ' mgc' : ''}" ${x.multi ? `data-mgk="${esc(x.mc)}"` : `data-agk="${esc(x.codes[0].ls[0].cust_code)}"`}><div class="acc-h"><span>${x.multi ? `${esc(x.mn)}<br><span class="sub">target ${trU(x.a.tgt)}</span>` : accLbl(x.codes[0], x)}</span><span style="text-align:right"><span data-ag="fcv">${trU(x.a.fcv)}</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
+      ${x.codes.map(c => x.multi ? `<div class="mcode" data-agk="${esc(c.ls[0].cust_code)}"><div class="mcode-h"><span>${accLbl(c, x)}</span><span data-ag="fcv">${trU(c.g.fcv)}</span></div>${c.ls.map(lineCard).join('')}</div>` : c.ls.map(lineCard).join('')).join('')}</div>`;
+    const lineRow = o => `<tr data-tl="${esc(o.key)}"${o.tu ? ` class="${o.tlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${o.tu || o.rows[0].mg ? '&nbsp;&nbsp;' : ''}${esc(o.sku)}${tqChip(o)}<div class="mrs sub">${teamMRs(o)}</div><div data-tf="flag">${teamFlag(o)}${teamAuto(o)}</div></td>${q4(o.act, 'act')}<td class="act">${trU(o.act[4])}</td>${tTd(o)}<td class="grp muted">${o.base || '–'}</td>
+          ${[0, 1, 2].map(i => `<td class="in">${tIn(o, i)}</td>`).join('')}<td data-tf="fcv">${trU(o.fcv)}</td><td data-tf="ach"${o.tu ? ` data-tip="${esc(tTip(o))}"` : ''}>${achHtml(tAch(o))}</td><td data-tf="gly">${grHtml(tGr(o, 'gLy'))}</td><td data-tf="gq">${grHtml(tGr(o, 'gQ'))}</td><td class="l rsn" data-tf="rs">${teamRs(o)}</td><td class="l nt">${teamNt(o)}</td></tr>`;
+    const accHtml = x => (x.multi ? `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick">${mgLbl(x)}</td>${q4(x.a.act)}<td>${trU(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${trU(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>` : '')
+      + x.codes.map(c => `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.ls[0].cust_code)}"><td class="l stick">${accLbl(c, x)}</td>${q4(c.g.act)}<td>${trU(c.g.act[4])}</td><td>${x.multi ? '' : trU(c.g.tgt)}</td><td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${trU(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>` + c.ls.map(lineRow).join('')).join('');
     // Vẽ trước TEAM_N account lớn nhất (theo target); "Xem thêm" nối tiếp vào bảng, không vẽ lại, không mất vị trí cuộn. Subtotal vẫn tính mọi dòng theo bộ lọc.
     const sig = [VIEW.fcTerr, VIEW.fcBrand, VIEW.fcFlt, VIEW.fcSearch].join('|'); if (VIEW.fcTeamSig !== sig){ VIEW.fcTeamSig = sig; VIEW.fcTeamN = TEAM_N; }
     const mob = MOBILE(), n0 = Math.min(accs.length, VIEW.fcTeamN);
@@ -1672,25 +1675,25 @@ function viewFC(){
   } else {
     // Từng MR: nhóm theo merge code → mã KH (Tender / NTBV) → SKU. Account 1 mã giữ như cũ (account → SKU).
     const groups = mGroups(rows, sz);
-    const tgtTd = r => `<td data-tip="${esc(r.mu ? MTIP(r) : r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : '')}">${r.mu && !r.mlead ? '<span class="muted">·</span>' : tr(rowTgt(r))}</td>`;
+    const tgtTd = r => `<td data-tip="${esc(r.mu ? MTIP(r) : r.tgtQ ? 'Target ' + nf0.format(Math.round(r.tgtQ)) + ' box' : '')}">${r.mu && !r.mlead ? '<span class="muted">·</span>' : trU(rowTgt(r))}</td>`;
     const skuCard = r => `<div class="sku${r.mu ? (r.mlead ? ' mlead' : ' msub') : ''}"><div class="n">${skuLbl(r)}</div>
-        <div class="meta"><span>${P[3].label}: ${tr(r.act[3])}</span><span>QTD: ${tr(r.act[4])}</span>${r.mu && !r.mlead ? '' : `<span${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>Target: ${tr(rowTgt(r))}</span>`}<span>TB 2Q: ${r.base || '–'}/th</span><span>FC: <b data-fcv="${r.id}">${tr(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(rowAch(r))}</span></span></div>
+        <div class="meta"><span>${P[3].label}: ${trU(r.act[3])}</span><span>QTD: ${trU(r.act[4])}</span>${r.mu && !r.mlead ? '' : `<span${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>Target: ${trU(rowTgt(r))}</span>`}<span>TB 2Q: ${r.base ? r.base + ' box' : '–'}/th</span><span>FC: <b data-fcv="${r.id}">${trU(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(rowAch(r))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
         <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}</div>`;
     const codeLbl = (c, x) => `${esc(c.rs[0].cust_name)} <span class="sub">${esc(c.rs[0].cust_code)}</span> ${chChip(c.rs[0].channel, x.multi)}`;
-    const skuRow = (r, deep) => `<tr${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${tr(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
-            ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${tr(r.fcv)}</td><td data-ach="${r.id}"${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${achHtml(rowAch(r))}</td><td data-gly="${r.id}">${grHtml(rowGr(r, 0))}</td><td data-gq="${r.id}">${grHtml(rowGr(r, 3))}</td>
+    const skuRow = (r, deep) => `<tr${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${trU(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
+            ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${trU(r.fcv)}</td><td data-ach="${r.id}"${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${achHtml(rowAch(r))}</td><td data-gly="${r.id}">${grHtml(rowGr(r, 0))}</td><td data-gq="${r.id}">${grHtml(rowGr(r, 3))}</td>
             <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}</td></tr>`;
     if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(x => x.multi
-      ? `<div class="acc mgc" data-mgk="${esc(x.mc)}"><div class="acc-h"><span>${esc(x.mn)}<br><span class="sub">target ${tr(x.a.tgt)} tr</span></span><span style="text-align:right"><span data-ag="fcv">${tr(x.a.fcv)} tr</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
-        ${x.codes.map(c => `<div class="mcode" data-agk="${esc(c.k)}"><div class="mcode-h"><span>↳ ${codeLbl(c, x)}</span><span data-ag="fcv">${tr(c.g.fcv)} tr</span></div>${c.rs.map(skuCard).join('')}</div>`).join('')}</div>`
-      : x.codes.map(c => `<div class="acc" data-agk="${esc(c.k)}"><div class="acc-h"><span>${esc(c.rs[0].cust_name)}<br><span class="sub">${esc(c.rs[0].cust_code)}</span> ${chChip(c.rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${tr(c.g.fcv)} tr</span><br><span data-ag="ach">${achHtml(c.g.ach)}</span></span></div>${c.rs.map(skuCard).join('')}</div>`).join('')).join('')}</div>`;
+      ? `<div class="acc mgc" data-mgk="${esc(x.mc)}"><div class="acc-h"><span>${esc(x.mn)}<br><span class="sub">target ${trU(x.a.tgt)}</span></span><span style="text-align:right"><span data-ag="fcv">${trU(x.a.fcv)}</span><br><span data-ag="ach">${achHtml(x.a.ach)}</span></span></div>
+        ${x.codes.map(c => `<div class="mcode" data-agk="${esc(c.k)}"><div class="mcode-h"><span>↳ ${codeLbl(c, x)}</span><span data-ag="fcv">${trU(c.g.fcv)}</span></div>${c.rs.map(skuCard).join('')}</div>`).join('')}</div>`
+      : x.codes.map(c => `<div class="acc" data-agk="${esc(c.k)}"><div class="acc-h"><span>${esc(c.rs[0].cust_name)}<br><span class="sub">${esc(c.rs[0].cust_code)}</span> ${chChip(c.rs[0].channel)}</span><span style="text-align:right"><span data-ag="fcv">${trU(c.g.fcv)}</span><br><span data-ag="ach">${achHtml(c.g.ach)}</span></span></div>${c.rs.map(skuCard).join('')}</div>`).join('')).join('')}</div>`;
     else { let html = '';
       for (const x of groups){
-        if (x.multi) html += `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick"><b>${esc(x.mn)}</b></td>${q4(x.a.act)}<td>${tr(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${tr(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>`;
+        if (x.multi) html += `<tr class="mg" data-mgk="${esc(x.mc)}"><td class="l stick"><b>${esc(x.mn)}</b></td>${q4(x.a.act)}<td>${trU(x.a.act[4])}</td><td data-tip="Target của merge code (account Bayer)">${trU(x.a.tgt)}</td><td class="grp"></td><td colspan="3"></td>${accCells(x.a)}<td></td><td></td></tr>`;
         for (const c of x.codes){
-          html += `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.k)}"><td class="l stick">${x.multi ? '<span class="mgi">↳</span>' : ''}${codeLbl(c, x)}</td>${q4(c.g.act)}<td>${tr(c.g.act[4])}</td><td>${x.multi ? '' : tr(c.g.tgt)}</td>
-            <td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${tr(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>`;
+          html += `<tr class="acc${x.multi ? ' mcode' : ''}" data-agk="${esc(c.k)}"><td class="l stick">${x.multi ? '<span class="mgi">↳</span>' : ''}${codeLbl(c, x)}</td>${q4(c.g.act)}<td>${trU(c.g.act[4])}</td><td>${x.multi ? '' : trU(c.g.tgt)}</td>
+            <td class="grp"></td><td colspan="3"></td>${x.multi ? `<td data-ag="fcv">${trU(c.g.fcv)}</td><td></td><td></td><td></td>` : accCells(c.g)}<td></td><td></td></tr>`;
           for (const r of c.rs) html += skuRow(r, x.multi);
         }
       }
@@ -1728,7 +1731,7 @@ function onFCInput(e){
   r.f = {...r.f, [f]: val, updated_at: nowIso(), ...(chg ? {auto_note: null, auto_at: null} : {})}; D.fc[id] = r.f; derive(r);
   if (r.mu) unitCalc(r.mu.rows);   // merge code: cảnh báo / %Ach tính lại trên tổng các mã
   if (chg) $$(`[data-auto="${id}"]`).forEach(x => x.remove());
-  $$(`[data-fcv="${id}"]`).forEach(x => x.textContent = tr(r.fcv));
+  $$(`[data-fcv="${id}"]`).forEach(x => x.innerHTML = trU(r.fcv));
   for (const x of r.mu ? r.mu.rows : [r]) paintRow(x);
   clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { if (r.nl) return nlRefresh(r); const el = $('#fc-kpi'); if (el) el.innerHTML = fcKpiHtml(r.rep_name); fcRefreshTotals(r); }, 250);
   const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
@@ -1932,7 +1935,7 @@ function nlView(c){
       ${brands.length > 1 ? `<select id="nl-b" aria-label="Brand"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.nlBrand ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>` : ''}
       ${addBtn('nl-add')}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
     <div id="fc-body" class="nlbody"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
-    <div class="sub" style="margin-top:8px">Đơn vị: tr VND, ô nhập theo box.${skus.some(p => !p.price) ? ` ${skus.filter(p => !p.price).map(p => nlSku(p.sku)).join(', ')} chưa có giá: FC chỉ tính box.` : ''}</div>`;
+    <div class="sub" style="margin-top:8px">Ô tháng nhập theo box.${skus.some(p => !p.price) ? ` ${skus.filter(p => !p.price).map(p => nlSku(p.sku)).join(', ')} chưa có giá: FC chỉ tính box.` : ''}</div>`;
   const body = $('#fc-body');
   const inp = (r, i) => { const k = ck(r), ed = canRow(r);
     if (k.mst[i] === 'closed') return `<span class="lockv" data-tip="${esc(`${mn[i]} đã có Act.: ${nf0.format(r.mtdBox[i])} box`)}">${r.mtdBox[i] ? nf0.format(r.mtdBox[i]) : '–'}</span>`;
@@ -1950,25 +1953,25 @@ function nlView(c){
   else if (!rows.length) body.innerHTML = '<div class="card sub">Không có BV nào theo bộ lọc này.</div>';
   else if (mob){
     const card = (x, sub) => `<div class="acc nlacc${sub ? ' nlsub' : ''}" data-nacc="${esc(x.code)}">
-      <div class="acc-h nlh"><span class="nlh-n">${sub ? '↳ ' : ''}${esc(x.name)}<span class="sub">${esc(x.code)}${mrN(x)}</span></span><span class="nlh-v"><span><b data-nag="fcv">${tr(x.g.fcv)}</b> tr</span><span class="sub"><span data-nag="box">${nf0.format(Math.round(x.g.box))}</span> box</span></span><span class="nlh-c">${sub ? nlChip(x) : ''}${segCell(x)}${rmBtn(x)}</span></div>
-      ${x.rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}${team ? ` <span class="sub">· ${esc(r.rep_name)}</span>` : ''}</div><div class="meta"><span>QTD: ${tr(r.act[4])}</span><span>FC: <b data-fbox="${r.id}">${nlBox(r)}</b> box · <b data-fcv="${r.id}">${tr(r.fcv)}</b> tr</span></div>
+      <div class="acc-h nlh"><span class="nlh-n">${sub ? '↳ ' : ''}${esc(x.name)}<span class="sub">${esc(x.code)}${mrN(x)}</span></span><span class="nlh-v"><span><b data-nag="fcv">${trU(x.g.fcv)}</b></span><span class="sub"><span data-nag="box">${nf0.format(Math.round(x.g.box))}</span> box</span></span><span class="nlh-c">${sub ? nlChip(x) : ''}${segCell(x)}${rmBtn(x)}</span></div>
+      ${x.rs.map(r => `<div class="sku"><div class="n">${skuLbl(r)}${team ? ` <span class="sub">· ${esc(r.rep_name)}</span>` : ''}</div><div class="meta"><span>QTD: ${trU(r.act[4])}</span><span>FC: <b data-fbox="${r.id}">${nlBox(r)}</b> box · <b data-fcv="${r.id}">${trU(r.fcv)}</b></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>${noteInp(r)}</div>`).join('')}</div>`;
     body.innerHTML = `<div class="mstot"><b>Subtotal</b><span class="sub">${nAcc} BV</span><span>FC <b data-nst="fcv">${nlBig(a0.fcv)}</b></span><span><b data-nst="box">${nf0.format(Math.round(a0.box))}</b> box</span></div><div class="mcards">${mgs.map((M, gi) => `${gi && mgs[gi - 1].seg === M.seg ? '' : `<div class="nlsegm ${M.seg || 'none'}">${esc(M.seg ? segName(M.seg) + ' · ' + segLong(M.seg) : 'Chưa chọn type')} <span class="sub">· ${mgs.filter(y => y.seg === M.seg).length} BV</span></div>`}${M.multi
-      ? `<div class="nlmgm" data-nmg="${esc(M.mc)}"><div class="nlmg-h"><span>${esc(M.name)} <span class="sub">merge ${esc(M.mc)} · ${M.codes.length} mã</span></span><span><b data-nag="fcv">${tr(M.g.fcv)}</b> tr · <span data-nag="box">${nf0.format(Math.round(M.g.box))}</span> box</span></div>${M.codes.map(x => card(x, true)).join('')}</div>`
+      ? `<div class="nlmgm" data-nmg="${esc(M.mc)}"><div class="nlmg-h"><span>${esc(M.name)}</span><span><b data-nag="fcv">${trU(M.g.fcv)}</b> · <span data-nag="box">${nf0.format(Math.round(M.g.box))}</span> box</span></div>${M.codes.map(x => card(x, true)).join('')}</div>`
       : card(M.codes[0], false)}`).join('')}</div>`;
   } else {
     const cols = 8 + (team ? 1 : 0) + (canAcc ? 1 : 0);
-    const head = `<tr><th class="l stick">BV / phòng khám · SKU</th><th class="l">Type BV</th>${team ? '<th class="l">MR</th>' : ''}${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mHead(i)}</th>`).join('')}<th>FC (box)</th><th>FC (tr)</th><th data-tip="Act. từ đầu quý đến ngày dữ liệu">Act. QTD</th><th class="l">Note</th>${canAcc ? '<th></th>' : ''}</tr>`;
+    const head = `<tr><th class="l stick">BV / phòng khám · SKU</th><th class="l">Type BV</th>${team ? '<th class="l">MR</th>' : ''}${mn.map((x, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mHead(i)}</th>`).join('')}<th>FC (box)</th><th>FC</th><th data-tip="Act. từ đầu quý đến ngày dữ liệu">Act. QTD</th><th class="l">Note</th>${canAcc ? '<th></th>' : ''}</tr>`;
     const mSum = (a, i) => { const v2 = Math.round(a.boxM[i]); return v2 ? nf0.format(v2) : '–'; };
-    const stot = `<tr class="stot"><td class="l stick">Subtotal <span class="sub">· ${nAcc} BV</span></td><td></td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nsm="${i}">${mSum(a0, i)}</td>`).join('')}<td data-nst="box">${nf0.format(Math.round(a0.box))}</td><td data-nst="fcv">${tr(a0.fcv)}</td><td>${tr(a0.act[4])}</td><td class="l sub">${a0.accFC.size}/${nAcc} BV có FC</td>${canAcc ? '<td></td>' : ''}</tr>`;
+    const stot = `<tr class="stot"><td class="l stick">Subtotal <span class="sub">· ${nAcc} BV</span></td><td></td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nsm="${i}">${mSum(a0, i)}</td>`).join('')}<td data-nst="box">${nf0.format(Math.round(a0.box))}</td><td data-nst="fcv">${trU(a0.fcv)}</td><td>${trU(a0.act[4])}</td><td class="l sub">${a0.accFC.size}/${nAcc} BV có FC</td>${canAcc ? '<td></td>' : ''}</tr>`;
     let html = '';
     let segPrev = null;
     for (const M of mgs){
       if (M.seg !== segPrev){ segPrev = M.seg; const gs = mgs.filter(y => y.seg === M.seg), sa = nlAgg(gs.flatMap(y => y.rs)); html += `<tr class="nlsegh ${M.seg || 'none'}"><td class="l stick" colspan="${cols}">${esc(M.seg ? segName(M.seg) + ' · ' + segLong(M.seg) : 'Chưa chọn type')} <span class="sub">· ${gs.length} BV · FC ${nlBig(sa.fcv)} · ${nf0.format(Math.round(sa.box))} box</span></td></tr>`; }
-      if (M.multi) html += `<tr class="mg" data-nmg="${esc(M.mc)}"><td class="l stick">${esc(M.name)} <span class="sub">merge ${esc(M.mc)} · ${M.codes.length} mã${mrN(M)}</span></td><td></td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(M.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(M.g.box))}</td><td data-nag="fcv">${tr(M.g.fcv)}</td><td>${tr(M.g.act[4])}</td><td></td>${canAcc ? '<td></td>' : ''}</tr>`;
+      if (M.multi) html += `<tr class="mg" data-nmg="${esc(M.mc)}"><td class="l stick">${esc(M.name)}${mrN(M) ? `<span class="sub">${mrN(M)}</span>` : ''}</td><td></td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(M.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(M.g.box))}</td><td data-nag="fcv">${trU(M.g.fcv)}</td><td>${trU(M.g.act[4])}</td><td></td>${canAcc ? '<td></td>' : ''}</tr>`;
      for (const x of M.codes){
-      html += `<tr class="acc${M.multi ? ' mcode' : ''}" data-nacc="${esc(x.code)}"><td class="l stick">${M.multi ? '<span class="mgi">↳</span>' : ''}${esc(x.name)} <span class="sub">${esc(x.code)}${M.multi && x.code === M.mc ? ' · mã gốc' : ''}${mrN(x)}</span> ${M.multi ? nlChip(x) : ''}</td><td class="l">${segCell(x)}</td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(x.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(x.g.box))}</td><td data-nag="fcv">${tr(x.g.fcv)}</td><td>${tr(x.g.act[4])}</td><td></td>${canAcc ? `<td>${rmBtn(x)}</td>` : ''}</tr>`;
-      for (const r of x.rs) html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}</td><td></td>${team ? `<td class="l sub">${esc(r.rep_name)}</td>` : ''}${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fbox="${r.id}">${nlBox(r)}</td><td data-fcv="${r.id}">${tr(r.fcv)}</td><td class="act">${tr(r.act[4])}</td><td class="in l">${noteInp(r)}</td>${canAcc ? '<td></td>' : ''}</tr>`;
+      html += `<tr class="acc${M.multi ? ' mcode' : ''}" data-nacc="${esc(x.code)}"><td class="l stick">${M.multi ? '<span class="mgi">↳</span>' : ''}${esc(x.name)} <span class="sub">${esc(x.code)}${mrN(x)}</span> ${M.multi ? nlChip(x) : ''}</td><td class="l">${segCell(x)}</td>${team ? '<td></td>' : ''}${[0, 1, 2].map(i => `<td data-nam="${i}">${mSum(x.g, i)}</td>`).join('')}<td data-nag="box">${nf0.format(Math.round(x.g.box))}</td><td data-nag="fcv">${trU(x.g.fcv)}</td><td>${trU(x.g.act[4])}</td><td></td>${canAcc ? `<td>${rmBtn(x)}</td>` : ''}</tr>`;
+      for (const r of x.rs) html += `<tr><td class="l stick">&nbsp;&nbsp;${skuLbl(r)}</td><td></td>${team ? `<td class="l sub">${esc(r.rep_name)}</td>` : ''}${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fbox="${r.id}">${nlBox(r)}</td><td data-fcv="${r.id}">${trU(r.fcv)}</td><td class="act">${trU(r.act[4])}</td><td class="in l">${noteInp(r)}</td>${canAcc ? '<td></td>' : ''}</tr>`;
      }
     }
     body.innerHTML = `<div class="tw"><table class="t nlt" data-cols="${cols}"><thead>${head}${stot}</thead><tbody>${html}</tbody></table></div>`;
@@ -1995,12 +1998,12 @@ function nlRefresh(r){
   const k = $('#nl-kpi'); if (k) k.innerHTML = nlStripHtml(NLROWS.filter(x => NL_VIEW.team || x.rep_name === NL_VIEW.rep));
   $$(`[data-fbox="${r.id}"]`).forEach(x => x.textContent = nlBox(r));
   const g = nlAgg(NL_VIEW.rows.filter(x => x.cust_code === r.cust_code));
-  $$(`[data-nacc="${CSS.escape(r.cust_code)}"]`).forEach(el => { const s = (sel, val) => { const x = $(sel, el); if (x) x.textContent = val; };
-    s('[data-nag="box"]', nf0.format(Math.round(g.box))); s('[data-nag="fcv"]', tr(g.fcv)); [0, 1, 2].forEach(i => s(`[data-nam="${i}"]`, Math.round(g.boxM[i]) ? nf0.format(Math.round(g.boxM[i])) : '–')); });
-  if (r.mc){ const gm = nlAgg(NL_VIEW.rows.filter(x => x.mc === r.mc)); $$(`[data-nmg="${CSS.escape(r.mc)}"]`).forEach(el => { const s = (sel, val) => $$(sel, el).filter(x => x.closest('[data-nmg]') === el && !x.closest('[data-nacc]')).forEach(x => x.textContent = val);
-    s('[data-nag="box"]', nf0.format(Math.round(gm.box))); s('[data-nag="fcv"]', tr(gm.fcv)); [0, 1, 2].forEach(i => s(`[data-nam="${i}"]`, Math.round(gm.boxM[i]) ? nf0.format(Math.round(gm.boxM[i])) : '–')); }); }
+  $$(`[data-nacc="${CSS.escape(r.cust_code)}"]`).forEach(el => { const s = (sel, val) => { const x = $(sel, el); if (x) x.innerHTML = val; };
+    s('[data-nag="box"]', nf0.format(Math.round(g.box))); s('[data-nag="fcv"]', trU(g.fcv)); [0, 1, 2].forEach(i => s(`[data-nam="${i}"]`, Math.round(g.boxM[i]) ? nf0.format(Math.round(g.boxM[i])) : '–')); });
+  if (r.mc){ const gm = nlAgg(NL_VIEW.rows.filter(x => x.mc === r.mc)); $$(`[data-nmg="${CSS.escape(r.mc)}"]`).forEach(el => { const s = (sel, val) => $$(sel, el).filter(x => x.closest('[data-nmg]') === el && !x.closest('[data-nacc]')).forEach(x => x.innerHTML = val);
+    s('[data-nag="box"]', nf0.format(Math.round(gm.box))); s('[data-nag="fcv"]', trU(gm.fcv)); [0, 1, 2].forEach(i => s(`[data-nam="${i}"]`, Math.round(gm.boxM[i]) ? nf0.format(Math.round(gm.boxM[i])) : '–')); }); }
   const a = nlAgg(NL_VIEW.rows); $$('[data-nst="box"]').forEach(x => x.textContent = nf0.format(Math.round(a.box)));
-  $$('[data-nst="fcv"]').forEach(x => x.textContent = x.closest('.mstot') ? nlBig(a.fcv) : tr(a.fcv));
+  $$('[data-nst="fcv"]').forEach(x => x.innerHTML = x.closest('.mstot') ? nlBig(a.fcv) : trU(a.fcv));
   [0, 1, 2].forEach(i => $$(`[data-nsm="${i}"]`).forEach(x => x.textContent = Math.round(a.boxM[i]) ? nf0.format(Math.round(a.boxM[i])) : '–'));
 }
 const nlScopeIds = code => NLROWS.filter(r => r.cust_code === code && (NL_VIEW.team || r.rep_name === NL_VIEW.rep)).map(r => r.id);
@@ -2087,7 +2090,7 @@ function dashNL(c){
   const byRep = reps.map(rep => { const rs = base.filter(r => r.rep_name === rep); return {rep, ...nlAgg(rs), n: rs.length}; }).sort((x, y) => y.fcv - x.fcv || y.box - x.box || x.rep.localeCompare(y.rep));
   const bx = b => Math.round(b || 0) ? nf0.format(Math.round(b)) : '<span class="muted">–</span>';
   const segSku = new Map(); sel.forEach(r => { const k = r.segment || '', m = segSku.get(k) || new Map(); m.set(r.sku, (m.get(r.sku) || 0) + (r.box || 0)); segSku.set(k, m); });
-  const t = nlAgg(base), segTd = (x, k) => `<td>${x.seg[k].fcv ? tr(x.seg[k].fcv) : '<span class="muted">–</span>'}</td>`;
+  const t = nlAgg(base), segTd = (x, k) => `<td>${x.seg[k].fcv ? trU(x.seg[k].fcv) : '<span class="muted">–</span>'}</td>`;
   c.el.innerHTML = `${brands.length > 1 ? `<div class="nlpills" role="group" aria-label="Brand">${['', ...brands].map(b => `<button class="chipbtn ${b === (VIEW.nlDBrand || '') ? 'on' : ''}" data-nlb="${esc(b)}">${b ? esc(titleW(b)) : 'Tất cả'}</button>`).join('')}</div>` : ''}
     ${!NLROWS.length ? `<div class="card nlempty"><div class="nle-t">Chưa có FC New launch</div><div class="sub">MR thêm BV / phòng khám và nhập FC ở FC Input → New launch (${esc(nlBrands(vTeams()))}). Số sẽ hiện ở đây theo MR, theo BV, theo type BV.</div></div>` : ''}
     ${nlStripHtml(sel, {dash: true, nRep: VIEW.dRep ? 1 : reps.length})}
@@ -2099,11 +2102,10 @@ function dashNL(c){
         <table class="t mini"><thead><tr><th class="l">SKU (box)</th>${MS.map(m => `<th>${mlabel(D.settings.year, m)}</th>`).join('')}<th>${P[4].label}</th></tr></thead><tbody>${skus.map(p => { const x = a.sku.get(p.sku) || {boxM: [0, 0, 0], box: 0}; return `<tr><td class="l">${esc(nlSku(p.sku))}</td>${x.boxM.map(b => `<td>${bx(b)}</td>`).join('')}<td><b>${bx(x.box)}</b></td></tr>`; }).join('')}</tbody></table></div>
     </div>
     <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><span class="sub">Bấm tên MR để mở FC New launch của MR đó</span></div>
-      <div class="tw"><table class="t nlbt"><thead><tr><th class="l stick">MR</th><th class="l hm">Trạng thái</th><th>FC (tr)</th><th>FC (box)</th>${SEGS.map(([k, l, d]) => `<th data-tip="${esc(d)}">${l} (tr)</th>`).join('')}<th>BV có FC</th><th>Act. QTD</th></tr></thead>
+      <div class="tw"><table class="t nlbt"><thead><tr><th class="l stick">MR</th><th class="l hm">Trạng thái</th><th>FC</th><th>FC (box)</th>${SEGS.map(([k, l, d]) => `<th data-tip="${esc(d)}">${l}</th>`).join('')}<th>BV có FC</th><th>Act. QTD</th></tr></thead>
       <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-nlopen="${esc(x.rep)}">${esc(x.rep)}</a></td><td class="l hm">${statusChip(x.rep)}</td>
-        <td>${x.n ? tr(x.fcv) : '<span class="muted">chưa có BV</span>'}</td><td>${x.box ? nf0.format(Math.round(x.box)) : '–'}</td>${SEGS.map(([k]) => segTd(x, k)).join('')}<td>${x.n ? `${x.accFC.size}/${x.acc.size}` : '–'}</td><td>${tr(x.act[4])}</td></tr>`).join('')}
-        <tr class="tot"><td class="l stick">Tổng team <span class="sub nlcode">${t.repsFC.size}/${reps.length} MR có FC</span></td><td class="l hm"></td><td>${tr(t.fcv)}</td><td>${nf0.format(Math.round(t.box))}</td>${SEGS.map(([k]) => segTd(t, k)).join('')}<td>${t.accFC.size}/${t.acc.size}</td><td>${tr(t.act[4])}</td></tr></tbody></table></div>
-      <div class="sub" style="margin-top:6px">Đơn vị: tr VND.</div></div>
+        <td>${x.n ? trU(x.fcv) : '<span class="muted">chưa có BV</span>'}</td><td>${x.box ? nf0.format(Math.round(x.box)) : '–'}</td>${SEGS.map(([k]) => segTd(x, k)).join('')}<td>${x.n ? `${x.accFC.size}/${x.acc.size}` : '–'}</td><td>${trU(x.act[4])}</td></tr>`).join('')}
+        <tr class="tot"><td class="l stick">Tổng team <span class="sub nlcode">${t.repsFC.size}/${reps.length} MR có FC</span></td><td class="l hm"></td><td>${trU(t.fcv)}</td><td>${nf0.format(Math.round(t.box))}</td>${SEGS.map(([k]) => segTd(t, k)).join('')}<td>${t.accFC.size}/${t.acc.size}</td><td>${trU(t.act[4])}</td></tr></tbody></table></div></div>
     <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By BV / phòng khám</h3><span class="grow"></span><input type="search" id="nlb-q" placeholder="Tìm BV / mã KH / MR" value="${esc(VIEW.nlbQ || '')}">
       <select id="nlb-s" aria-label="Type BV"><option value="all">Tất cả type BV</option>${SEGS.map(([k, l, d]) => `<option value="${k}" ${VIEW.nlbSeg === k ? 'selected' : ''}>${l} · ${d}</option>`).join('')}${sel.some(r => !r.segment) ? `<option value="" ${VIEW.nlbSeg === '' ? 'selected' : ''}>Chưa chọn type</option>` : ''}</select></div><div id="nlb"></div></div>`;
   const drawBV = () => {
@@ -2113,10 +2115,10 @@ function dashNL(c){
     const N = VIEW.nlbN || 30, list = gs.slice(0, N), tt = nlAgg(gs.flatMap(x => x.rs));
     const skuTd = (g, p) => { const v2 = g.sku.get(p.sku); return `<td>${v2 && Math.round(v2.box) ? nf0.format(Math.round(v2.box)) : '<span class="muted">–</span>'}</td>`; };
     const notes = x => { const multi = new Set(x.rs.map(r => r.rep_name)).size > 1; return [...new Set(x.rs.filter(r => norm(r.f.note)).map(r => `${multi ? r.rep_name.split(' ').pop() + ': ' : ''}${norm(r.f.note)}`))]; };
-    $('#nlb').innerHTML = gs.length ? `<div class="tw"><table class="t nlbt"><thead><tr><th class="l stick">BV / phòng khám</th><th class="l">Type BV</th><th class="l">MR</th>${skus.map(p => `<th data-tip="${esc(p.sku)}">${esc(nlSku(p.sku))}<br><span class="hs">box</span></th>`).join('')}<th>FC (box)</th><th>FC (tr)</th><th>Act. QTD</th><th class="l">Note</th></tr></thead>
-      <tbody>${list.map(x => `<tr><td class="l stick">${esc(x.name)} <span class="sub nlcode">${esc(x.multi ? `merge ${x.code} · ${x.codes.length} mã` : x.code)}</span></td><td class="l">${segChip(x.seg)}</td><td class="l">${[...new Set(x.rs.map(r => r.rep_name))].map(esc).join(', ')}</td>${skus.map(p => skuTd(x.g, p)).join('')}
-        <td>${Math.round(x.g.box) ? nf0.format(Math.round(x.g.box)) : '–'}</td><td>${tr(x.g.fcv)}</td><td>${tr(x.g.act[4])}</td><td class="l nt">${esc(notes(x).join(' · '))}</td></tr>`).join('')}
-        <tr class="tot"><td class="l stick">Tổng ${gs.length} BV</td><td></td><td></td>${skus.map(p => skuTd(tt, p)).join('')}<td>${nf0.format(Math.round(tt.box))}</td><td>${tr(tt.fcv)}</td><td>${tr(tt.act[4])}</td><td></td></tr></tbody></table></div>
+    $('#nlb').innerHTML = gs.length ? `<div class="tw"><table class="t nlbt"><thead><tr><th class="l stick">BV / phòng khám</th><th class="l">Type BV</th><th class="l">MR</th>${skus.map(p => `<th data-tip="${esc(p.sku)}">${esc(nlSku(p.sku))}<br><span class="hs">box</span></th>`).join('')}<th>FC (box)</th><th>FC</th><th>Act. QTD</th><th class="l">Note</th></tr></thead>
+      <tbody>${list.map(x => `<tr><td class="l stick">${esc(x.name)} <span class="sub nlcode">${esc(x.multi ? x.codes.join(', ') : x.code)}</span></td><td class="l">${segChip(x.seg)}</td><td class="l">${[...new Set(x.rs.map(r => r.rep_name))].map(esc).join(', ')}</td>${skus.map(p => skuTd(x.g, p)).join('')}
+        <td>${Math.round(x.g.box) ? nf0.format(Math.round(x.g.box)) : '–'}</td><td>${trU(x.g.fcv)}</td><td>${trU(x.g.act[4])}</td><td class="l nt">${esc(notes(x).join(' · '))}</td></tr>`).join('')}
+        <tr class="tot"><td class="l stick">Tổng ${gs.length} BV</td><td></td><td></td>${skus.map(p => skuTd(tt, p)).join('')}<td>${nf0.format(Math.round(tt.box))}</td><td>${trU(tt.fcv)}</td><td>${trU(tt.act[4])}</td><td></td></tr></tbody></table></div>
       ${gs.length > N ? `<div class="bar more"><span class="sub">Đang hiện ${N}/${gs.length} BV, xếp theo FC rồi quy mô account</span><button class="btn sm" id="nlb-more">Xem thêm</button></div>` : ''}` : '<div class="sub">Không có BV nào.</div>';
     $('#nlb-more') && ($('#nlb-more').onclick = () => { VIEW.nlbN = N + 50; drawBV(); });
   };
@@ -2568,7 +2570,7 @@ function dashRisk(c){
     const shown = l.slice(0, VIEW.rkN);
     $('#rk-l').innerHTML = l.length ? `<div class="rkh"><span>Account</span><span class="n4"><span>Target</span><span>FC</span><span>TB 2Q</span><span>Gap</span></span><span>Tín hiệu · Note MR</span></div>
       <div class="rkl">${shown.map(o => `<div class="rki" data-bv="${esc(o.code)}"><div class="a">${lvChip(o.level)} <b>${esc(o.name)}</b><div class="sub">${esc(o.code)}${o.chs.size ? ' · ' + esc([...o.chs].map(chLabel).join(', ')) : ''} · ${esc([...o.reps].join(', '))}</div></div>
-        <div class="n4"><span><i>Target</i>${tr(o.tgt)}</span><span><i>FC</i>${tr(o.fcv)} ${o.tgt ? `<small>${pct(o.fcv / o.tgt)}</small>` : ''}</span><span><i>TB 2Q</i>${tr(o.pace)}${isOpt(o) ? ` <small class="up" data-tip="FC cao hơn TB 2Q ${big(o.over)}">FC +${tr(o.over)}</small>` : ''}</span><span><i>Gap</i>${o.short ? `<b class="gap neg">−${tr(o.short)}</b>` : '<span class="muted">–</span>'}</span></div>
+        <div class="n4"><span><i>Target</i>${trU(o.tgt)}</span><span><i>FC</i>${trU(o.fcv)} ${o.tgt ? `<small>${pct(o.fcv / o.tgt)}</small>` : ''}</span><span><i>TB 2Q</i>${trU(o.pace)}${isOpt(o) ? ` <small class="up" data-tip="FC cao hơn TB 2Q ${big(o.over)}">FC +${trU(o.over)}</small>` : ''}</span><span><i>Gap</i>${o.short ? `<b class="gap neg">−${trU(o.short)}</b>` : '<span class="muted">–</span>'}</span></div>
         <div class="c">${sigHtml(o)}${topicHtml(o)}${o.notes.length ? `<div class="nt">${notesHtml(o)}</div>` : ''}</div></div>`).join('')}</div>
       <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · đơn vị tr VND · xếp theo mức rủi ro, rồi theo gap + phần FC cao hơn TB 2Q · bấm dòng để xem chi tiết từng SKU</span>${l.length > shown.length ? '<button class="btn sm" id="rk-more">Xem thêm</button>' : ''}</div>` : '<div class="sub">Không có account nào khớp bộ lọc.</div>';
     $('#rk-more') && ($('#rk-more').onclick = e => { e.stopPropagation(); VIEW.rkN += 25; draw(); });
@@ -2583,7 +2585,7 @@ function dashRisk(c){
 function riskText(accs, a){
   const asof = ASOF_DM, scope = [VIEW.dRep || (TEAMS.length > 1 ? 'Cả team ' + teamName(VIEW.team) : 'Cả team'), VIEW.dBrand, VIEW.dCh].filter(Boolean).join(' · ');
   const hi = accs.filter(o => o.level === 'hi').sort(byRisk), md = accs.filter(o => o.level === 'md').sort(byRisk), tps = topicAgg(accs), link = location.href.split('#')[0].split('?')[0];
-  const line = (o, i) => `${i + 1}. ${bvName(o.name)} (${[...o.reps].join(', ')}): target ${tr(o.tgt)} · FC ${tr(o.fcv)} · TB 2Q ${tr(o.pace)} tr · ${o.sig.filter(x => x.k !== 'note').map(x => x.t).join(', ')}${o.notes.length ? `\n   Note MR: ${notesPlain(o)}` : ''}`;
+  const line = (o, i) => `${i + 1}. ${bvName(o.name)} (${[...o.reps].join(', ')}): target ${trT(o.tgt)} · FC ${trT(o.fcv)} · TB 2Q ${trT(o.pace)} · ${o.sig.filter(x => x.k !== 'note').map(x => x.t).join(', ')}${o.notes.length ? `\n   Note MR: ${notesPlain(o)}` : ''}`;
   return [`[Risk & issue FC ${P[4].label}] data đến ${asof} · ${scope}`,
     `FC ${big(a.fcv)} · %Ach ${pct(a.ach)} · Act. QTD ${big(a.act[4])} (%Ach QTD ${pct(a.achQ)} vs phasing ${pct(PACE)})`,
     hi.length ? `\nRỦI RO CAO: ${hi.length} account, gap vs target ${big(hi.reduce((t, o) => t + o.short, 0))}\n${hi.slice(0, 10).map(line).join('\n')}${hi.length > 10 ? `\n… và ${hi.length - 10} account khác` : ''}` : '\nKhông có account rủi ro cao.',
@@ -3508,7 +3510,7 @@ function viewAdmin(){
         ${miss.map((x, i) => `<tr><td class="l"><input type="checkbox" class="m-ck" data-i="${i}" checked></td><td class="l">${esc(x.cust_name)}</td><td class="l">${esc(x.cust_code)}</td><td class="l">${esc(x.sku)}</td><td class="l">${esc(x.rep_name)}</td><td>${tr(x.value)}</td></tr>`).join('')}</tbody></table></div>
         <div class="bar" style="margin-top:10px"><button class="btn pri" id="m-add">Thêm các dòng đã chọn</button></div>` : '<div class="chip ok">✓ Không có account nào bị thiếu</div>'}</div>
       <div class="card"><h3>Target có trong file nhưng chưa có dòng FC</h3><div class="sub" style="margin-bottom:10px">Từ file target ${P[4].label}. Dòng có MR: bấm Tạo dòng FC. Dòng "MR trống/Vacant": nạp lại file target và chọn MR nhận.</div>
-      ${TGT_OPEN.length ? `<div class="tw"><table class="t"><thead><tr><th class="l">MR trong file</th><th class="l">Mã KH</th><th class="l">SKU</th><th>Target (tr)</th><th>Box</th></tr></thead><tbody>${[...TGT_OPEN].sort((x, y) => num(y.value) - num(x.value)).map(t => `<tr><td class="l">${esc(t.rep_name)}</td><td class="l">${esc(t.cust_code)} <span class="sub">${esc(D.mapping.find(m => m.cust_code === t.cust_code)?.cust_name || '')}</span></td><td class="l">${esc(t.sku)}</td><td>${tr(num(t.value))}</td><td>${nf0.format(Math.round(num(t.qty)))}</td></tr>`).join('')}</tbody></table></div>
+      ${TGT_OPEN.length ? `<div class="tw"><table class="t"><thead><tr><th class="l">MR trong file</th><th class="l">Mã KH</th><th class="l">SKU</th><th>Target</th><th>Box</th></tr></thead><tbody>${[...TGT_OPEN].sort((x, y) => num(y.value) - num(x.value)).map(t => `<tr><td class="l">${esc(t.rep_name)}</td><td class="l">${esc(t.cust_code)} <span class="sub">${esc(D.mapping.find(m => m.cust_code === t.cust_code)?.cust_name || '')}</span></td><td class="l">${esc(t.sku)}</td><td>${trU(num(t.value))}</td><td>${nf0.format(Math.round(num(t.qty)))}</td></tr>`).join('')}</tbody></table></div>
         <div class="bar" style="margin-top:10px"><button class="btn pri" id="t-add">Tạo dòng FC cho các MR có trong danh sách</button></div>` : '<div class="chip ok">✓ Mọi target đã có dòng FC</div>'}</div>`;
     $('#m-all') && ($('#m-all').onchange = e => $$('.m-ck').forEach(c => c.checked = e.target.checked));
     $('#t-add') && ($('#t-add').onclick = async () => {

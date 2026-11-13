@@ -2,6 +2,13 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.15 (13/11/2026) — Số tiền ghi kèm "tr"
+
+- **FC Input** (từng MR, Cả team, desktop và điện thoại): mọi số tiền ghi kèm "tr" (VD 424tr) để không nhầm với box: các quý, QTD, Target, FC, dòng account, dòng merge, Subtotal. Cột tháng và TB 2Q vẫn là box; thẻ điện thoại ghi "TB 2Q: 12 box/th". Tiêu đề cột "FC (tr)" đổi thành "FC", bỏ "Đơn vị: tr VND" dưới bảng.
+- **New launch** (FC Input và dashboard): FC tiền ghi kèm "tr" cạnh cột FC (box); bỏ "mã gốc", "merge … · n mã" như FC Input.
+- **Dashboard → Rủi ro:** thẻ account (Target, FC, TB 2Q, Gap) và nội dung copy ghi kèm "tr". Admin → bảng target chưa khớp: cột Target ghi kèm "tr".
+- Bảng dashboard chỉ có tiền (By channel, By MR, By account, Top account, Forecast, chi tiết BV) giữ nguyên, đơn vị ghi ở tiêu đề. Excel giữ nguyên (số tiền đủ VND).
+
 ## Phiên bản 4.14 (13/11/2026) — Tender quota, gọn nhãn
 
 - **Tender quota** (cần chạy `migration_v10.sql`): admin nạp file **Tender Data** export ở Admin → Kỳ & nạp dữ liệu (thay toàn bộ, chỉ giữ mã KH có trên app, ngày số liệu lấy theo tên file).
