@@ -1186,15 +1186,28 @@ function fcFlag(filled, fcv, baseV){
 /* ---------- Merge code (bản 4.10, DB bản 8) ----------
    Bayer giao target theo account = merge code (mã Khoa Dược / BHYT của BV, theo cách merge của Commex); mã NTBV, mã dịch vụ, mã trùng
    gộp vào. FC vẫn nhập theo từng mã. Đơn vị đánh giá = MR × merge code × SKU: target, %Ach, Gr, cảnh báo lệch TB 2Q, "chưa nhập" tính
-   trên tổng các mã; cảnh báo / lý do gắn ở dòng mã gốc (dòng dẫn), các mã còn lại không bắt lý do riêng. */
+   trên tổng các mã; cảnh báo / lý do gắn ở dòng dẫn (mã gốc, hoặc mã có sales khi mã gốc không có sales — mLead), các mã còn lại không bắt lý do riêng. */
 function mergeUnits(rows){
   const U = new Map();
   for (const r of rows){ r.mu = null; r.mlead = true; if (!r.mg || r.nl) continue;
     const k = `${r.rep_name}|${r.mc}|${r.sku}`; let u = U.get(k); if (!u) U.set(k, u = []); u.push(r); }
   for (const u of U.values()) if (u.length > 1) unitCalc(u);
 }
+/* Dòng dẫn của merge code × SKU (nơi hiện target / %Ach / Gr / lý do của cả account), bản 4.19.1:
+   mã gốc nếu mã gốc có sales 2 quý gần nhất / QTD; không thì mã có sales nhiều nhất trong 2 quý + QTD (vd BV Từ Dũ: mã Khoa Dược
+   không có sales, mọi sales nằm ở mã NTBV → Gr, %Ach hiện ở dòng NTBV, không hiện ở mã không có sales). Chưa ai có sales gần đây:
+   mã có sales nhiều nhất từ trước, rồi mới tới mã gốc. Không tính FC để dòng dẫn không nhảy khi MR đang nhập. */
+function mLead(u, isRoot){
+  const rec = r => r.act[2] + r.act[3] + r.act[4], all = r => r.act.reduce((t, x) => t + x, 0), max = f => u.reduce((a, b) => (f(b) > f(a) ? b : a));
+  const root = u.find(isRoot);
+  if (root && rec(root) > 0) return root;
+  const b1 = max(rec); if (rec(b1) > 0) return b1;
+  if (root && all(root) > 0) return root;
+  const b2 = max(all); if (all(b2) > 0) return b2;
+  return root || max(r => num(r.tgt) + num(r.baseV ?? r.base));
+}
 function unitCalc(u){
-  const lead = u.find(r => r.cust_code === r.mc) || u.reduce((a, b) => (b.tgt + b.baseV > a.tgt + a.baseV ? b : a));
+  const lead = mLead(u, r => r.cust_code === r.mc);
   const m = {rows: u, lead, fcv: 0, baseV: 0, tgt: 0, tgtQ: 0, act: [0, 0, 0, 0, 0], filled: false, flag: ''};
   for (const r of u){ m.fcv += r.fcv; m.baseV += r.baseV; m.tgt += r.tgt; m.tgtQ += r.tgtQ; for (let i = 0; i < 5; i++) m.act[i] += r.act[i]; if (r.filled) m.filled = true; }
   const fl = fcFlag(m.filled, m.fcv, m.baseV); m.flag = fl || '';
@@ -1204,7 +1217,7 @@ function unitCalc(u){
     r.unfilledHist = r.mlead && !m.filled && (m.baseV >= RULE.min || m.tgt >= RULE.min); }
   return m;
 }
-// Số hiển thị ở dòng SKU: dòng trong merge code thì %Ach / Gr / target tính theo tổng các mã, chỉ hiện ở dòng mã gốc
+// Số hiển thị ở dòng SKU: dòng trong merge code thì %Ach / Gr / target tính theo tổng các mã, chỉ hiện ở dòng dẫn (mLead)
 const rowTgt = r => r.mu ? (r.mlead ? r.mu.tgt : 0) : r.tgt;
 const rowAch = r => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? ratio(m ? m.fcv : r.fcv, rowTgt(r)) : null; };
 const rowGr = (r, i) => { const m = r.mu; if (m && !r.mlead) return null; return (m ? m.filled : r.filled) ? growth(m ? m.fcv : r.fcv, m ? m.act[i] : r.act[i]) : null; };
@@ -1573,13 +1586,13 @@ function mGroups(rows, sz){
     return {mc: g.mc, mn: g.mn, codes, a: agg(codes.flatMap(c => c.rs)), multi: codes.length > 1}; })
     .sort((x, y) => sz(y.a) - sz(x.a) || y.a.act[4] - x.a.act[4] || String(x.mn).localeCompare(String(y.mn)));
 }
-// Cả team: đơn vị merge code × SKU (cộng mọi MR, mọi mã); %Ach / Gr / target hiện ở dòng mã gốc
+// Cả team: đơn vị merge code × SKU (cộng mọi MR, mọi mã); %Ach / Gr / target hiện ở dòng dẫn (mLead)
 function teamUnits(lines){
   const U = new Map(); lines.forEach(o => { o.tu = null; o.tlead = true; if (!o.rows[0].mg) return; const k = o.mc + '|' + o.sku; if (!U.has(k)) U.set(k, []); U.get(k).push(o); });
   for (const ls of U.values()) if (ls.length > 1) tuCalc(ls);
 }
 function tuCalc(ls){
-  const lead = ls.find(o => o.cust_code === o.mc) || ls.reduce((a, b) => (b.tgt + b.base > a.tgt + a.base ? b : a));
+  const lead = mLead(ls, o => o.cust_code === o.mc);
   const u = {lines: ls, lead, fcv: 0, tgt: 0, act: [0, 0, 0, 0, 0], filled: false};
   for (const o of ls){ u.fcv += o.fcv; u.tgt += o.tgt; for (let i = 0; i < 5; i++) u.act[i] += o.act[i]; if (o.filled) u.filled = true; }
   u.ach = u.filled ? ratio(u.fcv, u.tgt) : null; u.gLy = u.filled ? growth(u.fcv, u.act[0]) : null; u.gQ = u.filled ? growth(u.fcv, u.act[3]) : null;

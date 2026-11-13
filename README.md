@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.19.1 (13/11/2026) — Merge code: target, %Ach, Gr hiện ở mã có sales
+- FC Input (từng MR và Cả team): account gộp nhiều mã (merge code) trước đây luôn hiện target / %Ach / Gr / lý do của cả account ở mã gốc (thường là mã Khoa Dược). Nhiều BV có mã Khoa Dược không có sales, mọi sales nằm ở mã NTBV (vd BV Từ Dũ), nên dòng không có sales lại hiện Gr, dòng có sales thì không.
+- Nay số chung hiện ở mã gốc nếu mã gốc có sales 2 quý gần nhất / QTD; không thì ở mã có sales nhiều nhất. Không tính FC khi chọn để dòng không nhảy lúc MR đang nhập. Số %Ach, Gr, target không đổi, chỉ đổi dòng hiển thị; lý do đã chọn vẫn giữ.
+- Rà app thật 13/11: 43 dòng merge × SKU ở 22 account đổi dòng hiện số (CVRM 9 account, WHC 13 account, gồm BV Từ Dũ, Hùng Vương, Nhân Dân 115, Thống Nhất, Viện Tim…).
+
 ## Phiên bản 4.19 + Database bản 13 (13/11/2026) — CFO theo dõi nộp FC tuần
 - **Hạn nộp FC tuần** (giờ VN): WHC 13:00 thứ 2, CVRM 13:00 thứ 3. Admin đổi thứ / giờ / ngày bắt đầu theo dõi ở Admin → Thành viên & giá → Hạn nộp FC tuần & CFO. Mặc định theo dõi từ hạn 16/11 (WHC), 17/11 (CVRM).
 - **Quy tắc mỗi tuần:** Đúng giờ = MR bấm Submit / Submit lại trong 6 ngày trước hạn · Trễ = Submit trong 24 giờ sau hạn (ghi trễ bao lâu) · quá 24 giờ = Không nộp · Khoá = FC đã duyệt hoặc kỳ khoá nhập lúc tới hạn (MR không Submit được, không tính). Mỗi lần Submit chỉ tính cho 1 tuần: Submit lại trong 24 giờ sau hạn không tính cho tuần sau. Giờ nộp lấy theo server (bảng `submit_log`), MR không sửa được.
