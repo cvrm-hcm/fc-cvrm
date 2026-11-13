@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.18 (13/11/2026) — Lý do dùng chung, New launch nhập giùm ở địa bàn chung
+- Lý do điều chỉnh FC ở địa bàn chung: account (merge code) × SKU có từ 2 MR, 1 MR đã chọn lý do (Khác thì có Note) là đủ. MR còn lại thấy tên MR + lý do + Note ngay dưới ô lý do ("– Dùng lý do chung"), không bị bắt chọn, không chặn submit; cần bổ sung thì vẫn chọn lý do / ghi Note riêng. Admin, dashboard đếm "cần lý do" theo cùng quy tắc.
+- Account 1 MR phụ trách: không đổi, vẫn tự chọn lý do.
+- New launch có nút "FC của tôi | Địa bàn chung" như In-market: nhập box cả account × SKU, app chia cho từng MR theo ratio, ai lưu sau thắng, đồng nghiệp không cần submit lại; FC của 1 MR đã duyệt hoặc kỳ đã khoá thì chỉ xem. Ở "FC của tôi", dòng New launch chung có chip "chung" + "nhập giùm".
+- Không đổi database (quyền bản 12 đã gồm SKU New launch).
+
 ## Phiên bản 4.17 + Database bản 12 (13/11/2026) — FC giùm địa bàn chung
 
 - FC Input của MR có nút **FC của tôi | Địa bàn chung (N)** khi có account × SKU cùng phụ trách với MR khác. Ở "Địa bàn chung": mỗi dòng là cả account, MR nhập số box cả account, app chia cho từng MR theo ratio (làm tròn box, tổng đúng số nhập) và lưu vào FC của từng người. Ai lưu sau thì số đó được dùng; dòng ghi "cập nhật: tên · giờ".
