@@ -150,6 +150,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .t th.closed{background:#eceff3}
 .t td{padding:5px 8px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
 .t.fyt th.fym{background:#f6e7f3}.t.fyt td.fym{background:#fcf6fb}.t.fyt th.fyp{background:#e3f0fa}.t.fyt td.fyp{text-align:center}
+.t.fyt tr.fysub td{font-weight:600;background:#f3f6fb}.t.fyt tr.fynlh td{background:#fff;padding-top:14px;font-weight:600;border-bottom:1px solid var(--line,#e3e6ec)}.t.fyt tr.fynlh td.sub{font-weight:400}.t.fyt tr.fynl td{color:var(--ink2)}
 .t.dimt tr.dgrp td{font-weight:600;background:#f3f6fb}.t.dimt tr.dsub td{color:var(--ink2)}.t.dimt tr.dsub td.stick{padding-left:18px}
 .t.fyt th,.t.fyt td{padding-left:7px;padding-right:7px}.t.fyt tr.tot td{background:#e9f3e2;font-weight:700}.fyv{font-weight:700}.fyv.good{color:var(--up)}.fyv.mid{color:var(--mid-ink)}.fyv.bad{color:var(--down,#c5221f)}.t.fyt td.l .chip{margin-left:4px}
 .t.bvb tr.bvt td{font-weight:600;background:#f3f6fb}.t.bvb tr.bvc td{color:var(--ink2)}.t.bvb tr.bvc td:nth-child(2){padding-left:14px}
@@ -2305,12 +2306,17 @@ function fyData(){
     (D.tgtFY || []).filter(t => ts.includes(t.team || TEAMS[0])).forEach(t => { const o = get(t.sku, t.team); o.tgtFY = (o.tgtFY || 0) + num(t.value); }); }
   const list = [...B.values()].filter(o => o.ly || o.fyLy || o.qtd || o.ytd || o.tgt || o.tgtFY || o.m.some(v => v))
     .sort((x, y) => tSort(x.team) - tSort(y.team) || x.launch - y.launch || x.b.localeCompare(y.b));
-  const tot = {b: 'Grand Total', ly: 0, fyLy: 0, qtd: 0, ytd: 0, tgt: 0, tgtFY: null, m: [0, 0, 0]};
-  list.forEach(o => { ['ly', 'fyLy', 'qtd', 'ytd', 'tgt'].forEach(k => tot[k] += o[k]); o.m.forEach((v, i) => tot.m[i] += v); if (o.tgtFY !== null) tot.tgtFY = (tot.tgtFY || 0) + o.tgtFY; });
-  [...list, tot].forEach(o => { o.fc = o.m[0] + o.m[1] + o.m[2]; o.fy = o.ytd + o.fc; o.ach = o.tgt ? o.fc / o.tgt : null; o.gLy = o.ly ? o.fc / o.ly - 1 : null; o.achFY = o.tgtFY ? o.fy / o.tgtFY : null; o.gFY = o.fyLy ? o.fy / o.fyLy - 1 : null; });
+  // Bản 4.15.3: CVRM → WHC (mỗi team 1 dòng Total) → Grand Total chỉ gồm sản phẩm in-market; New launch để riêng bên dưới, không cộng vào Grand Total
+  const sumOf = (b, xs, kind) => { const t = {b, kind, ly: 0, fyLy: 0, qtd: 0, ytd: 0, tgt: 0, tgtFY: null, m: [0, 0, 0]};
+    xs.forEach(o => { ['ly', 'fyLy', 'qtd', 'ytd', 'tgt'].forEach(k => t[k] += o[k]); o.m.forEach((v, i) => t.m[i] += v); if (o.tgtFY !== null) t.tgtFY = (t.tgtFY || 0) + o.tgtFY; }); return t; };
+  const inm = list.filter(o => !o.launch), nl = list.filter(o => o.launch), tms = [...new Set(inm.map(o => o.team))];
+  const groups = tms.map(t => { const rows = inm.filter(o => o.team === t); return {team: t, rows, sub: tms.length > 1 ? sumOf('Total ' + teamName(t), rows, 'sub') : null}; });
+  const tot = sumOf('Grand Total', inm, 'tot');
+  [...list, tot, ...groups.map(g => g.sub).filter(Boolean)].forEach(o => { o.fc = o.m[0] + o.m[1] + o.m[2]; o.fy = o.ytd + o.fc; o.ach = o.tgt ? o.fc / o.tgt : null; o.gLy = o.ly ? o.fc / o.ly - 1 : null; o.achFY = o.tgtFY ? o.fy / o.tgtFY : null; o.gFY = o.fyLy ? o.fy / o.fyLy - 1 : null; });
+  nl.forEach(o => { o.ach = o.gLy = o.achFY = o.gFY = null; });   // New launch: không %Ach / growth
   const yy = String(Y).slice(-2), MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const mHd = MS.map((m, i) => MST[i] === 'closed' ? `Actual ${MON3[m - 1]}` : MST[i] === 'current' ? `Act. + FC ${MON3[m - 1]}` : `FC ${MON3[m - 1]}`);
-  return {list, tot, Y, Q, yy, rep, mHd, ts, title: `Forecast Q${Q}-${Y}`, cur: `Q${Q}'${yy}`, ly: `Q${Q}'${String(Y - 1).slice(-2)}`, ytdLb: Q > 1 ? `Q${Q - 1}'${yy}` : '', asof: ASOF_DM};
+  return {list, groups, nl, tot, Y, Q, yy, rep, mHd, ts, title: `Forecast Q${Q}-${Y}`, cur: `Q${Q}'${yy}`, ly: `Q${Q}'${String(Y - 1).slice(-2)}`, ytdLb: Q > 1 ? `Q${Q - 1}'${yy}` : '', asof: ASOF_DM};
 }
 function fyTableHtml(){
   const d = fyData(), pc = x => x === null || x === undefined ? '<span class="muted">–</span>' : `<span class="fyv ${achClass(x)}">${pct(x)}</span>`, fy = o => o.tgtFY === null ? '<span class="muted">–</span>' : tr(o.tgtFY);
@@ -2318,7 +2324,8 @@ function fyTableHtml(){
   const noFY = !d.rep && d.list.some(o => o.tgtFY === null && !o.launch);
   return `<div class="card fyc"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">${esc(d.title)}${VIEW.team === 'ALL' ? ' · cả 2 team' : TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}${d.rep ? ' · ' + esc(d.rep) : ''}</h3><span class="grow"></span>${isAdmin() && !d.rep ? '<button class="btn sm" id="fy-edit">Nhập Target FY</button>' : ''}<button class="btn sm" id="fy-exp">⬇ Excel</button></div>
     <div class="tw"><table class="t fyt"><thead><tr><th class="l stick">Brand</th><th>Act. ${d.ly}</th><th>Act. FY${String(d.Y - 1).slice(-2)}</th><th data-tip="Act. ${d.cur} đến ngày dữ liệu ${esc(d.asof)}">QTD ${d.cur}<div class="hs">đến ${esc(d.asof)}</div></th>${d.ytdLb ? `<th data-tip="Act. từ đầu năm đến hết ${d.ytdLb}">YTD ${d.ytdLb}</th>` : ''}<th>Target ${d.cur}</th><th>Target FY${d.yy}</th>${d.mHd.map(h => `<th class="fym">${h.replace('Act. + FC ', '').replace('Actual ', '').replace('FC ', '')}<div class="hs">${/^Actual/.test(h) ? 'Act.' : /^Act\. \+/.test(h) ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th class="fyp">%Ach ${d.cur}</th><th class="fyp">Gr vs ${d.ly}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) / Target FY${d.Y}">%Ach FY${d.yy}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) vs Act. FY${d.Y - 1}">Gr vs FY${String(d.Y - 1).slice(-2)}</th></tr></thead>
-    <tbody>${d.list.map(o => row(o, '')).join('')}${row(d.tot, 'tot')}</tbody></table></div>
+    <tbody>${d.groups.map(g => g.rows.map(o => row(o, '')).join('') + (g.sub ? row(g.sub, 'fysub') : '')).join('')}${row(d.tot, 'tot')}
+      ${d.nl.length ? `<tr class="fynlh"><td class="l stick">New launch</td><td class="l sub" colspan="${(d.ytdLb ? 6 : 5) + 3 + 4}">Chưa có target, không cộng vào Grand Total</td></tr>${d.nl.map(o => row(o, 'fynl')).join('')}` : ''}</tbody></table></div>
     <div class="sub" style="margin-top:6px">Đơn vị: tr VND.${noFY ? ` <span class="warn">Chưa có Target FY${d.Y} ${isAdmin() ? '(bấm Nhập Target FY)' : '(admin nhập)'}.</span>` : ''}</div></div>`;
 }
 function fyEdit(){
@@ -2351,16 +2358,21 @@ async function exportFY(btn){
     const pcH = [`%Ach FC ${d.cur}`, `% Growth vs ${d.ly}`, `%Ach FC FY ${d.Y}`, `% Growth vs FY ${d.Y - 1}`];
     const hr = ws.getRow(4); [...cols.map(c => c[0]), ...pcH].forEach((h, k) => { const c = hr.getCell(k + 1); c.value = h; c.font = {bold: true, size: 10, name: 'Arial'}; c.alignment = {vertical: 'middle', horizontal: 'center', wrapText: true}; c.border = BOX; c.fill = F(k >= cM ? BLU : k >= iM ? PNK : GRN); }); hr.height = 42;
     ws.getColumn(1).width = 16; for (let k = 2; k <= cM + 4; k++) ws.getColumn(k).width = k > cM ? 13 : 17;
-    const R0 = 5, all = [...d.list, d.tot], last = R0 + d.list.length - 1;
-    all.forEach((o, n) => { const rn = R0 + n, isT = o === d.tot, row = ws.getRow(rn);
+    // Bản 4.15.3: CVRM → Total CVRM → WHC → Total WHC → Grand Total (SUBTOTAL bỏ qua các dòng Total team) → New launch (không cộng)
+    const R0 = 5, all = [], rng = {};
+    d.groups.forEach(g => { const a0 = R0 + all.length; g.rows.forEach(o => all.push(o)); if (g.sub){ rng[all.length] = [a0, R0 + all.length - 1]; all.push(g.sub); } });
+    const totN = all.length; rng[totN] = [R0, R0 + totN - 1]; all.push(d.tot);
+    const nlH = d.nl.length ? all.length : -1; if (d.nl.length){ all.push({b: 'New launch (chưa có target, không cộng vào Grand Total)', kind: 'nlh'}); d.nl.forEach(o => all.push(o)); }
+    all.forEach((o, n) => { const rn = R0 + n, isT = o.kind === 'tot' || o.kind === 'sub', row = ws.getRow(rn);
       row.getCell(1).value = o.b;
-      cols.slice(1).forEach((c, k) => { const ci = k + 2, v = c[1](o); row.getCell(ci).value = isT ? (o === d.tot && ci - 1 === iTF && v === null ? null : {formula: `SUBTOTAL(109,${L(ci - 1)}${R0}:${L(ci - 1)}${last})`, result: v ?? 0}) : (v === null ? null : Math.round(v)); row.getCell(ci).numFmt = VND; });
+      if (o.kind === 'nlh'){ row.getCell(1).font = {bold: true, italic: true, name: 'Arial', size: 10, color: {argb: 'FF52514E'}}; return; }
+      cols.slice(1).forEach((c, k) => { const ci = k + 2, v = c[1](o), [a0, a1] = rng[n] || []; row.getCell(ci).value = isT ? (ci - 1 === iTF && v === null ? null : {formula: `SUBTOTAL(109,${L(ci - 1)}${a0}:${L(ci - 1)}${a1})`, result: v ?? 0}) : (v === null ? null : Math.round(v)); row.getCell(ci).numFmt = VND; });
+      if (o.launch){ for (let k = 0; k < 4; k++){ const c = row.getCell(cM + k + 1); c.value = '–'; c.alignment = {horizontal: 'center'}; } }
       const fcF = `(${L(iM)}${rn}+${L(iM + 1)}${rn}+${L(iM + 2)}${rn})`, fyF = `(${iYtd >= 0 ? `${L(iYtd)}${rn}+` : ''}${fcF})`;
-      [[`IFERROR(${fcF}/${L(iT)}${rn},"")`, o.ach], [`IFERROR(${fcF}/${L(iLy)}${rn}-1,"")`, o.gLy], [`IFERROR(${fyF}/${L(iTF)}${rn},"")`, o.achFY], [`IFERROR(${fyF}/${L(iFy)}${rn}-1,"")`, o.gFY]]
+      if (!o.launch) [[`IFERROR(${fcF}/${L(iT)}${rn},"")`, o.ach], [`IFERROR(${fcF}/${L(iLy)}${rn}-1,"")`, o.gLy], [`IFERROR(${fyF}/${L(iTF)}${rn},"")`, o.achFY], [`IFERROR(${fyF}/${L(iFy)}${rn}-1,"")`, o.gFY]]
         .forEach(([f, v], k) => { const c = row.getCell(cM + k + 1); c.value = {formula: f, result: v === null ? '' : v}; c.numFmt = PCT; c.alignment = {horizontal: 'center'}; if (k % 2) c.font = {color: {argb: 'FF2E75B6'}, name: 'Arial', size: 10}; });
-      row.eachCell({includeEmpty: true}, (c, k) => { if (k > cM + 4) return; c.border = {left: bd, right: bd, ...(isT ? {top: bd, bottom: bd} : {})}; c.font = {...(c.font || {}), name: 'Arial', size: 10, bold: isT}; if (isT) c.fill = F(GRN); });
+      row.eachCell({includeEmpty: true}, (c, k) => { if (k > cM + 4) return; c.border = {left: bd, right: bd, ...(isT ? {top: bd, bottom: bd} : {}), ...(n === all.length - 1 ? {bottom: bd} : {})}; c.font = {...(c.font || {}), name: 'Arial', size: 10, bold: isT}; if (o.kind === 'tot') c.fill = F(GRN); else if (o.kind === 'sub') c.fill = F('FFF2F2F2'); });
       });
-    ws.getRow(R0 + all.length - 1).getCell(1).border = BOX;
     const buf = await wb.xlsx.writeBuffer(), team = VIEW.team === 'ALL' ? 'HCM' : teamName(VIEW.team);
     downloadBlob(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `Forecast_Q${d.Q}-${d.Y}_${team}${d.rep ? '_' + d.rep.replace(/\s+/g, '_') : ''}.xlsx`); toast('Đã tải bảng ' + d.title);
   } catch(e){ toast('Lỗi xuất Excel: ' + e.message, 5000); }

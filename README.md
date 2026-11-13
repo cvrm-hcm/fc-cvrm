@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.15.3 (13/11/2026) — Bảng Forecast: CVRM → WHC → Grand Total, New launch để riêng
+
+- Bảng Forecast (Overview) và file Excel tải về: brand CVRM → Total CVRM → brand WHC → Total WHC → Grand Total. Grand Total chỉ gồm sản phẩm in-market.
+- New launch (Firialta, Qlaira) nằm dưới Grand Total, không cộng vào tổng, không có %Ach / growth (ghi "–"). Excel: Grand Total dùng SUBTOTAL (bỏ qua 2 dòng Total team).
+
 ## Phiên bản 4.15.2 (13/11/2026) — Bảng Tender theo thuật ngữ file Tender Data, bỏ mã KH khỏi bảng
 
 - Tender: Quota → Winning Quota, Còn lại → Remaining Quota, Đang /tháng → Đã dùng TB /th, Cần /tháng → Cần dùng /th (để utilize hết trước hạn thầu, RR = 1), Dự kiến hết → Est. hết quota ("sau hạn thầu" khi không hết), FC còn lại → FC remain, ◇ Dự kiến → ◇ Upcoming Quota. Chip FC Input: "Remaining 7,837 · RR 1.2". Tên BV đậm, SKU ngắn (Xa20, Adalat LA 30) bên dưới.
