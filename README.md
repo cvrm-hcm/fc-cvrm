@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.15.1 (13/11/2026) — Bảng dashboard trên điện thoại dọc
+
+- Cột tên dính bên trái (Account, MR) chỉ chiếm tối đa ~40% màn hình, tên dài xuống dòng → thấy được các cột số khi vuốt ngang.
+- Top account, By account: cột Kênh / Type BV / MR chuyển xuống dòng phụ dưới tên account. By MR: trạng thái submit nằm dưới tên MR. Máy tính giữ nguyên.
+- Top account: "Xem theo" và 2 nút Type BV / Kênh luôn chung 1 hàng.
+
 ## Phiên bản 4.15 (13/11/2026) — Số tiền ghi kèm "tr"
 
 - **FC Input** (từng MR, Cả team, desktop và điện thoại): mọi số tiền ghi kèm "tr" (VD 424tr) để không nhầm với box: các quý, QTD, Target, FC, dòng account, dòng merge, Subtotal. Cột tháng và TB 2Q vẫn là box; thẻ điện thoại ghi "TB 2Q: 12 box/th". Tiêu đề cột "FC (tr)" đổi thành "FC", bỏ "Đơn vị: tr VND" dưới bảng.
