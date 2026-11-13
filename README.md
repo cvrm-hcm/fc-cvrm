@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.22.2 (14/11/2026) — Chương trình trade: mỗi dòng 1 SKU × 1 kênh
+- Admin → Chương trình trade nhập theo thứ tự **SKU → Tên chương trình → Kênh → Giá trước giảm → % giảm → Giá trade → Từ / Đến ngày**. Chọn SKU / kênh → app tự điền giá trước giảm = giá / box của kênh trong bảng giá (sửa được), nhập % → app tính giá trade (sửa giá trade thì app tính lại %).
+- Cùng SKU chạy ở nhiều kênh: thêm dòng cho từng kênh, mỗi kênh 1 giá trade. App chặn 2 dòng cùng SKU × kênh trùng thời gian. Không đổi database.
+
 ## Phiên bản 4.22.1 + Database bản 16 (14/11/2026) — Chương trình trade theo kênh
 - Admin → Chương trình trade: cột **Kênh** (tick nhiều: Tender / Self-pay / Clinic; chương trình mới mặc định Clinic; tick cả 3 = mọi kênh). Chỉ account thuộc kênh đã chọn mới có ô trade; nạp raw chỉ tính Act. trade ở mã KH thuộc kênh đó (mã chưa rõ kênh vẫn nhận theo giá). Cùng SKU có thể chạy nhiều chương trình cho các kênh khác nhau; Dashboard tách bảng theo chương trình.
 - `migration_v16.sql`: `promos.channels text[]` (trống = mọi kênh). Đã chạy trên Supabase 14/11 (`v16_promo_channels`); `schema.sql` đã gộp.

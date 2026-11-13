@@ -272,7 +272,7 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 /* Trade (bản 4.22): ô "trade" nhỏ dưới ô box, chỉ ở SKU có chương trình */
 .chip.trc{background:#fff1e0;color:#8a4b00}
 .prch{white-space:nowrap}.prch label{margin-right:8px;font-size:12.5px;cursor:pointer}
-.prmcard .inp.num{width:104px}.prmcard [data-c=name]{width:170px}.prmcard [data-c=sku]{width:190px}.prmcard [data-c=disc]{width:58px!important}.prmcard input[type=date]{width:132px}
+.prmcard .inp.num{width:104px}.prmcard [data-c=name]{width:170px}.prmcard [data-c=sku]{width:190px}.prmcard [data-c=ch]{width:110px}.prmcard input.inp[data-c=disc]{width:58px}.prmcard input[type=date]{width:132px}
 .mcell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px}
 .trw{display:flex;align-items:center;justify-content:flex-end;gap:3px;font-size:11px;color:#8a4b00;white-space:nowrap}
 .trw.ro{color:#8a4b00;opacity:.85}
@@ -1228,42 +1228,47 @@ function priceSuggest(){
    on[i] = chương trình có chạy trong tháng i của quý → tháng đó có ô "trade". */
 // Admin → Thành viên & giá → Chương trình trade (bản 4.22)
 const promoOn = () => MODE === 'demo' || (!!D && D.dbv >= 16);   // bản 16: chương trình có kênh áp dụng
+// Mỗi dòng = 1 SKU × 1 kênh (bản 4.22.2): cùng SKU chạy ở nhiều kênh thì thêm nhiều dòng, vì giá trước giảm khác nhau theo kênh.
+// Thứ tự nhập: SKU → Tên chương trình → Kênh → Giá trước giảm (tự lấy giá của kênh trong bảng giá, sửa được) → % giảm → Giá trade → thời gian.
 function promoRow(p){
-  const skus = D.prices.filter(x => !x.launch).map(x => x.sku).sort(), o = (v, l) => `<option ${v === p.sku ? 'selected' : ''} value="${esc(v)}">${esc(l)}</option>`;
-  return `<tr data-pid="${p.id || ''}"><td class="l"><select data-c="sku" class="inp">${o('', 'Chọn SKU')}${skus.map(x => o(x, x)).join('')}</select></td>
+  const skus = D.prices.filter(x => !x.launch).map(x => x.sku).sort(), o = (v, l, cur) => `<option ${v === cur ? 'selected' : ''} value="${esc(v)}">${esc(l)}</option>`;
+  const ch = (prmChs(p) || [])[0] || (p.id ? '' : 'Clinic');
+  return `<tr data-pid="${p.id || ''}"><td class="l"><select data-c="sku" class="inp">${o('', 'Chọn SKU', p.sku || '')}${skus.map(x => o(x, x, p.sku)).join('')}</select></td>
     <td class="l"><input data-c="name" class="inp" value="${esc(p.name || '')}" placeholder="vd Mirena cận date"></td>
-    <td><input data-c="base" class="inp num" inputmode="numeric" value="${esc(p.base_price ?? '')}" placeholder="giá gốc"></td>
-    <td><input data-c="disc" class="inp num" inputmode="decimal" style="width:64px" value="${p.disc !== null && p.disc !== undefined && p.disc !== '' ? Math.round(num(p.disc) * 1000) / 10 : ''}" placeholder="%"></td>
+    <td class="l"><select data-c="ch" class="inp">${p.id && !prmChs(p) ? o('', 'Mọi kênh (bản cũ)', '') : ''}${PRM_CH.map(c => o(c, c, ch)).join('')}</select></td>
+    <td><input data-c="base" class="inp num" inputmode="numeric" value="${esc(p.base_price ?? '')}" placeholder="giá kênh" data-tip="Tự lấy giá / box của kênh trong bảng giá khi chọn SKU / kênh; sửa được nếu chương trình tính trên giá khác"></td>
+    <td><input data-c="disc" class="inp num" inputmode="decimal" value="${p.disc !== null && p.disc !== undefined && p.disc !== '' ? Math.round(num(p.disc) * 1000) / 10 : ''}" placeholder="%"></td>
     <td><input data-c="price" class="inp num" inputmode="numeric" value="${esc(p.price ?? '')}" placeholder="giá trade"></td>
-    <td class="l prch">${PRM_CH.map(c => `<label><input type="checkbox" data-ch="${c}" ${!prmChs(p) || prmChs(p).includes(c) ? 'checked' : ''}> ${c}</label>`).join('')}</td>
     <td><input data-c="from" class="inp" type="date" value="${esc(p.date_from || '')}"></td><td><input data-c="to" class="inp" type="date" value="${esc(p.date_to || '')}"></td>
     <td><button class="btn sm ghost" data-prm>Xóa</button></td></tr>`;
 }
 function promoCardHtml(){
   if (!promoOn()) return `<div class="card prmcard"><h3>Chương trình trade</h3><div class="sub">Cần nâng database lên bản 16: Supabase → SQL Editor → chạy <b>migration_v15.sql</b>, <b>migration_v16.sql</b>, rồi bấm Làm mới.</div></div>`;
   return `<div class="card prmcard"><h3>Chương trình trade</h3>
-    <div class="sub" style="margin-bottom:8px">Vd Mirena hàng cận date giảm 20%, chỉ kênh Clinic. Trong thời gian chương trình, ở account thuộc kênh đã chọn, MR thấy ô <b>trade</b> nhỏ dưới ô box ở SKU đó (FC Input) để nhập trong số box tháng, bao nhiêu box bán giá trade. Nạp raw sales: dòng có đơn giá = giá trade (±2%) trong thời gian chương trình được tính là Act. trade.</div>
-    <div class="tw"><table class="t"><thead><tr><th class="l">SKU</th><th class="l">Tên chương trình</th><th data-tip="Giá trước khi giảm (tham khảo, để tính giá trade theo %)">Giá gốc</th><th>% giảm</th><th data-tip="Giá / box bán theo chương trình: dùng để tính FC tiền và nhận diện đơn trade trong raw">Giá trade</th><th class="l" data-tip="Kênh của account được chạy chương trình (thường chỉ Clinic). Tick cả 3 = mọi kênh.">Kênh</th><th>Từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
-    <tbody id="prm">${(D.promos || []).map(promoRow).join('')}</tbody></table></div>
-    <div class="bar" style="margin-top:8px"><button class="btn" id="prm-add">+ Thêm chương trình</button><span class="grow"></span><button class="btn pri" id="prm-save">Lưu chương trình</button></div></div>`;
+    <div class="sub" style="margin-bottom:8px">Mỗi dòng là 1 SKU ở 1 kênh: chọn SKU → tên chương trình → kênh → app điền giá trước giảm theo giá kênh → nhập % giảm → app tính giá trade → thời gian. Cùng SKU chạy nhiều kênh thì thêm dòng cho từng kênh. Ở account thuộc kênh đó, MR thấy ô <b>trade</b> dưới ô box (FC Input). Nạp raw sales: dòng có đơn giá = giá trade (±2%) trong thời gian chương trình được tính là Act. trade.</div>
+    <div class="tw"><table class="t"><thead><tr><th class="l">SKU</th><th class="l">Tên chương trình</th><th class="l">Kênh</th><th data-tip="Giá / box của kênh trước khi giảm">Giá trước giảm</th><th>% giảm</th><th data-tip="Giá / box bán theo chương trình: dùng để tính FC tiền và nhận diện đơn trade trong raw">Giá trade</th><th>Từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
+    <tbody id="prm">${(D.promos || []).slice().sort((a, b) => a.sku.localeCompare(b.sku) || String((prmChs(a) || [''])[0]).localeCompare(String((prmChs(b) || [''])[0]))).map(promoRow).join('')}</tbody></table></div>
+    <div class="bar" style="margin-top:8px"><button class="btn" id="prm-add">+ Thêm dòng</button><span class="grow"></span><button class="btn pri" id="prm-save">Lưu chương trình</button></div></div>`;
 }
 function bindPromo(){
   if (!$('#prm')) return;
-  const calc = (tr, from) => { const b = num($('[data-c=base]', tr).value), d = num($('[data-c=disc]', tr).value), p = num($('[data-c=price]', tr).value);
-    if (from === 'price'){ if (b && p) $('[data-c=disc]', tr).value = Math.round((1 - p / b) * 1000) / 10; } else if (b && d) $('[data-c=price]', tr).value = Math.round(b * (1 - d / 100)); };
-  $('#prm').addEventListener('input', e => { const tr = e.target.closest('tr'), c = e.target.dataset.c; if (!tr) return;
-    if (c === 'sku' && !$('[data-c=base]', tr).value){ const pr = PRICES.get(e.target.value); if (pr) $('[data-c=base]', tr).value = Math.max(...[pr.price, ...PCH.map(pc => pr[PCH_KEY[pc]])].map(num)); }
-    if (c === 'base' || c === 'disc') calc(tr, c); if (c === 'price') calc(tr, 'price'); });
+  const val = (tr, c) => $(`[data-c=${c}]`, tr).value, set = (tr, c, v) => { $(`[data-c=${c}]`, tr).value = v; };
+  const toPrice = tr => { const b = num(val(tr, 'base')), d = val(tr, 'disc'); if (b && d !== '') set(tr, 'price', Math.round(b * (1 - num(d) / 100))); };
+  const toDisc = tr => { const b = num(val(tr, 'base')), p = num(val(tr, 'price')); if (b && p) set(tr, 'disc', Math.round((1 - p / b) * 1000) / 10); };
+  const fillBase = tr => { const sku = val(tr, 'sku'), ch = val(tr, 'ch'); if (!sku) return; const b = ch ? priceOf(sku, ch) : num(PRICES.get(sku)?.price); if (b) { set(tr, 'base', b); toPrice(tr); } };
+  $('#prm').addEventListener('input', e => { const tr = e.target.closest('tr'), c = e.target.dataset.c; if (!tr || !c) return;
+    if (c === 'sku' || c === 'ch') fillBase(tr); else if (c === 'base' || c === 'disc') toPrice(tr); else if (c === 'price') toDisc(tr); });
   $('#prm').addEventListener('click', e => { if (e.target.dataset.prm !== undefined) e.target.closest('tr').remove(); });
-  $('#prm-add').onclick = () => { const y = +D.settings.year, q = +D.settings.quarter; $('#prm').insertAdjacentHTML('beforeend', promoRow({channels: ['Clinic'], date_from: `${y}-${String(q * 3 - 2).padStart(2, '0')}-01`, date_to: `${y}-${String(q * 3).padStart(2, '0')}-${new Date(y, q * 3, 0).getDate()}`})); };
+  $('#prm-add').onclick = () => { const y = +D.settings.year, q = +D.settings.quarter; $('#prm').insertAdjacentHTML('beforeend', promoRow({date_from: `${y}-${String(q * 3 - 2).padStart(2, '0')}-01`, date_to: `${y}-${String(q * 3).padStart(2, '0')}-${new Date(y, q * 3, 0).getDate()}`})); };
   $('#prm-save').onclick = async () => {
-    const list = $$('#prm tr').map(tr => ({id: num(tr.dataset.pid) || null, sku: $('[data-c=sku]', tr).value, name: norm($('[data-c=name]', tr).value), base_price: num($('[data-c=base]', tr).value) || null,
-      disc: $('[data-c=disc]', tr).value === '' ? null : num($('[data-c=disc]', tr).value) / 100, price: num($('[data-c=price]', tr).value), date_from: $('[data-c=from]', tr).value, date_to: $('[data-c=to]', tr).value, team: SKU_TEAM.get($('[data-c=sku]', tr).value) || null,
-      channels: (c => c.length === PRM_CH.length ? null : c)($$('[data-ch]', tr).filter(x => x.checked).map(x => x.dataset.ch))}));
-    if (list.some(x => Array.isArray(x.channels) && !x.channels.length)) return toast('Mỗi chương trình chọn ít nhất 1 kênh');
+    const list = $$('#prm tr').map(tr => ({id: num(tr.dataset.pid) || null, sku: val(tr, 'sku'), name: norm(val(tr, 'name')), base_price: num(val(tr, 'base')) || null,
+      disc: val(tr, 'disc') === '' ? null : num(val(tr, 'disc')) / 100, price: num(val(tr, 'price')), date_from: val(tr, 'from'), date_to: val(tr, 'to'), team: SKU_TEAM.get(val(tr, 'sku')) || null,
+      channels: val(tr, 'ch') ? [val(tr, 'ch')] : null}));
     const bad = list.find(x => !x.sku || !x.name || !(x.price > 0) || !x.date_from || !x.date_to || x.date_to < x.date_from);
-    if (bad) return toast('Mỗi chương trình cần SKU, tên, giá trade, từ ngày ≤ đến ngày');
-    try { await STORE.savePromos(list); toast(`Đã lưu ${list.length} chương trình. Nạp lại raw sales để tách Act. trade.`); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
+    if (bad) return toast('Mỗi dòng cần SKU, tên, giá trade, từ ngày ≤ đến ngày');
+    const dup = list.find((x, i) => list.some((y, j) => j > i && y.sku === x.sku && (!x.channels || !y.channels || x.channels[0] === y.channels[0]) && x.date_from <= y.date_to && y.date_from <= x.date_to));
+    if (dup) return toast(`${dup.sku}: 2 dòng cùng kênh${dup.channels ? ' ' + dup.channels[0] : ''} trùng thời gian. Mỗi SKU × kênh chỉ 1 chương trình cùng lúc.`, 4500);
+    try { await STORE.savePromos(list); toast(`Đã lưu ${list.length} dòng chương trình. Nạp lại raw sales để tách Act. trade.`); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
 }
 function promoMap(){
   const y = +D.settings.year, out = new Map(), ld = mo => new Date(y, mo, 0).getDate();
