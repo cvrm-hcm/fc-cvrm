@@ -176,6 +176,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 /* FC Input: Subtotal dính dưới tiêu đề bảng (desktop), thanh Subtotal dính đầu danh sách (mobile), chế độ Cả team */
 .t thead tr.stot td{position:sticky;top:var(--hh,44px);z-index:2;background:#eaf1fb;font-weight:700;border-bottom:2px solid #c6d5ec;padding:6px 8px}
 .t thead tr.stot td.stick{left:0;z-index:3;background:#eaf1fb}
+.t thead tr:not(.stot) th{cursor:pointer;user-select:none}.t thead th[data-sort]{color:var(--navy,#1f3864)}.t thead th[data-sort]::after{content:" ▼";font-size:9px}.t thead th[data-sort="asc"]::after{content:" ▲"}
 .vu{font-size:.82em;font-weight:500;opacity:.7;margin-left:1px}
 .mstot{position:sticky;top:var(--sbh);z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;background:#eaf1fb;border:1px solid #c6d5ec;border-radius:10px;padding:7px 10px;margin-bottom:10px;font-size:12.5px;box-shadow:0 2px 6px rgba(15,30,60,.08)}
 .t td .mrs,.mcards .mrs{white-space:normal;max-width:260px;font-size:11px;line-height:1.35;margin-top:1px}
@@ -3597,6 +3598,61 @@ const prHint = x => x ? `<div class="sub prh" data-tip="Raw: ${nf0.format(x.n)} 
 const prRow = (p, sg) => `<tr><td class="l"><input data-c="sku" value="${esc(p.sku)}" style="width:190px"></td><td class="l"><input data-c="brand" value="${esc(p.brand)}" style="width:80px"></td><td><input data-c="price" value="${p.price || ''}" placeholder="${p.launch ? 'chưa có' : ''}" style="width:96px;text-align:right">${prHint(sg?.base)}</td>${PCH.map(pc => `<td><input data-c="${PCH_KEY[pc]}" value="${num(p[PCH_KEY[pc]]) || ''}" placeholder="= chung" style="width:96px;text-align:right">${prHint(sg?.ch[pc])}</td>`).join('')}<td class="l"><select data-c="team">${TEAMS.map(t => `<option value="${t}" ${t === (p.team || TEAMS[0]) ? 'selected' : ''}>${esc(teamName(t))}</option>`).join('')}</select></td><td style="text-align:center"><input type="checkbox" data-c="launch" ${p.launch ? 'checked' : ''} aria-label="New launch"></td></tr>`;
 
 boot().catch(e => { $('#app').innerHTML = `<div class="login"><h1>Lỗi khởi động</h1><div class="msg err">${esc(e.message || e)}</div></div>`; });
+
+/* ---------- Bấm tiêu đề cột để sắp xếp (bản 4.16, như Power BI) ----------
+   Áp cho mọi bảng .t: lần 1 số lớn → nhỏ (chữ A → Z), lần 2 đảo lại. Dòng Total / Subtotal / tiêu đề nhóm đứng yên;
+   bảng có cấp (merge code → mã KH → SKU, brand → kênh) sắp theo dòng cha, dòng con đi theo. Bảng vẽ lại vẫn giữ cách sắp. */
+const SORT_ST = new Map();
+const sortFixed = tr => /\b(tot|stot|fysub|fynlh|nlsegh)\b/.test(tr.className) || (tr.cells.length === 1 && tr.cells[0].colSpan > 2);
+const sortParent = tr => /\b(mg|dgrp|bvt)\b/.test(tr.className) || (/\bacc\b/.test(tr.className) && !/\bmcode\b/.test(tr.className));
+const sortHead = t => t.tHead ? [...t.tHead.rows].filter(r => !r.classList.contains('stot')).pop() : null;   // FC Input: dòng Subtotal nằm trong thead
+const sortKey = t => [...t.classList].filter(c => c !== 't').join('.') + '|' + [...(sortHead(t)?.cells || [])].map(c => c.textContent.trim()).join('|');
+function sortCell(tr, col){ let x = 0; for (const c of tr.cells){ if (col >= x && col < x + c.colSpan) return c; x += c.colSpan; } return null; }
+function sortVal(c){
+  if (!c) return null; const inp = c.querySelector('input'); let t = (inp ? inp.value : c.textContent).trim();
+  if (!t || /^[–—-]$/.test(t)) return null;
+  const n = t.replace(/[−–]/g, '-').replace(/[↑↓▲▼,%\s]|tr\b|tỷ|box/g, '').replace(/^\+/, '');
+  if (/^-?\d+(\.\d+)?$/.test(n)) return +n;
+  const d = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (d) return +new Date(+d[3], d[2] - 1, +d[1]);
+  return t.toLowerCase();
+}
+function applySort(t){
+  const st = SORT_ST.get(sortKey(t)); const hr = sortHead(t); if (!hr) return;
+  [...hr.cells].forEach(h => h.removeAttribute('data-sort'));
+  if (!st) return;
+  let col = 0, th = null; for (const h of hr.cells){ if (col === st.col){ th = h; break; } col += h.colSpan; } if (!th) return;
+  th.setAttribute('data-sort', st.dir);
+  for (const tb of t.tBodies){
+    const rows = [...tb.rows]; if (rows.length < 2) continue;
+    const hasP = rows.some(sortParent), out = []; let seg = [], blk = null;
+    const flush = () => { if (blk) seg.push(blk); blk = null;
+      const isNum = seg.some(b => typeof b.v === 'number');
+      seg.sort((a, b) => a.v === null && b.v === null ? a.i - b.i : a.v === null ? 1 : b.v === null ? -1
+        : (typeof a.v === typeof b.v ? (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) : typeof a.v === 'number' ? -1 : 1) * (st.dir === 'asc' ? 1 : -1) || a.i - b.i);
+      seg.forEach(b => out.push(...b.rows)); seg = []; };
+    rows.forEach((tr, i) => {
+      if (sortFixed(tr)){ flush(); out.push(tr); return; }
+      if (!hasP || sortParent(tr) || !blk){ if (blk) seg.push(blk); blk = {i, rows: [tr], v: sortVal(sortCell(tr, st.col))}; }
+      else blk.rows.push(tr);
+    });
+    flush();
+    if (out.some((r, i) => r !== rows[i])) out.forEach(r => tb.appendChild(r));
+  }
+}
+document.addEventListener('click', e => {
+  const th = e.target.closest('table.t > thead > tr > th'); if (!th || e.target.closest('a,button,input,select')) return;
+  const t = th.closest('table'), hr = th.parentElement; if (hr !== sortHead(t)) return; if (!th.textContent.trim() || th.classList.contains('nosort')) return;
+  let col = 0; for (const h of hr.cells){ if (h === th) break; col += h.colSpan; }
+  const k = sortKey(t), cur = SORT_ST.get(k);
+  const first = t.tBodies[0] ? [...t.tBodies[0].rows].filter(r => !sortFixed(r)).map(r => sortVal(sortCell(r, col))).find(v => v !== null) : null;
+  const d0 = typeof first === 'string' ? 'asc' : 'desc';
+  SORT_ST.set(k, {col, dir: cur && cur.col === col ? (cur.dir === 'desc' ? 'asc' : 'desc') : d0});
+  applySort(t);
+});
+// Bảng vẽ lại (đổi bộ lọc, làm mới, nhập FC) → sắp lại theo cột đã chọn
+new MutationObserver(ms => { const ts = new Set(); for (const m of ms) for (const n of m.addedNodes){ if (n.nodeType !== 1) continue;
+    if (n.matches?.('table.t')) ts.add(n); n.querySelectorAll?.('table.t').forEach(t => ts.add(t)); const p = n.closest?.('table.t'); if (p && n.tagName === 'TBODY') ts.add(p); }
+  ts.forEach(t => { if (SORT_ST.has(sortKey(t))) applySort(t); }); }).observe(document.body, {childList: true, subtree: true});
 </script>
 </body>
 </html>

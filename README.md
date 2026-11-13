@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.16 (13/11/2026) — Bấm tiêu đề cột để sắp xếp
+
+- Mọi bảng (FC Input, Dashboard, New launch, Tender, Admin, chi tiết BV): bấm tiêu đề cột → số lớn → nhỏ (cột chữ A → Z), bấm lần nữa đảo lại. Cột đang sắp có dấu ▼ / ▲.
+- Dòng Subtotal, Total team, Grand Total, tiêu đề New launch / Gov–Priv–Clinic đứng yên. Bảng có cấp sắp theo dòng cha, dòng con đi kèm: FC Input sắp theo account (merge code), SKU nằm dưới account; By channel / By type BV sắp theo nhóm.
+- Bảng vẽ lại (đổi bộ lọc, Làm mới, nhập FC) vẫn giữ cách sắp đã chọn trong phiên.
+
 ## Phiên bản 4.15.3 (13/11/2026) — Bảng Forecast: CVRM → WHC → Grand Total, New launch để riêng
 
 - Bảng Forecast (Overview) và file Excel tải về: brand CVRM → Total CVRM → brand WHC → Total WHC → Grand Total. Grand Total chỉ gồm sản phẩm in-market.
