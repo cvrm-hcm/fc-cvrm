@@ -601,6 +601,10 @@ select.segsel.none{background:#fff4e5;color:#8a5300;border-color:#f1c27d}
 .nls .kq span{color:var(--ink2)}
 .dnav.fcmode{margin:0 0 0 4px}
 .dnav.fcmode button{padding:5px 12px}
+.shtg{display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:5px 8px 5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;line-height:1.3}
+.shtg .n{min-width:20px;padding:0 6px;border-radius:999px;background:var(--line2);color:var(--ink);font-size:12px;text-align:center}
+.shtg:hover{border-color:#c9ced8;color:var(--ink)}
+.shtg.on{background:var(--navy);border-color:var(--navy);color:#fff}.shtg.on .n{background:rgba(255,255,255,.2);color:#fff}
 .nlempty{padding:22px 22px 20px}
 .nle-t{font-weight:700;font-size:15px;color:var(--ink);margin-bottom:4px}
 .nlempty .btn{margin-top:12px}
@@ -645,6 +649,9 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
 @media (max-width:760px){
   .dnav.fcmode{order:5;flex:1 1 100%;width:100%;margin:2px 0 0}
   .dnav.fcmode button{flex:1}
+  .dnav.fcmode{flex:1 1 0;min-width:0;width:auto}
+  .shtg{order:6;margin:2px 0 0 6px;padding:7px 8px 7px 10px}
+  .fchead::after{content:'';order:4;flex-basis:100%;height:0}   /* In-market | New launch + nút Địa bàn chung xuống chung 1 hàng */
   .kstrip.nls{grid-template-columns:1fr 1fr}
   .nls .kc:nth-child(1) .kd{display:block}
   .nls .kq{max-width:none}
@@ -1316,6 +1323,8 @@ const repEmail = rep => lc((D.members || []).find(m => m.role === 'MR' && m.rep_
 const byOtherMR = (e, mine) => !!e && lc(e) !== mine && (D.members || []).some(m => m.role === 'MR' && lc(m.email) === lc(e));
 const memName = e => (D.members || []).find(m => lc(m.email) === lc(e || ''))?.rep_name || e || '';
 const coStatus = rep => { const s = (D.coSubs || {})[rep] || D.subs[rep]; return s ? (s.status || 'submitted') : 'draft'; };
+// Nút bật / tắt Địa bàn chung (bản 4.18.1): 1 nút cạnh In-market | New launch thay cho hàng tab thứ 2
+const shToggle = (on, n) => n ? `<button class="shtg${on ? ' on' : ''}" data-fsh="${on ? 0 : 1}" aria-pressed="${on}" aria-label="${on ? 'Đang xem địa bàn chung, bấm để về FC của tôi' : 'Xem địa bàn chung: account × SKU cùng phụ trách với MR khác'}"><svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="14" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.8 16.5c.6-2.9 2.7-4.4 5.2-4.4s4.6 1.5 5.2 4.4M12.3 12.4c2.7-.5 4.9.7 5.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Địa bàn chung<span class="n">${n}</span></button>` : '';
 const canEditRow = r => isAdmin() || (ME.role === 'MR' && !D.settings.locked && (r.rep_name === ME.rep_name ? repStatus(ME.rep_name) !== 'approved' : !!r.co && coStatus(r.rep_name) !== 'approved'));
 const canEdit = rep => isAdmin() || (ME.role === 'MR' && ME.rep_name === rep && !D.settings.locked && repStatus(rep) !== 'approved');
 function accuracy(pk, brand){
@@ -1661,7 +1670,7 @@ function viewFC(){
   const saveInd = `<span class="save-ind" id="saveind">${teamEdit ? (shared ? 'Nhập box cả account · tự chia theo ratio' : 'Nhập box tổng · tự chia theo ratio') : team ? 'Chỉ xem · cộng cả team' : editable ? (mob ? 'Nhập box · tự lưu' : 'Nhập box · tự lưu · Enter / ↓ xuống dòng dưới') : 'Chỉ xem'}</span>`;
   v.innerHTML = `
     <div class="bar filters fchead">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep"><option value="${TEAM}" ${team ? 'selected' : ''}>Cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
-      <h2 style="margin:0">${shared ? 'Địa bàn chung' : team ? (VIEW.team === 'ALL' ? 'Cả 2 team' : TEAMS.length > 1 ? 'Cả team ' + esc(teamName(VIEW.team)) : 'Cả team') : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2>${modeSw}${shN ? `<div class="dnav fcmode" role="tablist" aria-label="FC của tôi / địa bàn chung"><button role="tab" data-fsh="0" class="${shared ? '' : 'on'}" aria-selected="${!shared}">FC của tôi</button><button role="tab" data-fsh="1" class="${shared ? 'on' : ''}" aria-selected="${shared}" data-tip="Account × SKU bạn cùng phụ trách với MR khác: nhập số cả account, app chia theo ratio">Địa bàn chung (${shN})</button></div>` : ''}<span class="grow"></span>${shared ? '' : team ? teamChip : statusChip(rep)} ${mob ? '' : acts.join(' ')}</div>
+      <h2 style="margin:0">${shared ? 'Địa bàn chung' : team ? (VIEW.team === 'ALL' ? 'Cả 2 team' : TEAMS.length > 1 ? 'Cả team ' + esc(teamName(VIEW.team)) : 'Cả team') : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2>${modeSw}${shToggle(shared, shN)}<span class="grow"></span>${shared ? '' : team ? teamChip : statusChip(rep)} ${mob ? '' : acts.join(' ')}</div>
     ${notes}
     <div id="fc-kpi">${fcKpiHtml(rep)}</div>
     <div class="bar filters fbar"><input type="search" id="f-q" placeholder="${team ? 'Tìm account / mã KH / SKU / MR' : 'Tìm account / mã KH / SKU'}" value="${esc(VIEW.fcSearch)}" style="flex:1 1 180px">
@@ -1994,7 +2003,7 @@ function nlView(c){
   const cntSt = k => withRows.filter(x => repStatus(x) === k).length;
   const teamChip = `<span class="chip sb">${cntSt('submitted') + cntSt('approved')}/${withRows.length} MR đã submit · ${cntSt('approved')} đã duyệt</span>`;
   const editableAny = shared ? all.some(canEditRow) : team ? isAdmin() : canEdit(rep);
-  const shSw = c.shN ? `<div class="dnav fcmode" role="tablist" aria-label="FC của tôi / địa bàn chung"><button role="tab" data-fsh="0" class="${shared ? '' : 'on'}" aria-selected="${!shared}">FC của tôi</button><button role="tab" data-fsh="1" class="${shared ? 'on' : ''}" aria-selected="${shared}" data-tip="BV × SKU New launch bạn cùng phụ trách với MR khác: nhập số cả account, app chia theo ratio">Địa bàn chung (${c.shN})</button></div>` : '';
+  const shSw = shToggle(shared, c.shN);
   const saveInd = `<span class="save-ind" id="saveind">${shared && editableAny ? 'Nhập box cả account · tự chia theo ratio' : editableAny ? (mob ? 'Nhập box · tự lưu' : 'Nhập box · tự lưu · Enter / ↓ xuống dòng dưới') : 'Chỉ xem'}</span>`;
   const addBtn = id => canAcc && skus.length ? `<button class="btn${id === 'nl-add2' ? ' pri' : ''}" id="${id}">＋ Thêm BV / phòng khám</button>` : '';
   v.innerHTML = `

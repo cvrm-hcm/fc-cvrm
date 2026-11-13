@@ -8,6 +8,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - New launch có nút "FC của tôi | Địa bàn chung" như In-market: nhập box cả account × SKU, app chia cho từng MR theo ratio, ai lưu sau thắng, đồng nghiệp không cần submit lại; FC của 1 MR đã duyệt hoặc kỳ đã khoá thì chỉ xem. Ở "FC của tôi", dòng New launch chung có chip "chung" + "nhập giùm".
 - Không đổi database (quyền bản 12 đã gồm SKU New launch).
 - Dashboard → By account: bỏ cột Channel, MR (và dòng phụ kênh · MR trên điện thoại).
+- FC Input: bỏ hàng tab thứ 2 "FC của tôi | Địa bàn chung", thay bằng 1 nút bật / tắt "Địa bàn chung N" cạnh In-market | New launch (điện thoại: chung 1 hàng).
 
 ## Phiên bản 4.17 + Database bản 12 (13/11/2026) — FC giùm địa bàn chung
 
