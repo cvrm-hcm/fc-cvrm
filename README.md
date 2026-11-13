@@ -2,6 +2,22 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.19 + Database bản 13 (13/11/2026) — CFO theo dõi nộp FC tuần
+- **Hạn nộp FC tuần** (giờ VN): WHC 13:00 thứ 2, CVRM 13:00 thứ 3. Admin đổi thứ / giờ / ngày bắt đầu theo dõi ở Admin → Thành viên & giá → Hạn nộp FC tuần & CFO. Mặc định theo dõi từ hạn 16/11 (WHC), 17/11 (CVRM).
+- **Quy tắc mỗi tuần:** Đúng giờ = MR bấm Submit / Submit lại trong 6 ngày trước hạn · Trễ = Submit trong 24 giờ sau hạn (ghi trễ bao lâu) · quá 24 giờ = Không nộp · Khoá = FC đã duyệt hoặc kỳ khoá nhập lúc tới hạn (MR không Submit được, không tính). Mỗi lần Submit chỉ tính cho 1 tuần: Submit lại trong 24 giờ sau hạn không tính cho tuần sau. Giờ nộp lấy theo server (bảng `submit_log`), MR không sửa được.
+- **CFO:** MR được admin tick cột CFO ở bảng Thành viên. CFO chỉ theo dõi MR cùng team. Header ghi "MR · CFO".
+  - Dashboard → tab **FC tuần**: chọn tuần (số đỏ = MR trễ / chưa nộp), thẻ Đúng giờ · Trễ · Chưa nộp · Khoá, bảng MR (trạng thái, giờ Submit, số tuần đúng giờ · trễ · không nộp trong quý, tổng thời gian trễ), nút **📋 Copy báo cáo** để dán Zalo / Teams.
+  - Bảng **FC theo MR × brand**: mỗi brand FC (tr) · %Ach · Gr LYSP · Gr quý trước + cột nộp tuần. Số theo lần Submit gần nhất của từng MR (bảng `fc_snap`, app ghi lúc MR bấm Submit), CFO không đọc được số account của MR khác.
+  - **Thông báo:** hạn vừa qua (trong 3 ngày) có MR trễ / chưa nộp → số đỏ trên tab Dashboard + banner đầu app ("Xem báo cáo" / "Đã xem"). App đang mở lúc tới hạn thì tự làm mới 1 phút sau hạn. Chưa gửi email / thông báo đẩy (cần dịch vụ gửi mail riêng).
+- **RFFM / admin:** Dashboard → tab FC tuần (cả 2 team, chọn team). Tab By MR: bảng By MR × brand cũ gộp thành bảng mới (thêm cột FC tiền từng brand + cột Nộp tuần), số đang tính. Admin có nút "Lấy số hiện tại cho N MR chưa có số" ở tab FC tuần để CFO thấy số ngay, không cần chờ MR Submit.
+- **MR:** FC Input có chip hạn FC tuần (còn bao lâu / đã nộp giờ nào / chưa nộp tuần trước), nhắc khi còn dưới 24 giờ hoặc đã quá hạn. Toast sau khi Submit ghi "đúng giờ hạn …" hoặc "tính trễ …".
+- `migration_v13.sql`: `team_members.cfo`, `teams.wk_dow / wk_time / wk_from`, bảng `submit_log` (trigger ghi mỗi lần submit / duyệt / trả lại / khoá, mở kỳ; đã ghi lại các lần submit đang có), bảng `fc_snap`, quyền đọc: RFFM / admin cả team, MR của mình, CFO MR cùng team; MR chỉ ghi `fc_snap` của mình ở kỳ hiện tại. Không đổi quyền cũ. Test trên Postgres 16: MR, CFO, MR team khác, RFFM, admin, anon.
+
+## Nâng cấp từ bản 12 (đang chạy)
+
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v13.sql` → **Run**. Kết quả cuối file: `db_version = 13`, hạn nộp 2 team.
+2. Admin → Thành viên & giá: tick **CFO** cho 1 MR mỗi team → Lưu. Xem lại hạn nộp, ngày bắt đầu theo dõi.
+
 ## Database bản 12.1 (13/11/2026) — Tăng tốc quyền địa bàn chung
 - `migration_v12_1.sql`: viết lại `my_shared_ids()`, `my_co_reps()` (join theo account × SKU) + index `mapping (cust_code, sku)`. Không đổi quyền: so 22 tài khoản test × các bảng, kết quả giống hệt; trên app thật 19 MR cùng danh sách dòng chung / đồng nghiệp. Đã chạy trên Supabase (`v12_1_shared_fast`); `schema.sql`, `migration_v12.sql` đã gộp sẵn.
 - Load test (database test cỡ team, thêm New launch + địa bàn chung): 20 người cùng đăng nhập 0.9 s (trước 1.3–1.6 s), 40 người 1.7–1.9 s, 80 người 3.5–3.6 s, 150 người 5.8–6.5 s, 0 lỗi; lưu FC p50 50 ms. 20 trình duyệt thật cùng nhập, nhập giùm địa bàn chung, New launch, submit: 0 lỗi lưu, 0 dòng lệch database.
@@ -346,6 +362,7 @@ Dashboard của RFFM/Admin chia 4 tab, dùng chung bộ lọc MR / Brand / Kênh
 | Vai trò | Làm được |
 |---|---|
 | MR | Nhập FC account của mình, chọn lý do, nộp, đề xuất account/SKU, thêm BV / phòng khám New launch. Chỉ xem dashboard và số của mình. |
+| CFO (MR được tick) | Như MR, thêm tab Dashboard → FC tuần: nhật ký nộp FC tuần và số FC theo brand (lúc Submit) của MR cùng team. Không xem số account của MR khác. |
 | RFFM | Xem FC và dashboard cả team, duyệt / trả lại / mở lại, xuất Excel. Không sửa số. |
 | ADMIN | Toàn quyền: nạp dữ liệu, đổi kỳ, khóa kỳ, chốt bản FC, phân bổ account, thành viên. |
 
