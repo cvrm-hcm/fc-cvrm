@@ -1044,6 +1044,7 @@ class DemoStore {
   async updateMappingRows(ids, patch){ const s = new Set(ids); this.db.mapping.forEach(m => { if (s.has(m.id)) Object.assign(m, patch); }); this.persist(); }
   async saveCustomers(list){ const m = new Map((this.db.customers || []).map(c => [c.cust_code, c])); list.forEach(c => m.set(c.cust_code, {...(m.get(c.cust_code) || {}), ...c})); this.db.customers = [...m.values()]; this.persist(); }
   async saveMerges(list){ this.db.merges = list.map(m => ({...m})); this.persist(); }
+  async saveAddresses(list){ const m = new Map((this.db.customers || []).map(c => [c.cust_code, c])); list.forEach(x => { const o = m.get(x.cust_code); if (o) o.address = x.address; else m.set(x.cust_code, {cust_code: x.cust_code, cust_name: x.cust_name || null, segment: null, address: x.address}); }); this.db.customers = [...m.values()]; this.persist(); return list.length; }
   async saveFyTargets(year, list){ const k = year + 'FY', ts = new Set(list.map(x => x.team)); this.db.targets[k] = (this.db.targets[k] || []).filter(t => !ts.has(t.team)).concat(list.filter(x => num(x.value) > 0).map(x => ({period: k, rep_name: '', cust_code: '*', sku: x.brand, value: num(x.value), qty: null, team: x.team}))); this.persist(); }
   // Tender quota (bản 4.14)
   async replaceTenders(list){ let id = 1; this.db.tenders = list.map(t => ({...t, id: id++})); this.persist(); }
@@ -1154,6 +1155,10 @@ class CloudStore {
   async saveFyTargets(year, list){ const k = year + 'FY', up = list.filter(x => num(x.value) > 0), del = list.filter(x => !(num(x.value) > 0));
     if (up.length){ const {error} = await this.sb.from('targets').upsert(up.map(x => ({period: k, rep_name: '', cust_code: '*', sku: x.brand, value: num(x.value), qty: null, team: x.team}))); if (error) throw error; }
     for (const x of del){ const {error} = await this.sb.from('targets').delete().eq('period', k).eq('cust_code', '*').eq('sku', x.brand).eq('team', x.team); if (error) throw error; } }
+  // Chỉ ghi địa chỉ (bản 4.21.1): mã đã có giữ tên / type / kênh; mã chưa có thêm mới kèm tên
+  async saveAddresses(list){ const old = list.filter(x => CUST.has(x.cust_code)), neu = list.filter(x => !CUST.has(x.cust_code));
+    await this.chunked('customers', old.map(x => ({cust_code: x.cust_code, address: x.address})), {onConflict: 'cust_code'});
+    await this.chunked('customers', neu.map(x => ({cust_code: x.cust_code, cust_name: x.cust_name || null, address: x.address})), {onConflict: 'cust_code'}); return list.length; }
   async saveCustomers(list){ const v14 = D.dbv >= 14; await this.chunked('customers', list.map(c => ({cust_code: c.cust_code, cust_name: c.cust_name || null, segment: c.segment || null, channel: c.channel || null, cust_group: c.cust_group || null, sector: c.sector || null, ...(v14 && c.address !== undefined ? {address: c.address || null} : {}), updated_at: nowIso()})), {onConflict: 'cust_code'}); }
 }
 
@@ -3675,6 +3680,24 @@ async function fcAutoRoll(snap, log){
     log(`Tự trừ sales vào FC: dời ${n} dòng của ${nRep} MR (${[0, 1, 2].filter(i => tot[i]).map(i => `${MONTHS[MS[i] - 1]} ${tot[i] > 0 ? '+' : '−'}${nf0.format(Math.abs(tot[i]))} box`).join(', ')}), FC quý từng dòng giữ nguyên${nOver ? `; ${nOver} dòng sales đã vượt cả FC quý` : ''}.${n < plan.length ? ` Bỏ qua ${plan.length - n} dòng vừa có người sửa.` : ''}`);
   } catch(e){ log('Tự trừ sales vào FC: lỗi, chưa dời được (' + e.message + '). Sales mới đã nạp xong.'); }
 }
+// Địa chỉ khách hàng từ raw cũ / mới (bản 4.21.1): chỉ đọc mã KH + địa chỉ, không đổi sales, FC. Nhiều file: file chọn sau ghi đè file trước.
+async function importAddresses(files, log){
+  if (!selfOn()) throw new Error('Cần database bản 14: chạy migration_v14.sql trước.');
+  const got = new Map(), cols = new Set(), miss = []; let k = 0;
+  for (const file of files){ k++; log(`Đang đọc ${k}/${files.length}: ${file.name}…`);
+    const wb = await readWorkbook(file), f = findSheet(wb, [], ['Customer Code']); if (!f){ miss.push(`${file.name} (không thấy cột Customer Code)`); continue; }
+    const h = f.hdr, ci = colIdx(h, ['Customer Code']), cn = colIdx(h, ['Customer Name']), AD = addrCols(h);
+    if (!AD.cols.length){ miss.push(file.name); continue; } AD.cols.forEach(c => cols.add(c));
+    for (let i = f.hi + 1; i < f.rows.length; i++){ const r = f.rows[i] || [], cc = norm(r[ci]), a = cc && AD.of(r); if (a) got.set(cc, {address: a, name: cn >= 0 ? norm(r[cn]) : ''}); } }
+  const noCol = miss.length ? `\nKhông thấy cột địa chỉ trong: ${miss.join(', ')}.` : '';
+  if (!got.size) throw new Error(`Chưa lấy được địa chỉ nào.${noCol} Gửi tên cột địa chỉ trong file raw để map thêm.`);
+  const nNew = [...got.keys()].filter(c => !CUST.has(c)).length;
+  await STORE.saveAddresses([...got].map(([cust_code, o]) => ({cust_code, address: o.address, cust_name: o.name})));
+  log(`Lưu địa chỉ ${nf0.format(got.size)} mã KH (cột ${[...cols].join(' + ')})${nNew ? `, trong đó ${nf0.format(nNew)} mã chưa có trong danh mục` : ''}. Sales, FC, phân bổ giữ nguyên.${noCol}`);
+}
+function addrCard(){ if (MODE === 'cloud' && D.dbv < 14) return ''; const cs = D.customers || [], nA = cs.filter(c => c.address).length;
+  return `<div class="card"><h3>📍 Địa chỉ khách hàng (cho Tra cứu)</h3><div class="drop">Chọn 1 hoặc nhiều file raw sales <b>cũ hoặc mới</b> (export Power BI). App chỉ lấy mã KH + địa chỉ, <b>không đổi sales, FC, phân bổ</b>. Nhiều file: file chọn sau ghi đè địa chỉ file trước.<br><input type="file" id="u-ad" accept=".xlsx,.xls,.xlsm" multiple></div>
+    <div class="log" id="l-ad">${cs.length ? `Đang có địa chỉ ${nf0.format(nA)}/${nf0.format(cs.length)} mã KH.` : 'Chưa có danh mục khách hàng.'} Cột nhận được: Customer Address, Ship-to Address, Địa chỉ… hoặc Street / Ward / District / Province.</div></div>`; }
 // Admin → 3. Raw sales: nạp sales, rồi (nếu tick) tự trừ sales mới vào FC
 async function importSalesKeepFC(file, log, team = TEAMS[0]){
   let txt = ''; const add = m => { txt = txt ? txt + '\n' + m : m; log(txt); };
@@ -4094,7 +4117,7 @@ function viewAdmin(){
       <div class="card"><h3>2. Danh sách account × SKU × MR${its}</h3>${itNo}<div class="drop">Cột REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Tender/Self-pay. Nhận cả sheet FC Input (file v2).<br><input type="file" id="u-f" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fc" checked> Nạp luôn số FC + Note (nếu file có) vào kỳ ${P[4].label}</label></div>
         <div class="bar"><label><input type="checkbox" id="u-del"> Thay toàn bộ: xóa dòng không có trong file (giữ dòng đề xuất)</label></div><div class="log" id="l-f">Đang có ${ROWS.length} dòng account × SKU${its}.</div><button class="btn sm" data-tpl="account" style="margin-top:6px">⬇ File mẫu</button></div>
-      ${myTeams().map(rawCard).join('')}
+      ${myTeams().map(rawCard).join('')}${addrCard()}
       <div class="card"><h3>4. Target ${P[4].label}${its}</h3>${itNo}<div class="drop"><b>File Target Allocation</b> (sheet Account: REP · Cus. Code · Product Name · Final Target · Volume Target): target tự gắn theo từng MR. Cũng nhận file chỉ có Cust Code · SKU · Target.<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-tc" checked> Tự tạo dòng FC cho MR có target nhưng chưa có dòng</label></div>
         <div class="bar"><label><input type="checkbox" id="u-ts"> Cập nhật Sales ratio theo tỷ trọng target (account chia nhiều MR)</label></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((x, y) => x + num(y.value), 0))}${D.targets.some(t => t.rep_name) ? ' (theo MR)' : ''}${TGT_OPEN.length ? `, ${big(TGT_OPEN.reduce((x, t) => x + num(t.value), 0))} chưa có dòng FC/MR` : ''}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">⬇ File mẫu</button></div>
@@ -4115,6 +4138,8 @@ function viewAdmin(){
         await STORE.saveSettings(ns);
         for (const el of $$('[data-rg]')){ const t = el.dataset.rg, v = el.value.trim(); if (v && v !== (teamInfo(t).team_filter || '')) await STORE.saveTeam(t, {team_filter: v}); }
         toast('Đã lưu'); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
+    $('#u-ad') && ($('#u-ad').onchange = async e => { const fs = [...e.target.files]; if (!fs.length) return; const L = $('#l-ad'); L.textContent = 'Đang xử lý…';
+      try { await importAddresses(fs, m => L.textContent = m); D = await STORE.loadAll(); build(); L.textContent += '\n✓ Xong.'; } catch(err){ L.textContent = '✗ ' + err.message; } e.target.value = ''; });
     hook('#u-p', '#l-p', (f, log) => importPrices(f, log, it)); for (const t of myTeams()) hook('#u-s' + sid(t), '#l-s' + sid(t), (f, log) => importSalesKeepFC(f, log, t));
     hook('#u-f', '#l-f', (f, log) => importAccounts(f, $('#u-fc').checked, $('#u-del').checked, log, it)); hook('#u-t', '#l-t', (f, log) => importTargets(f, {create: $('#u-tc').checked, sync: $('#u-ts').checked}, log, it)); hook('#u-fcx', '#l-fcx', (f, log) => importFCFile(f, {sync: $('#u-fcs').checked, clear: $('#u-fcz').checked}, log));
     $$('[data-tpl]').forEach(b => b.onclick = () => downloadTemplate(b.dataset.tpl));
