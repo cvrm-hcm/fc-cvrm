@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Database bản 12.1 (13/11/2026) — Tăng tốc quyền địa bàn chung
+- `migration_v12_1.sql`: viết lại `my_shared_ids()`, `my_co_reps()` (join theo account × SKU) + index `mapping (cust_code, sku)`. Không đổi quyền: so 22 tài khoản test × các bảng, kết quả giống hệt; trên app thật 19 MR cùng danh sách dòng chung / đồng nghiệp. Đã chạy trên Supabase (`v12_1_shared_fast`); `schema.sql`, `migration_v12.sql` đã gộp sẵn.
+- Load test (database test cỡ team, thêm New launch + địa bàn chung): 20 người cùng đăng nhập 0.9 s (trước 1.3–1.6 s), 40 người 1.7–1.9 s, 80 người 3.5–3.6 s, 150 người 5.8–6.5 s, 0 lỗi; lưu FC p50 50 ms. 20 trình duyệt thật cùng nhập, nhập giùm địa bàn chung, New launch, submit: 0 lỗi lưu, 0 dòng lệch database.
+
 ## Phiên bản 4.18 (13/11/2026) — Lý do dùng chung, New launch nhập giùm ở địa bàn chung
 - Lý do điều chỉnh FC ở địa bàn chung: account (merge code) × SKU có từ 2 MR, 1 MR đã chọn lý do (Khác thì có Note) là đủ. MR còn lại thấy tên MR + lý do + Note ngay dưới ô lý do ("– Dùng lý do chung"), không bị bắt chọn, không chặn submit; cần bổ sung thì vẫn chọn lý do / ghi Note riêng. Admin, dashboard đếm "cần lý do" theo cùng quy tắc.
 - Account 1 MR phụ trách: không đổi, vẫn tự chọn lý do.

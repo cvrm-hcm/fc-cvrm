@@ -8,17 +8,18 @@
 -- =====================================================================
 
 -- Các dòng mapping (mọi MR) ở account × SKU mà mình đang phụ trách
+create index if not exists mapping_cust_sku_idx on public.mapping (cust_code, sku);
 create or replace function public.my_shared_ids() returns setof bigint
   language sql stable security definer set search_path = public as $$
-  select m.id from mapping m
-  where m.status = 'active'
-    and (m.cust_code, m.sku) in (select x.cust_code, x.sku from mapping x where x.rep_name = my_rep() and x.status = 'active')
+  select o.id from mapping x join mapping o on o.cust_code = x.cust_code and o.sku = x.sku and o.status = 'active'
+  where x.rep_name = my_rep() and x.status = 'active'
 $$;
 
 -- Đồng nghiệp cùng phụ trách ít nhất 1 account × SKU với mình
 create or replace function public.my_co_reps() returns setof text
   language sql stable security definer set search_path = public as $$
-  select distinct m.rep_name from mapping m where m.id in (select my_shared_ids()) and m.rep_name <> my_rep()
+  select distinct o.rep_name from mapping x join mapping o on o.cust_code = x.cust_code and o.sku = x.sku and o.status = 'active' and o.rep_name <> x.rep_name
+  where x.rep_name = my_rep() and x.status = 'active'
 $$;
 
 -- FC của MR giữ dòng mapping này đã được duyệt chưa
