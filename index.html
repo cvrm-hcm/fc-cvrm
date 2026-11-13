@@ -271,6 +271,8 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .chip.lk{background:#eceef2;color:#555}
 /* Trade (bản 4.22): ô "trade" nhỏ dưới ô box, chỉ ở SKU có chương trình */
 .chip.trc{background:#fff1e0;color:#8a4b00}
+.prch{white-space:nowrap}.prch label{margin-right:8px;font-size:12.5px;cursor:pointer}
+.prmcard .inp.num{width:104px}.prmcard [data-c=name]{width:170px}.prmcard [data-c=sku]{width:190px}.prmcard [data-c=disc]{width:58px!important}.prmcard input[type=date]{width:132px}
 .mcell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px}
 .trw{display:flex;align-items:center;justify-content:flex-end;gap:3px;font-size:11px;color:#8a4b00;white-space:nowrap}
 .trw.ro{color:#8a4b00;opacity:.85}
@@ -830,7 +832,7 @@ document.addEventListener('mousemove', e => { if (TIP.style.display === 'block')
 function seedPromoDemo(db){
   const sku = (db.prices || []).map(p => p.sku).find(x => /^MIRENA/i.test(x)); db.promos = []; if (!sku) return;
   const y = +db.settings.year, base = 2674571, price = Math.round(base * 0.8);
-  db.promos.push({id: (db.nextId = (db.nextId || 1) + 1), sku, name: 'Mirena cận date', base_price: base, disc: 0.2, price, date_from: `${y}-10-01`, date_to: `${y}-12-31`, team: 'WHC', note: null});
+  db.promos.push({id: (db.nextId = (db.nextId || 1) + 1), sku, name: 'Mirena cận date', base_price: base, disc: 0.2, price, channels: ['Clinic'], date_from: `${y}-10-01`, date_to: `${y}-12-31`, team: 'WHC', note: null});
   let k = 0; for (const r of db.sales || []) if (r.sku === sku && +r.year === y && [10, 11].includes(+r.month) && num(r.qty) > 0 && (k++ % 4 === 0)){ const q = Math.min(num(r.qty), 2); r.qty_promo = q; r.value_promo = q * price; r.value = num(r.value) - q * (num(r.value) / num(r.qty) - price); }
 }
 function seedDemo(){
@@ -1021,7 +1023,7 @@ class DemoStore {
       targets: d.targets[pk] || [], tgtFY: d.targets[d.settings.year + 'FY'] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}, teams: d.teams || TEAM_DEF.slice(0, 1).map(t => ({...t, data_as_of: d.settings.data_as_of})), customers: d.customers || [], merges: d.merges || [], tenders: d.tenders || [], tupc: d.tupc || [],
       wlog: (d.wlog || []).map(e => ({...e})), snaps: (d.snaps || []).filter(s => s.period === pk).map(s => ({...s})), notes: ((d.notes || {})[pk] || []).map(n => ({...n})),
       wkp: (() => { const lead = new Set(d.members.filter(m => m.role !== 'MR').map(m => m.rep_name)), o = d.members.filter(m => m.role === 'MR').map(m => ({team: m.team || 'CVRM', rep_name: m.rep_name}));
-        d.mapping.forEach(m => { if (lead.has(m.rep_name) && (m.status || 'active') === 'active' && !o.some(x => x.team === (m.team || 'CVRM') && x.rep_name === m.rep_name)) o.push({team: m.team || 'CVRM', rep_name: m.rep_name}); }); return o; })(), promos: (d.promos || []).map(x => ({...x})), dbv: 15};
+        d.mapping.forEach(m => { if (lead.has(m.rep_name) && (m.status || 'active') === 'active' && !o.some(x => x.team === (m.team || 'CVRM') && x.rep_name === m.rep_name)) o.push({team: m.team || 'CVRM', rep_name: m.rep_name}); }); return o; })(), promos: (d.promos || []).map(x => ({...x, channels: x.channels === undefined ? ['Clinic'] : x.channels})), dbv: 16};
   }
   // Nộp FC tuần (bản 4.19): nhật ký Submit / duyệt / khoá kỳ, số FC theo brand lúc Submit
   logWk(period, rep, status){ (this.db.wlog ||= []).push({id: this.db.nextId++, period, rep_name: rep, status, at: nowIso(), by_email: this.user}); }
@@ -1118,7 +1120,7 @@ class CloudStore {
       this.sb.rpc('wk_people').then(({data, error}) => error ? null : data).catch(() => null), this.all('fc_notes', '*', q => q.eq('period', pk)).catch(() => []),   // người nộp FC tuần, ghi chú cả team: DB bản 14
       this.all('promos', '*', q => q.order('id')).catch(() => [])]);   // chương trình trade: DB bản 15
     const fc = {}; fcRows.forEach(r => fc[r.mapping_id] = r); const subs = {}; subRows.forEach(r => subs[r.rep_name] = r);
-    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, promos: dbv >= 15 ? promos : []};
+    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, promos: dbv >= 15 ? promos : []};   // promos.channels từ DB bản 16
   }
   // Bản 4 (migration_v4.sql): MR chỉ đọc được số của mình. Bản 5 (migration_v5.sql): tự trừ sales mới vào FC. 0 = database chưa nâng cấp.
   async dbVersion(){ const {data, error} = await this.sb.rpc('app_db_version'); return error ? 0 : num(data); }
@@ -1139,7 +1141,7 @@ class CloudStore {
   // Chương trình trade (DB bản 15): thay toàn bộ danh sách
   async savePromos(list){ const keep = list.filter(x => x.id).map(x => x.id), cur = (D.promos || []).map(x => x.id).filter(id => !keep.includes(id));
     if (cur.length){ const {error} = await this.sb.from('promos').delete().in('id', cur); if (error) throw error; }
-    const row = x => ({sku: x.sku, name: x.name, base_price: x.base_price || null, disc: x.disc ?? null, price: x.price, date_from: x.date_from, date_to: x.date_to, team: x.team || null, note: x.note || null});
+    const row = x => ({sku: x.sku, name: x.name, base_price: x.base_price || null, disc: x.disc ?? null, price: x.price, date_from: x.date_from, date_to: x.date_to, team: x.team || null, note: x.note || null, ...(D.dbv >= 16 ? {channels: x.channels || null} : {})});
     const up = list.filter(x => x.id), ins = list.filter(x => !x.id);
     for (const x of up){ const {error} = await this.sb.from('promos').update(row(x)).eq('id', x.id); if (error) throw error; }
     if (ins.length){ const {error} = await this.sb.from('promos').insert(ins.map(x => ({...row(x), created_by: ME_REAL ? ME_REAL.email : ME.email}))); if (error) throw error; } }
@@ -1225,7 +1227,7 @@ function priceSuggest(){
    Admin khai báo SKU, tên, giá trade / box, từ ngày – đến ngày. Mỗi SKU lấy 1 chương trình có thời gian giao với quý FC (bắt đầu muộn nhất).
    on[i] = chương trình có chạy trong tháng i của quý → tháng đó có ô "trade". */
 // Admin → Thành viên & giá → Chương trình trade (bản 4.22)
-const promoOn = () => MODE === 'demo' || (!!D && D.dbv >= 15);
+const promoOn = () => MODE === 'demo' || (!!D && D.dbv >= 16);   // bản 16: chương trình có kênh áp dụng
 function promoRow(p){
   const skus = D.prices.filter(x => !x.launch).map(x => x.sku).sort(), o = (v, l) => `<option ${v === p.sku ? 'selected' : ''} value="${esc(v)}">${esc(l)}</option>`;
   return `<tr data-pid="${p.id || ''}"><td class="l"><select data-c="sku" class="inp">${o('', 'Chọn SKU')}${skus.map(x => o(x, x)).join('')}</select></td>
@@ -1233,14 +1235,15 @@ function promoRow(p){
     <td><input data-c="base" class="inp num" inputmode="numeric" value="${esc(p.base_price ?? '')}" placeholder="giá gốc"></td>
     <td><input data-c="disc" class="inp num" inputmode="decimal" style="width:64px" value="${p.disc !== null && p.disc !== undefined && p.disc !== '' ? Math.round(num(p.disc) * 1000) / 10 : ''}" placeholder="%"></td>
     <td><input data-c="price" class="inp num" inputmode="numeric" value="${esc(p.price ?? '')}" placeholder="giá trade"></td>
+    <td class="l prch">${PRM_CH.map(c => `<label><input type="checkbox" data-ch="${c}" ${!prmChs(p) || prmChs(p).includes(c) ? 'checked' : ''}> ${c}</label>`).join('')}</td>
     <td><input data-c="from" class="inp" type="date" value="${esc(p.date_from || '')}"></td><td><input data-c="to" class="inp" type="date" value="${esc(p.date_to || '')}"></td>
     <td><button class="btn sm ghost" data-prm>Xóa</button></td></tr>`;
 }
 function promoCardHtml(){
-  if (!promoOn()) return `<div class="card prmcard"><h3>Chương trình trade</h3><div class="sub">Cần nâng database lên bản 15: Supabase → SQL Editor → chạy <b>migration_v15.sql</b>, rồi bấm Làm mới.</div></div>`;
+  if (!promoOn()) return `<div class="card prmcard"><h3>Chương trình trade</h3><div class="sub">Cần nâng database lên bản 16: Supabase → SQL Editor → chạy <b>migration_v15.sql</b>, <b>migration_v16.sql</b>, rồi bấm Làm mới.</div></div>`;
   return `<div class="card prmcard"><h3>Chương trình trade</h3>
-    <div class="sub" style="margin-bottom:8px">Vd Mirena hàng cận date giảm 20%. Trong thời gian chương trình, MR thấy ô <b>trade</b> nhỏ dưới ô box ở SKU đó (FC Input) để nhập trong số box tháng, bao nhiêu box bán giá trade. Nạp raw sales: dòng có đơn giá = giá trade (±2%) trong thời gian chương trình được tính là Act. trade.</div>
-    <div class="tw"><table class="t"><thead><tr><th class="l">SKU</th><th class="l">Tên chương trình</th><th data-tip="Giá trước khi giảm (tham khảo, để tính giá trade theo %)">Giá gốc</th><th>% giảm</th><th data-tip="Giá / box bán theo chương trình: dùng để tính FC tiền và nhận diện đơn trade trong raw">Giá trade</th><th>Từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
+    <div class="sub" style="margin-bottom:8px">Vd Mirena hàng cận date giảm 20%, chỉ kênh Clinic. Trong thời gian chương trình, ở account thuộc kênh đã chọn, MR thấy ô <b>trade</b> nhỏ dưới ô box ở SKU đó (FC Input) để nhập trong số box tháng, bao nhiêu box bán giá trade. Nạp raw sales: dòng có đơn giá = giá trade (±2%) trong thời gian chương trình được tính là Act. trade.</div>
+    <div class="tw"><table class="t"><thead><tr><th class="l">SKU</th><th class="l">Tên chương trình</th><th data-tip="Giá trước khi giảm (tham khảo, để tính giá trade theo %)">Giá gốc</th><th>% giảm</th><th data-tip="Giá / box bán theo chương trình: dùng để tính FC tiền và nhận diện đơn trade trong raw">Giá trade</th><th class="l" data-tip="Kênh của account được chạy chương trình (thường chỉ Clinic). Tick cả 3 = mọi kênh.">Kênh</th><th>Từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
     <tbody id="prm">${(D.promos || []).map(promoRow).join('')}</tbody></table></div>
     <div class="bar" style="margin-top:8px"><button class="btn" id="prm-add">+ Thêm chương trình</button><span class="grow"></span><button class="btn pri" id="prm-save">Lưu chương trình</button></div></div>`;
 }
@@ -1252,10 +1255,12 @@ function bindPromo(){
     if (c === 'sku' && !$('[data-c=base]', tr).value){ const pr = PRICES.get(e.target.value); if (pr) $('[data-c=base]', tr).value = Math.max(...[pr.price, ...PCH.map(pc => pr[PCH_KEY[pc]])].map(num)); }
     if (c === 'base' || c === 'disc') calc(tr, c); if (c === 'price') calc(tr, 'price'); });
   $('#prm').addEventListener('click', e => { if (e.target.dataset.prm !== undefined) e.target.closest('tr').remove(); });
-  $('#prm-add').onclick = () => { const y = +D.settings.year, q = +D.settings.quarter; $('#prm').insertAdjacentHTML('beforeend', promoRow({date_from: `${y}-${String(q * 3 - 2).padStart(2, '0')}-01`, date_to: `${y}-${String(q * 3).padStart(2, '0')}-${new Date(y, q * 3, 0).getDate()}`})); };
+  $('#prm-add').onclick = () => { const y = +D.settings.year, q = +D.settings.quarter; $('#prm').insertAdjacentHTML('beforeend', promoRow({channels: ['Clinic'], date_from: `${y}-${String(q * 3 - 2).padStart(2, '0')}-01`, date_to: `${y}-${String(q * 3).padStart(2, '0')}-${new Date(y, q * 3, 0).getDate()}`})); };
   $('#prm-save').onclick = async () => {
     const list = $$('#prm tr').map(tr => ({id: num(tr.dataset.pid) || null, sku: $('[data-c=sku]', tr).value, name: norm($('[data-c=name]', tr).value), base_price: num($('[data-c=base]', tr).value) || null,
-      disc: $('[data-c=disc]', tr).value === '' ? null : num($('[data-c=disc]', tr).value) / 100, price: num($('[data-c=price]', tr).value), date_from: $('[data-c=from]', tr).value, date_to: $('[data-c=to]', tr).value, team: SKU_TEAM.get($('[data-c=sku]', tr).value) || null}));
+      disc: $('[data-c=disc]', tr).value === '' ? null : num($('[data-c=disc]', tr).value) / 100, price: num($('[data-c=price]', tr).value), date_from: $('[data-c=from]', tr).value, date_to: $('[data-c=to]', tr).value, team: SKU_TEAM.get($('[data-c=sku]', tr).value) || null,
+      channels: (c => c.length === PRM_CH.length ? null : c)($$('[data-ch]', tr).filter(x => x.checked).map(x => x.dataset.ch))}));
+    if (list.some(x => Array.isArray(x.channels) && !x.channels.length)) return toast('Mỗi chương trình chọn ít nhất 1 kênh');
     const bad = list.find(x => !x.sku || !x.name || !(x.price > 0) || !x.date_from || !x.date_to || x.date_to < x.date_from);
     if (bad) return toast('Mỗi chương trình cần SKU, tên, giá trade, từ ngày ≤ đến ngày');
     try { await STORE.savePromos(list); toast(`Đã lưu ${list.length} chương trình. Nạp lại raw sales để tách Act. trade.`); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
@@ -1264,16 +1269,24 @@ function promoMap(){
   const y = +D.settings.year, out = new Map(), ld = mo => new Date(y, mo, 0).getDate();
   for (const p of (D.promos || [])){ if (!p.sku || !num(p.price) || !p.date_from || !p.date_to) continue;
     const on = MS.map(mo => { const a = `${y}-${String(mo).padStart(2, '0')}-01`, b = `${y}-${String(mo).padStart(2, '0')}-${ld(mo)}`; return p.date_from <= b && p.date_to >= a; });
-    if (!on.some(Boolean)) continue; const o = out.get(p.sku); if (!o || p.date_from > o.date_from) out.set(p.sku, {...p, on}); }
+    if (!on.some(Boolean)) continue; if (!out.has(p.sku)) out.set(p.sku, []); out.get(p.sku).push({...p, on}); }
+  for (const l of out.values()) l.sort((a, b) => (b.date_from > a.date_from) - (b.date_from < a.date_from));   // chương trình bắt đầu muộn nhất trước
   return out;
 }
-const promoTxt = p => `${p.name}: giá trade ${nf0.format(num(p.price))}/box${num(p.disc) ? ` (−${Math.round(num(p.disc) * 100)}%)` : ''} · ${dmy(new Date(p.date_from))} – ${dmy(new Date(p.date_to))}`;
+// Kênh áp dụng (bản 4.22.1): channels trống = mọi kênh. Dòng chưa rõ kênh: chỉ nhận chương trình áp dụng mọi kênh.
+const PRM_CH = ['Tender', 'Self-pay', 'Clinic'], prmChs = p => Array.isArray(p.channels) && p.channels.length ? p.channels : null;
+const prmChOk = (p, ch) => { const c = prmChs(p); return !c || (!!ch && c.includes(ch)); };
+const promoFor = (sku, ch) => (PROMO.get(sku) || []).find(p => prmChOk(p, ch));
+const promoTxt = p => `${p.name}: giá trade ${nf0.format(num(p.price))}/box${num(p.disc) ? ` (−${Math.round(num(p.disc) * 100)}%)` : ''} · ${prmChs(p) ? 'kênh ' + prmChs(p).join(', ') : 'mọi kênh'} · ${dmy(new Date(p.date_from))} – ${dmy(new Date(p.date_to))}`;
 const trChip = r => r.promo && !r.nl ? ` <span class="chip trc" data-tip="${esc(promoTxt(r.promo) + '. Ô "trade" dưới ô box: trong số box tháng đó, bao nhiêu box bán giá trade.')}">Trade${num(r.promo.disc) ? ' −' + Math.round(num(r.promo.disc) * 100) + '%' : ''}</span>` : '';
 // Raw: dòng nào đơn giá = giá trade (±2%) trong thời gian chương trình → tính là bán trade
-function promoOfLine(sku, dt, y, mo, unit){
+// Kênh Tender / Self-pay / Clinic của mã KH khi nạp raw: theo phân bổ trên app, chưa có thì theo cột kênh của raw
+function lineCh(code, o){ const a = ACC.get(code); if (a && a.ch) return a.ch; if (!o) return ''; const t = segOf(o.channel, o.cust_group, o.sector); return t ? chOfRaw(o, t) : ''; }
+function promoOfLine(sku, dt, y, mo, unit, ch){
   if (!(D.promos || []).length || !(unit > 0)) return null;
   const d = dt ? isoDate(dt) : `${y}-${String(mo).padStart(2, '0')}-15`;
-  return D.promos.find(p => p.sku === sku && num(p.price) > 0 && p.date_from <= d && p.date_to >= d && Math.abs(unit / num(p.price) - 1) <= 0.02) || null;
+  // kênh của mã KH chưa rõ: vẫn nhận theo giá (giá trade là dấu hiệu chính)
+  return D.promos.find(p => p.sku === sku && num(p.price) > 0 && p.date_from <= d && p.date_to >= d && Math.abs(unit / num(p.price) - 1) <= 0.02 && (!ch || !prmChs(p) || prmChs(p).includes(ch))) || null;
 }
 function derive(r){
   const f = r.f || {}; const pr = r.price || 0; const raw = [f.m1, f.m2, f.m3]; const has = v => v !== null && v !== undefined && v !== '';
@@ -1431,11 +1444,11 @@ function build(){
     const q = P.map(p => SQ.get(`${k}|${p.y}|${p.q}`) || [0, 0]); const mm = MS.map(mo => SM.get(`${k}|${mo}`) || [0, 0]);
     const r = {...m, f: D.fc[m.id] || (D.coFc || {})[m.id] || {}, price: PRICE.get(m.sku), act: q.map(x => x[0] * rt), qty: q.map(x => x[1] * rt), actM: mm.map(x => x[0] * rt), qtyM: mm.map(x => x[1] * rt), tgt: 0, tgtQ: 0,
       tvM: mm.map(x => num(x[2]) * rt), tqM: mm.map(x => num(x[3]) * rt)};   // Act. bán giá trade (bản 4.22)
-    r.promo = PROMO.get(m.sku) || null; r.trOn = MS.map((mo, i) => !!r.promo && r.promo.on[i]);
     r.team = m.team || SKU_TEAM.get(m.sku) || repTeam.get(lc(m.rep_name)) || TEAMS[0]; if (!TEAMS.includes(r.team)) r.team = TEAMS[0]; r.mst = TC[r.team].mst;
     r.nl = NLSKU.has(m.sku); const ac = ACC.get(m.cust_code); r.atype = ac?.type || null; r.chFile = m.channel || null;
     r.channel = ac?.ch || (['Tender', 'Self-pay', 'Clinic'].includes(m.channel) ? m.channel : null); r.chSrc = ac?.ch ? ac.src : r.channel ? 'file' : '';
     r.pch = priceCh(m.cust_code, r.channel); r.price = priceOf(m.sku, r.pch);   // giá/box theo kênh của account (bản 4.13)
+    r.promo = promoFor(m.sku, r.channel) || null; r.trOn = MS.map((mo, i) => !!r.promo && r.promo.on[i]);   // chương trình trade theo SKU × kênh (bản 4.22.1)
     r.segment = m.segment || (r.nl ? r.atype || CUST.get(m.cust_code)?.segment : null) || null;
     const mg = MERGE.get(m.cust_code); r.mg = !!mg; r.mc = mg ? mg.merge_code : m.cust_code; r.mn = mg ? mg.merge_name : m.cust_name;
     if (tHasRep.has(k)){ const x = tRep.get(`${lc(m.rep_name)}|${k}`) || [0, 0]; r.tgt = x[0]; r.tgtQ = x[1]; } else { const x = tAcc.get(k) || [0, 0]; r.tgt = x[0] * rt; r.tgtQ = x[1] * rt; }
@@ -1597,10 +1610,10 @@ document.addEventListener('visibilitychange', () => {
 });
 // Cảnh báo admin khi database chưa chạy đủ migration: liệt kê đúng các file còn thiếu
 function dbOldNote(){
-  if (MODE !== 'cloud' || !isAdmin() || D.dbv >= 15) return '';
-  const files = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].filter(n => n > D.dbv).map(n => `<b>migration_v${n}.sql</b>`).join(' → ');
-  const why = D.dbv < 4 ? 'Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API.' : D.dbv < 5 ? 'Nạp raw sales mới chưa tự trừ sales vào FC.' : D.dbv < 6 ? 'Chưa tách được 2 team CVRM / WHC.' : D.dbv < 7 ? 'Phần New launch (Firialta, Qlaira) chưa dùng được.' : D.dbv < 8 ? 'Merge code (gộp mã Tender + NTBV theo account Bayer) chưa dùng được.' : D.dbv < 9 ? 'Giá theo kênh (Tender / Self-pay / Clinic) chưa lưu được, FC đang tính 1 giá chung cho mọi kênh.' : D.dbv < 10 ? 'Tender quota (gói thầu, Upcoming Quota) chưa dùng được.' : D.dbv < 11 ? 'Cả team cùng đăng nhập dễ bị chậm.' : D.dbv < 12 ? 'MR chưa FC giùm được ở địa bàn chung.' : D.dbv < 13 ? 'Chưa theo dõi được nộp FC tuần, chưa chọn được CFO.' : D.dbv < 14 ? 'Chưa ghi chú được ở Cả team, chưa tính admin có FC vào nộp tuần, chưa có nhãn tự add và Tra cứu địa bàn.' : 'Chưa có chương trình trade (ô trade, giá trade, Act. trade).';
-  return `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 15.</b> ${why} Mở Supabase → SQL Editor → chạy lần lượt ${files} trong repo, rồi bấm Làm mới.</div>`;
+  if (MODE !== 'cloud' || !isAdmin() || D.dbv >= 16) return '';
+  const files = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].filter(n => n > D.dbv).map(n => `<b>migration_v${n}.sql</b>`).join(' → ');
+  const why = D.dbv < 4 ? 'Giao diện đã ẩn số cả team với MR, nhưng MR vẫn đọc được qua API.' : D.dbv < 5 ? 'Nạp raw sales mới chưa tự trừ sales vào FC.' : D.dbv < 6 ? 'Chưa tách được 2 team CVRM / WHC.' : D.dbv < 7 ? 'Phần New launch (Firialta, Qlaira) chưa dùng được.' : D.dbv < 8 ? 'Merge code (gộp mã Tender + NTBV theo account Bayer) chưa dùng được.' : D.dbv < 9 ? 'Giá theo kênh (Tender / Self-pay / Clinic) chưa lưu được, FC đang tính 1 giá chung cho mọi kênh.' : D.dbv < 10 ? 'Tender quota (gói thầu, Upcoming Quota) chưa dùng được.' : D.dbv < 11 ? 'Cả team cùng đăng nhập dễ bị chậm.' : D.dbv < 12 ? 'MR chưa FC giùm được ở địa bàn chung.' : D.dbv < 13 ? 'Chưa theo dõi được nộp FC tuần, chưa chọn được CFO.' : D.dbv < 14 ? 'Chưa ghi chú được ở Cả team, chưa tính admin có FC vào nộp tuần, chưa có nhãn tự add và Tra cứu địa bàn.' : D.dbv < 15 ? 'Chưa có chương trình trade (ô trade, giá trade, Act. trade).' : 'Chương trình trade chưa chọn được kênh (Clinic…).';
+  return `<div class="note warn" id="db-old"><b>Database chưa nâng cấp bản 16.</b> ${why} Mở Supabase → SQL Editor → chạy lần lượt ${files} trong repo, rồi bấm Làm mới.</div>`;
 }
 function renderMigration(detail){
   $('#app').innerHTML = `<div class="login"><h1>Cần nâng cấp database</h1><div class="sub" style="margin-top:6px">App đã lên phiên bản mới nhưng database Supabase chưa được nâng cấp.</div>
@@ -2760,7 +2773,7 @@ function fyData(){
 /* Dashboard: chương trình trade (bản 4.22). Mỗi chương trình 1 bảng: theo tháng, box FC của SKU, trong đó box trade (FC + Act.),
    tiền trade; RFFM / admin thêm cột theo MR. */
 function tradeCardHtml(rows, byRep){
-  const P0 = new Map(); for (const r of rows) if (r.promo && !r.nl){ const k = r.sku; if (!P0.has(k)) P0.set(k, {p: r.promo, rows: []}); P0.get(k).rows.push(r); }
+  const P0 = new Map(); for (const r of rows) if (r.promo && !r.nl){ const k = r.promo.id; if (!P0.has(k)) P0.set(k, {p: r.promo, rows: []}); P0.get(k).rows.push(r); }
   if (!P0.size) return '';
   const mn = MS.map(m => mlabel(D.settings.year, m)), sum = (rs, f) => rs.reduce((t, r) => t + f(r), 0), b0 = x => x ? nf0.format(Math.round(x)) : '–';
   return [...P0.values()].map(({p, rows: rs}) => {
@@ -2769,7 +2782,7 @@ function tradeCardHtml(rows, byRep){
     const reps = byRep ? [...new Set(rs.map(r => r.rep_name))].map(rep => { const x = rs.filter(r => r.rep_name === rep); return {rep, box: sum(x, r => r.box), tr: sum(x, r => r.trBox), v: sum(x, r => r.trV), act: sum(x, r => sum([0, 1, 2], i => num((r.tqM || [])[i])))}; }).filter(o => o.tr || o.act).sort((x, y) => y.tr - x.tr) : [];
     return `<div class="card"><h3>Trade · ${esc(p.name)}</h3><div class="sub" style="margin-bottom:8px">${esc(p.sku)} · ${esc(promoTxt(p).replace(p.name + ': ', ''))}</div>
       <div class="tw"><table class="t"><thead><tr><th class="l"></th>${mn.map((x, i) => `<th>${x}${on(i) ? '' : '<br><span class="hs">ngoài CT</span>'}</th>`).join('')}<th>${P[4].label}</th></tr></thead><tbody>
-        <tr><td class="l">Box FC (cả SKU)</td>${[0, 1, 2].map(i => `<td>${b0(box(i))}</td>`).join('')}<td>${b0(tot(box))}</td></tr>
+        <tr><td class="l">Box FC (account trong chương trình)</td>${[0, 1, 2].map(i => `<td>${b0(box(i))}</td>`).join('')}<td>${b0(tot(box))}</td></tr>
         <tr><td class="l"><b>Trong đó trade</b> (box)</td>${[0, 1, 2].map(i => `<td><b>${b0(trb(i))}</b></td>`).join('')}<td><b>${b0(tot(trb))}</b></td></tr>
         <tr><td class="l sub">% box trade</td>${[0, 1, 2].map(i => `<td class="sub">${sh(trb(i), box(i))}</td>`).join('')}<td class="sub">${sh(tot(trb), tot(box))}</td></tr>
         <tr><td class="l sub">Act. trade đã lên (box)</td>${[0, 1, 2].map(i => `<td class="sub">${b0(act(i))}</td>`).join('')}<td class="sub">${b0(tot(act))}</td></tr>
@@ -3753,7 +3766,7 @@ async function importSales(file, log, team = TEAMS[0]){
     { const cc = norm(r[c.code]); if (cc){ const o = cust.get(cc) || {cust_code: cc}; o.cust_name = norm(r[c.name]) || o.cust_name; if (c.ch >= 0 && r[c.ch]) o.channel = norm(r[c.ch]); if (c.g2 >= 0 && r[c.g2]) o.cust_group = norm(r[c.g2]); if (c.g3 >= 0 && r[c.g3]) o.sector = norm(r[c.g3]); if (AD.cols.length) o.address = AD.of(r) || o.address || ''; cust.set(cc, o); } }   // danh mục khách hàng (mọi SKU)
     const sku = norm(r[c.sku]); if (!skus.has(sku)) continue;
     const code = norm(r[c.code]); const v = num(r[c.val]); const qn = c.qty >= 0 ? num(r[c.qty]) : 0; const k = `${code}|${sku}|${y}|${mo}`; const o = ag.get(k) || [0, 0, 0, 0]; o[0] += v; o[1] += qn; ag.set(k, o);
-    const pm = qn > 0 ? promoOfLine(sku, dt, y, mo, v / qn) : null; if (pm){ o[2] += v; o[3] += qn; const pk = pm.name + ' · ' + sku; trLog.set(pk, (trLog.get(pk) || 0) + qn); }   // bán giá trade (bản 4.22)
+    const pm = qn > 0 ? promoOfLine(sku, dt, y, mo, v / qn, lineCh(code, cust.get(code))) : null; if (pm){ o[2] += v; o[3] += qn; const pk = pm.name + ' · ' + sku; trLog.set(pk, (trLog.get(pk) || 0) + qn); }   // bán giá trade (bản 4.22)
     const isTeam = c.team < 0 || lc(r[c.team]) === tfl; const qk = y * 4 + Math.floor((mo - 1) / 3) + 1;
     if (isTeam) qt.set(qk, (qt.get(qk) || 0) + v);
     const rep = c.rep >= 0 ? norm(r[c.rep]) : '';

@@ -960,8 +960,11 @@ alter table public.fc_entries add column if not exists t3 numeric;
 alter table public.sales_agg add column if not exists qty_promo numeric not null default 0;
 alter table public.sales_agg add column if not exists value_promo numeric not null default 0;
 
+-- Bản 16: kênh áp dụng của chương trình trade (trống = mọi kênh)
+alter table public.promos add column if not exists channels text[];
+
 create or replace function public.app_db_version() returns int
-  language sql immutable set search_path = '' as $$ select 15 $$;
+  language sql immutable set search_path = '' as $$ select 16 $$;
 
 notify pgrst, 'reload schema';
 

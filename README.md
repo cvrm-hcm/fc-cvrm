@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.22.1 + Database bản 16 (14/11/2026) — Chương trình trade theo kênh
+- Admin → Chương trình trade: cột **Kênh** (tick nhiều: Tender / Self-pay / Clinic; chương trình mới mặc định Clinic; tick cả 3 = mọi kênh). Chỉ account thuộc kênh đã chọn mới có ô trade; nạp raw chỉ tính Act. trade ở mã KH thuộc kênh đó (mã chưa rõ kênh vẫn nhận theo giá). Cùng SKU có thể chạy nhiều chương trình cho các kênh khác nhau; Dashboard tách bảng theo chương trình.
+- `migration_v16.sql`: `promos.channels text[]` (trống = mọi kênh). Đã chạy trên Supabase 14/11 (`v16_promo_channels`); `schema.sql` đã gộp.
+
 ## Phiên bản 4.22 + Database bản 15 (14/11/2026) — Chương trình trade, bỏ nút Điền TB 2Q
 - **Chương trình trade** (vd Mirena hàng cận date giảm 20%): Admin → Thành viên & giá → **Chương trình trade**: SKU, tên, giá gốc + % giảm (app tự tính giá trade) hoặc nhập thẳng giá trade / box, từ ngày – đến ngày. Sau này sản phẩm nào có chương trình chỉ cần thêm 1 dòng.
 - **FC Input:** SKU có chương trình chạy trong tháng → chip "Trade −20%" cạnh SKU và ô **trade** nhỏ ngay dưới ô box của tháng đó (máy tính và điện thoại). Ô trade = trong số box FC của tháng, bao nhiêu box bán giá trade. FC tiền = box thường × giá kênh + box trade × giá trade. Tháng đang chạy: số nhỏ bên trái ô trade là box trade đã lên (raw), MR nhập phần còn lại. Trade lớn hơn box tháng: ô viền đỏ, app chỉ tính tối đa bằng box. Cả team / Địa bàn chung: hiện tổng box trade (chỉ xem), MR nhập trade ở FC của tôi.
@@ -11,7 +15,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - `migration_v15.sql`: bảng `promos` (thành viên đọc, admin ghi), `fc_entries.t1..t3`, `sales_agg.qty_promo / value_promo`. Không đổi quyền cũ. Đã chạy trên Supabase 14/11 (`v15_trade_promos`); `schema.sql` đã gộp.
 
 ## Nâng cấp từ bản 14 (đang chạy)
-1. Supabase → **SQL Editor** → dán toàn bộ `migration_v15.sql` → **Run** (kết quả `db_version = 15`). App thật đã chạy.
+1. Supabase → **SQL Editor** → chạy `migration_v15.sql` rồi `migration_v16.sql` (kết quả `db_version = 16`). App thật đã chạy cả 2.
 2. Admin → Thành viên & giá → Chương trình trade: thêm Mirena cận date (giá trade 2,139,657 hoặc giá gốc 2,674,571 − 20%), từ ngày – đến ngày → Lưu.
 3. Nạp lại raw sales WHC để tách Act. trade.
 
