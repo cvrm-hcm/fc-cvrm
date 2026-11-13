@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.21.4 (13/11/2026) — Đăng xuất chỉ máy đang dùng
+- Bấm Đăng xuất ở 1 máy (laptop, iPad, điện thoại) không còn đăng xuất các máy khác. Mỗi máy vẫn tự nhớ đăng nhập. Không đổi database.
+
 ## Phiên bản 4.21.3 (13/11/2026) — Ẩn dòng trống, target về mã có sales
 - **FC Input mặc định ẩn dòng trống:** không có sales 4 quý gần nhất + QTD, không có target, FC = 0 hoặc chỉ có Note (kể cả note nhập nhầm). Chọn **Tất cả dòng (+N dòng trống)** để hiện. Dòng có FC > 0 (account muốn mở rộng trong quý) vẫn hiện ở FC của MR và ở Cả team cho RFFM / admin. Đề xuất, dòng tự add, dòng cần lý do luôn hiện.
 - **Target về mã có sales:** cùng MR × merge code × SKU, mã có target nhưng không có sales 4 quý + QTD (vd target giao ở mã Khoa Dược, sales nằm ở NTBV) → target tính ở mã có sales. Tổng target MR / brand / account không đổi, chỉ đổi mã (kênh) mang target; rê chuột ô target để xem target chuyển từ mã nào. Mã chưa gộp merge code thì app chưa biết là cùng BV: thêm ở Admin → Merge code.

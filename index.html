@@ -1063,7 +1063,7 @@ class CloudStore {
   async currentEmail(){ const {data} = await this.sb.auth.getSession(); return data.session?.user?.email?.toLowerCase() || null; }
   async signInPassword(email, pw){ const {error} = await this.sb.auth.signInWithPassword({email, password: pw}); if (error) throw error; }
   async sendLink(email){ const {error} = await this.sb.auth.signInWithOtp({email, options: {shouldCreateUser: false, emailRedirectTo: location.href.split('#')[0]}}); if (error) throw error; }
-  async signOut(){ await this.sb.auth.signOut(); }
+  async signOut(){ await this.sb.auth.signOut({scope: 'local'}); }   // bản 4.21.4: chỉ đăng xuất máy đang dùng (mặc định của Supabase là đăng xuất mọi thiết bị)
   async getUser(){ const {data} = await this.sb.auth.getUser(); return data.user; }
   async setPassword(pw){ const {error} = await this.sb.auth.updateUser({password: pw, data: {pw_changed: true}}); if (error) throw error; }
   // Đọc cả bảng theo trang 1000 dòng (giới hạn mặc định của Supabase): trang đầu kèm tổng số dòng, các trang sau tải song song.
