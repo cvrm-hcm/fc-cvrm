@@ -2,6 +2,19 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.22 + Database bản 15 (14/11/2026) — Chương trình trade, bỏ nút Điền TB 2Q
+- **Chương trình trade** (vd Mirena hàng cận date giảm 20%): Admin → Thành viên & giá → **Chương trình trade**: SKU, tên, giá gốc + % giảm (app tự tính giá trade) hoặc nhập thẳng giá trade / box, từ ngày – đến ngày. Sau này sản phẩm nào có chương trình chỉ cần thêm 1 dòng.
+- **FC Input:** SKU có chương trình chạy trong tháng → chip "Trade −20%" cạnh SKU và ô **trade** nhỏ ngay dưới ô box của tháng đó (máy tính và điện thoại). Ô trade = trong số box FC của tháng, bao nhiêu box bán giá trade. FC tiền = box thường × giá kênh + box trade × giá trade. Tháng đang chạy: số nhỏ bên trái ô trade là box trade đã lên (raw), MR nhập phần còn lại. Trade lớn hơn box tháng: ô viền đỏ, app chỉ tính tối đa bằng box. Cả team / Địa bàn chung: hiện tổng box trade (chỉ xem), MR nhập trade ở FC của tôi.
+- **Act. trade:** nạp raw sales, dòng có đơn giá = giá trade (±2%) trong thời gian chương trình được tính là bán trade (`sales_agg.qty_promo / value_promo`). Raw WHC: đơn trade Mirena qua NPP không có SAP Batch / Order Reason, chỉ nhận ra được theo đơn giá (2,139,657 = 80% của 2,674,571).
+- **Dashboard:** bảng **Trade · <tên chương trình>** ở Overview (RFFM / admin: theo tháng + theo MR; MR: của mình): box FC cả SKU, trong đó trade, % trade, Act. trade đã lên, tiền trade. **Excel:** sheet **Trade** (từng account × SKU × MR: box FC, box trade từng tháng, tiền trade).
+- **Bỏ nút "Điền theo TB 2Q"** ở thanh FC Input.
+- `migration_v15.sql`: bảng `promos` (thành viên đọc, admin ghi), `fc_entries.t1..t3`, `sales_agg.qty_promo / value_promo`. Không đổi quyền cũ. Đã chạy trên Supabase 14/11 (`v15_trade_promos`); `schema.sql` đã gộp.
+
+## Nâng cấp từ bản 14 (đang chạy)
+1. Supabase → **SQL Editor** → dán toàn bộ `migration_v15.sql` → **Run** (kết quả `db_version = 15`). App thật đã chạy.
+2. Admin → Thành viên & giá → Chương trình trade: thêm Mirena cận date (giá trade 2,139,657 hoặc giá gốc 2,674,571 − 20%), từ ngày – đến ngày → Lưu.
+3. Nạp lại raw sales WHC để tách Act. trade.
+
 ## Phiên bản 4.21.4 (13/11/2026) — Đăng xuất chỉ máy đang dùng
 - Bấm Đăng xuất ở 1 máy (laptop, iPad, điện thoại) không còn đăng xuất các máy khác. Mỗi máy vẫn tự nhớ đăng nhập. Không đổi database.
 
