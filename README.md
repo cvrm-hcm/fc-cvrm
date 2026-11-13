@@ -5,7 +5,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 ## Phiên bản 4.15.3 (13/11/2026) — Bảng Forecast: CVRM → WHC → Grand Total, New launch để riêng
 
 - Bảng Forecast (Overview) và file Excel tải về: brand CVRM → Total CVRM → brand WHC → Total WHC → Grand Total. Grand Total chỉ gồm sản phẩm in-market.
-- New launch (Firialta, Qlaira) nằm dưới Grand Total, không cộng vào tổng, không có %Ach / growth (ghi "–"). Excel: Grand Total dùng SUBTOTAL (bỏ qua 2 dòng Total team).
+- New launch (Firialta, Qlaira) nằm dưới Grand Total, có dòng header lặp lại, không cộng vào tổng, không có %Ach / growth (ghi "–"). Excel: Grand Total dùng SUBTOTAL (bỏ qua 2 dòng Total team).
 
 ## Phiên bản 4.15.2 (13/11/2026) — Bảng Tender theo thuật ngữ file Tender Data, bỏ mã KH khỏi bảng
 
