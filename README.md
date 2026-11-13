@@ -7,6 +7,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - Tender: Quota → Winning Quota, Còn lại → Remaining Quota, Đang /tháng → Đã dùng TB /th, Cần /tháng → Cần dùng /th (để utilize hết trước hạn thầu, RR = 1), Dự kiến hết → Est. hết quota ("sau hạn thầu" khi không hết), FC còn lại → FC remain, ◇ Dự kiến → ◇ Upcoming Quota. Chip FC Input: "Remaining 7,837 · RR 1.2". Tên BV đậm, SKU ngắn (Xa20, Adalat LA 30) bên dưới.
 - Mọi bảng xem (FC Input, Dashboard, New launch, Tender, chi tiết BV, Risk): chỉ ghi tên BV, mã KH xem khi rê chuột vào tên. Bảng Admin và file Excel giữ mã KH.
 - % FC → %Contri (By channel, By type BV, Top account).
+- Brand theo bảng giá (brand công ty): file account / target của team ghi nhóm "OC" thì app vẫn tách Yasmin, Yaz. Brand lạ không còn bị gán mặc định team CVRM ở bảng Forecast. App thật 13/11: 614 dòng WHC đổi OC → Yasmin / Yaz; Target FY OC (3,605,009,943, đang nằm nhầm ở CVRM) tách theo tỷ lệ target Q4'26: Yasmin 2,872,248,198 · Yaz 732,761,745 (team WHC).
 
 ## Database bản 11 (13/11/2026) — Cả team cùng vào không bị đơ
 

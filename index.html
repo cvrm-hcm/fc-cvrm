@@ -1169,6 +1169,7 @@ function scopeData(){
 }
 function build(){
   scopeData();
+  { const pb = new Map(D.prices.map(p => [p.sku, p.brand])); D.mapping.forEach(m => { const b = pb.get(m.sku); if (b && m.brand !== b) m.brand = b; }); }   // brand theo công ty (bảng giá), không theo nhóm file team (bản 4.15.2)
   const s = D.settings; P = periodsOf(s.year, s.quarter); PK = pkey(s.year, s.quarter);
   MS = [1, 2, 3].map(i => (s.quarter - 1) * 3 + i);
   TEAMS = D.teams && D.teams.length ? [...D.teams].sort((a, b) => num(a.sort) - num(b.sort)).map(t => t.team) : ['CVRM'];
@@ -2296,12 +2297,12 @@ function fyData(){
   const sq = (r, y, q) => (SQ.get(`${r.cust_code}|${r.sku}|${y}|${q}`) || [0])[0] * num(r.ratio);
   const bInfo = new Map(); D.prices.filter(p => ts.includes(p.team || TEAMS[0])).forEach(p => { const b = p.brand, o = bInfo.get(b) || {team: p.team || TEAMS[0], launch: true}; if (!p.launch) o.launch = false; bInfo.set(b, o); });
   const tSort = t => { const x = (D.teams || []).find(z => z.team === t); return x ? num(x.sort) : 99; };
-  const B = new Map(), get = b => { if (!B.has(b)) B.set(b, {b, ly: 0, fyLy: 0, qtd: 0, ytd: 0, tgt: 0, tgtFY: null, m: [0, 0, 0], ...(bInfo.get(b) || {team: TEAMS[0], launch: false})}); return B.get(b); };
-  for (const r of ROWS.concat(NLROWS)){ if (rep && r.rep_name !== rep) continue; const o = get(r.brand);
+  const B = new Map(), get = (b, tm) => { if (!B.has(b)) B.set(b, {b, ly: 0, fyLy: 0, qtd: 0, ytd: 0, tgt: 0, tgtFY: null, m: [0, 0, 0], ...(bInfo.get(b) || {team: tm || TEAMS[0], launch: false})}); return B.get(b); };
+  for (const r of ROWS.concat(NLROWS)){ if (rep && r.rep_name !== rep) continue; const o = get(r.brand, r.team);
     o.ly += r.act[0]; o.qtd += r.act[4]; o.tgt += r.tgt; r.fcvM.forEach((v, i) => o.m[i] += v);
     for (let q = 1; q <= 4; q++) o.fyLy += sq(r, Y - 1, q); for (let q = 1; q < Q; q++) o.ytd += sq(r, Y, q); }
   if (!rep){ TGT_OPEN.forEach(t => { const b = PRICE.get(t.sku)?.brand || brandOf(t.sku); if (B.has(b) || bInfo.has(b)) get(b).tgt += num(t.value); });
-    (D.tgtFY || []).filter(t => ts.includes(t.team || TEAMS[0])).forEach(t => { const o = get(t.sku); o.tgtFY = (o.tgtFY || 0) + num(t.value); }); }
+    (D.tgtFY || []).filter(t => ts.includes(t.team || TEAMS[0])).forEach(t => { const o = get(t.sku, t.team); o.tgtFY = (o.tgtFY || 0) + num(t.value); }); }
   const list = [...B.values()].filter(o => o.ly || o.fyLy || o.qtd || o.ytd || o.tgt || o.tgtFY || o.m.some(v => v))
     .sort((x, y) => tSort(x.team) - tSort(y.team) || x.launch - y.launch || x.b.localeCompare(y.b));
   const tot = {b: 'Grand Total', ly: 0, fyLy: 0, qtd: 0, ytd: 0, tgt: 0, tgtFY: null, m: [0, 0, 0]};
@@ -3070,7 +3071,7 @@ async function importAccounts(file, withFC, delMissing, log, team = TEAMS[0]){
   if (c.sku < 0) throw new Error('Thiếu cột SKU');
   const out = []; const fcv = []; const segNow = new Map(D.mapping.filter(x => NLSKU.has(x.sku) && x.segment).map(x => [`${x.rep_name}|${x.cust_code}|${x.sku}`, x.segment]));
   for (let i = f.hi + 1; i < f.rows.length; i++){ const r = f.rows[i]; if (!r[c.rep] || !r[c.code] || !r[c.sku]) continue;
-    const m = {rep_name: norm(r[c.rep]), cust_code: norm(r[c.code]), cust_name: norm(r[c.name]), brand: c.brand >= 0 && r[c.brand] ? norm(r[c.brand]).toUpperCase() : brandOf(r[c.sku]), sku: norm(r[c.sku]), ratio: c.ratio >= 0 && r[c.ratio] !== null ? num(r[c.ratio]) : 1, channel: c.ch >= 0 ? norm(r[c.ch]) || null : null, status: 'active'};
+    const m = {rep_name: norm(r[c.rep]), cust_code: norm(r[c.code]), cust_name: norm(r[c.name]), brand: D.prices.find(p => p.sku === norm(r[c.sku]))?.brand || (c.brand >= 0 && r[c.brand] ? norm(r[c.brand]).toUpperCase() : brandOf(r[c.sku])), sku: norm(r[c.sku]), ratio: c.ratio >= 0 && r[c.ratio] !== null ? num(r[c.ratio]) : 1, channel: c.ch >= 0 ? norm(r[c.ch]) || null : null, status: 'active'};
     const sg = c.seg >= 0 ? parseSeg(r[c.seg]) : null; if (sg || NLSKU.has(m.sku)) m.segment = sg || segNow.get(`${m.rep_name}|${m.cust_code}|${m.sku}`) || CUST.get(m.cust_code)?.segment || null;   // kênh New launch: theo file, không có thì giữ kênh đang có, rồi theo raw
     out.push(m); const vv = k => (c[k] >= 0 && r[c[k]] !== null && r[c[k]] !== '') ? Math.round(num(r[c[k]])) : null;
     fcv.push({key: `${m.rep_name}|${m.cust_code}|${m.sku}`, m1: vv('m1'), m2: vv('m2'), m3: vv('m3'), note: c.note >= 0 ? norm(r[c.note]) : '', reason: c.reason >= 0 ? normReason(norm(r[c.reason])) || null : null}); }
@@ -3217,7 +3218,7 @@ async function importFCFile(file, opts, log){
     + `${locked.length ? `<br>⚠ ${locked.length} MR đã submit hoặc đã duyệt: số trong file sẽ thay số họ đã submit.` : ''}</span>`)) throw new Error('Đã hủy nạp FC');
   if (upd.length) D.mapping = await STORE.upsertMapping(upd, false);
   if (create.length){
-    D.mapping = await STORE.upsertMapping(create.map(t => ({team: VIEW.team === 'ALL' ? teamOfRep(t.rep) : VIEW.team, rep_name: t.rep, cust_code: t.code, cust_name: t.name || D.mapping.find(m => m.cust_code === t.code)?.cust_name || t.code, brand: t.brand || PRICE_BRAND(t.sku), sku: t.sku, ratio: t.ratio, channel: t.channel || D.mapping.find(m => m.cust_code === t.code)?.channel || null, status: 'active'})), false);
+    D.mapping = await STORE.upsertMapping(create.map(t => ({team: VIEW.team === 'ALL' ? teamOfRep(t.rep) : VIEW.team, rep_name: t.rep, cust_code: t.code, cust_name: t.name || D.mapping.find(m => m.cust_code === t.code)?.cust_name || t.code, brand: D.prices.some(p => p.sku === t.sku) ? PRICE_BRAND(t.sku) : t.brand || PRICE_BRAND(t.sku), sku: t.sku, ratio: t.ratio, channel: t.channel || D.mapping.find(m => m.cust_code === t.code)?.channel || null, status: 'active'})), false);
     const idx2 = new Map(D.mapping.map(m => [K(m.rep_name, m.cust_code, m.sku), m])); missFC.forEach(t => { const m = idx2.get(K(t.rep, t.code, t.sku)); if (m) hit.push({m, t}); }); }
   let badRatio = 0; if (opts.sync){ const rs = new Map(); D.mapping.filter(m => m.status !== 'proposed').forEach(m => { const k = `${m.cust_code}|${m.sku}`; rs.set(k, (rs.get(k) || 0) + num(m.ratio)); }); badRatio = new Set(all.map(t => `${t.code}|${t.sku}`).filter(k => Math.abs((rs.get(k) || 0) - 1) > 0.001)).size; }
   const list = hit.map(({m, t}) => { const cur = D.fc[m.id] || {}; return {mapping_id: m.id, m1: keep(t, cur, 0), m2: keep(t, cur, 1), m3: keep(t, cur, 2), note: t.note || cur.note || '', reason: t.reason || cur.reason || null}; });
