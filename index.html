@@ -1909,14 +1909,24 @@ function viewFC(){
       : `Ô tháng nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
   const body = $('#fc-body');
   const LOCK = '<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
+  /* Tháng có chương trình trade (bản 4.22.3): ô trên = box KHÔNG trong chương trình (giá thường), ô dưới = box trade; FC tháng = cộng 2 ô.
+     Lưu vẫn như cũ: m = tổng box tháng, t = box trade → báo cáo, cảnh báo, tự trừ sales không đổi. */
+  const inpN = (r, i, c) => { const st = c.mst[i], m = r.f['m' + (i + 1)], t = r.f['t' + (i + 1)], hasM = m !== null && m !== undefined && m !== '';
+    const nMtd = Math.max(0, r.mtdBox[i] - r.tMtd[i]);
+    if (st === 'closed') return `<span class="lockv" data-tip="${esc(`${mn[i]} Act.: ${nf0.format(nMtd)} box giá thường + ${nf0.format(r.tMtd[i])} box trade = ${nf0.format(r.mtdBox[i])} box`)}">${nMtd ? nf0.format(nMtd) : '–'}</span>`;
+    const box = (val, tip) => `<input class="box" inputmode="numeric" data-id="${r.id}" data-f="m${i + 1}" data-split value="${esc(val ?? '')}" ${editable ? '' : 'disabled'} data-tip="${esc(tip)}">`;
+    if (st === 'current') return `<span class="cur"><span class="pre" data-tip="${esc(`Đơn giá thường đã lên đến ${c.asofDM}: ${nf0.format(nMtd)} box`)}">${nMtd ? nf0.format(nMtd) + '+' : ''}</span>${box(hasM ? Math.max(0, num(r.rem[i]) - num(r.trRem[i])) : '', `${mn[i]}: box KHÔNG trong chương trình (giá thường) từ ${c.nextDM}. Box trade nhập ở ô dưới, app tự cộng.`)}</span>`;
+    return box(hasM ? Math.max(0, num(m) - Math.min(num(t), num(m))) : '', `${mn[i]}: box KHÔNG trong chương trình (giá thường) cả tháng. Box trade nhập ở ô dưới, app tự cộng.`);
+  };
   // Ô trade (bản 4.22): chỉ ở SKU có chương trình trade chạy trong tháng đó; nằm ngay dưới ô box
   const trIn = (r, i) => { if (r.nl || !(r.trOn || [])[i]) return ''; const c = ck(r), st = c.mst[i], tm = r.tMtd[i], tv = r.f['t' + (i + 1)], hasT = tv !== null && tv !== undefined && tv !== '';
     if (st === 'closed') return tm ? `<div class="trw ro" data-tip="${esc(`${mn[i]}: ${nf0.format(tm)} box bán giá trade (Act.)`)}">↳ ${nf0.format(tm)} trade</div>` : '';
     const val = st === 'current' ? (hasT ? Math.max(0, num(tv) - tm) : '') : (hasT ? num(tv) : '');
-    const tip = `${mn[i]}: trong số box ${st === 'current' ? `từ ${c.nextDM}` : 'cả tháng'}, bao nhiêu box bán giá trade (${nf0.format(num(r.promo.price))}/box)${tm ? ` · đã lên ${nf0.format(tm)} box trade đến ${c.asofDM}` : ''}`;
-    return `<div class="trw"><span class="trl">${tm && st === 'current' ? nf0.format(tm) + '+' : 'trade'}</span><input class="box trd${r.trOver[i] ? ' over' : ''}" inputmode="numeric" data-id="${r.id}" data-f="t${i + 1}" ${st === 'current' ? `data-tmtd="${tm}"` : ''} value="${esc(val)}" placeholder="0" ${editable ? '' : 'disabled'} data-tip="${esc(tip)}" aria-label="${esc(`Trade ${r.cust_name} · ${r.sku} · ${mn[i]}`)}"></div>`; };
+    const tip = `${mn[i]}: box bán giá trade ${nf0.format(num(r.promo.price))}/box ${st === 'current' ? `từ ${c.nextDM}` : 'cả tháng'}, ngoài số box ở ô trên. FC tháng = ô trên + ô trade.${tm ? ` Đã lên ${nf0.format(tm)} box trade đến ${c.asofDM}.` : ''}`;
+    return `<div class="trw"><span class="trl">${tm && st === 'current' ? 'trade ' + nf0.format(tm) + '+' : 'trade'}</span><input class="box trd" inputmode="numeric" data-id="${r.id}" data-f="t${i + 1}" data-split value="${esc(val)}" placeholder="0" ${editable ? '' : 'disabled'} data-tip="${esc(tip)}" aria-label="${esc(`Trade ${r.cust_name} · ${r.sku} · ${mn[i]}`)}"></div>`; };
   const inp = (r, i) => { const t = trIn(r, i), m = inp0(r, i); return t ? `<div class="mcell">${m}${t}</div>` : m; };
   const inp0 = (r, i) => { const c = ck(r);
+    if (!r.nl && (r.trOn || [])[i]) return inpN(r, i, c);
     if (c.mst[i] === 'closed') return `<span class="lockv" data-tip="${esc(`${mn[i]} đã có Act.: FC khoá = ${nf0.format(r.mtdBox[i])} box`)}">${r.mtdBox[i] ? nf0.format(r.mtdBox[i]) : '–'}</span>`;
     const box = (val, ph, tip, extra = '') => `<input class="box" inputmode="numeric" data-id="${r.id}" data-f="m${i + 1}" ${extra} value="${esc(val ?? '')}" ${editable ? '' : 'disabled'} data-tip="${esc(tip)}">`;
     if (c.mst[i] === 'current'){ const sug = Math.max(0, r.sugM[i] - r.mtdBox[i]);
@@ -2068,12 +2078,31 @@ function onTeamNote(el){
     try { await p; SAVE_ERR = false; if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đã lưu ' + hm(new Date()); } } catch(e){ SAVE_ERR = true; if (ind){ ind.className = 'save-ind err'; ind.textContent = 'Lỗi lưu: ' + e.message; } } finally { pending.delete(p); } };
   tnTimers[key] = setTimeout(tnFlush[key], 700);
 }
+// Ô trên = box giá thường, ô dưới = box trade → lưu m = tổng 2 ô (tháng đang chạy cộng thêm đơn đã lên), t = box trade (cộng trade đã lên)
+function onSplitInput(el, r, f){
+  const i = +f[1] - 1, mt = 'm' + (i + 1), tt = 't' + (i + 1), cur = r.mst[i] === 'current', has = v => v !== null && v !== undefined && v !== '';
+  let x = el.value.replace(/[^\d]/g, ''); if (el.value !== x) el.value = x; x = x === '' ? null : Number(x);
+  const nOld = has(r.f[mt]) ? (cur ? Math.max(0, num(r.rem[i]) - num(r.trRem[i])) : Math.max(0, num(r.f[mt]) - Math.min(num(r.f[tt]), num(r.f[mt])))) : null;
+  const tOld = has(r.f[tt]) ? (cur ? num(r.trRem[i]) : num(r.f[tt])) : null;
+  const n = f[0] === 'm' ? x : nOld, t = f[0] === 't' ? x : tOld;
+  const m = n === null && t === null ? null : (cur ? r.mtdBox[i] : 0) + num(n) + num(t), tv = t === null ? null : (cur ? r.tMtd[i] : 0) + t;
+  const chg = fcVal(r.f[mt]) !== fcVal(m);
+  r.f = {...r.f, [mt]: m, [tt]: tv, updated_at: nowIso(), ...(chg ? {auto_note: null, auto_at: null} : {})}; D.fc[r.id] = r.f; derive(r);
+  if (r.mu) unitCalc(r.mu.rows);
+  if (chg) $$(`[data-auto="${r.id}"]`).forEach(z => z.remove());
+  $$(`[data-fcv="${r.id}"]`).forEach(z => z.innerHTML = trU(r.fcv));
+  for (const z of r.mu ? r.mu.rows : [r]) paintRow(z);
+  clearTimeout(kpiTimer); kpiTimer = setTimeout(() => { if (FC_VIEW && FC_VIEW.team) return; const k = $('#fc-kpi'); if (k) k.innerHTML = fcKpiHtml(r.rep_name); fcRefreshTotals(r); }, 250);
+  const ind = $('#saveind'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
+  clearTimeout(saveTimers[r.id]); saveTimers[r.id] = setTimeout(() => doSave(r.id), 700);
+}
 function onFCInput(e){
   const el = e.target; if (el.dataset && el.dataset.tk !== undefined) return onTeamInput(el);   // ô số tổng ở Cả team
   if (el.dataset && el.dataset.tnote !== undefined) return onTeamNote(el);   // ghi chú cả team (bản 4.20)
   if (!el.dataset || !el.dataset.id) return;
   const id = Number(el.dataset.id); const r = ALLROWS.find(x => x.id === id); if (!r) return;
   const f = el.dataset.f; let val = el.value;
+  if (el.dataset.split !== undefined && /^[mt][123]$/.test(f)) return onSplitInput(el, r, f);   // tháng có chương trình trade (bản 4.22.3)
   if (/^m[123]$/.test(f)){ val = val.replace(/[^\d]/g, ''); if (el.value !== val) el.value = val; val = val === '' ? null : Number(val); if (val !== null && el.dataset.mtd !== undefined) val += Number(el.dataset.mtd); }
   if (/^t[123]$/.test(f)){ val = val.replace(/[^\d]/g, ''); if (el.value !== val) el.value = val; val = val === '' ? null : Number(val); if (val !== null && el.dataset.tmtd !== undefined) val += Number(el.dataset.tmtd); }   // trade (bản 4.22): lưu cả tháng
   if (f === 'reason') val = val || null;
