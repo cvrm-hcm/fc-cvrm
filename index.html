@@ -297,7 +297,7 @@ input.box.trd.over{border-color:var(--critical);background:#fff5f5}
 .poa-accs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}.poa-acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
 .poa-acc.on{border-color:#9db7dc;background:#f4f8fd}.poa-acc .n{font-weight:600;flex:1;min-width:0}.poa-acc .sub{flex-basis:100%;font-size:12px}.poa-acc .poa-al{flex-basis:100%;height:28px}
 .incseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.incseg-b{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}.incseg-b+.incseg-b{border-left:1px solid var(--line)}.incseg-b.on{background:#1f3864;color:#fff;font-weight:600}.incseg-b:disabled{opacity:.45;cursor:default}
-.ok-t{color:var(--ok-ink)}.oncel{margin-top:8px;border-top:1px solid var(--line)}.once{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.once>div{flex:1;min-width:0}.once .sub{overflow-wrap:anywhere}
+.ok-t{color:var(--ok-ink)}#refresh.new{box-shadow:0 0 0 2px #7fd1a0}.oncel{margin-top:8px;border-top:1px solid var(--line)}.once{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.once>div{flex:1;min-width:0}.once .sub{overflow-wrap:anywhere}
 details.poa-accd>summary{cursor:pointer;list-style-position:inside}
 .inctiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}.inctile{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff}.inctile.main{background:#f3f6fb;border-color:#d6e0ef}.inctile .l{font-size:12.5px;color:var(--ink2)}.inctile .v{font-size:22px;font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px}.inctile.main .v{font-size:28px}.inctile .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
 details.howto{margin-top:8px;font-size:12.5px;color:var(--ink2)}details.howto summary{cursor:pointer;color:#1f3864;font-weight:600}details.howto>div{margin-top:4px;line-height:1.5}
@@ -1219,7 +1219,7 @@ class CloudStore {
     await this.wipe('prices', 'sku'); await this.chunked('prices', list.map(p => ({sku: p.sku, brand: p.brand, price: p.price, team: p.team || 'CVRM', ...(v7 ? {launch: !!p.launch} : {}), ...(v9 ? {price_tender: ch(p.price_tender), price_selfpay: ch(p.price_selfpay), price_clinic: ch(p.price_clinic)} : {})}))); }
   // Số FC theo brand ở lần Submit (DB bản 13): xoá số cũ của các MR này rồi ghi mới
   // Ghi chú cả team (DB bản 14): mỗi người 1 ghi chú / account × SKU, server ghi tên + giờ
-  async saveNote(period, cust_code, sku, note){ const {error} = await this.sb.from('fc_notes').upsert({period, cust_code, sku, by_email: lc(ME_REAL ? ME_REAL.email : ME.email), note: note || ''}); if (error) throw error; }
+  async saveNote(period, cust_code, sku, note){ const {error} = await this.sb.from('fc_notes').upsert({period, cust_code, sku, by_email: lc(ME_REAL ? ME_REAL.email : ME.email), note: note || '', at: nowIso()}); if (error) throw error; }
   async saveSnaps(period, reps, rows){ for (const rep of reps){ const {error} = await this.sb.from('fc_snap').delete().eq('period', period).eq('rep_name', rep); if (error) throw error; } if (rows.length) await this.chunked('fc_snap', rows); }
   async saveTeam(team, patch){ const {data, error} = await this.sb.from('teams').update(patch).eq('team', team).select(); if (error) throw error;
     if (!data || !data.length){ const {error: e2} = await this.sb.from('teams').insert({team, name: team, ...patch}); if (e2) throw e2; } }
@@ -1246,9 +1246,12 @@ class CloudStore {
   // New launch (DB bản 7): MR thêm BV của mình (status active, SKU new launch), đổi kênh; admin ghi danh mục khách hàng khi nạp raw
   async addMappingRows(rows){ const {data, error} = await this.sb.from('mapping').insert(rows.map(({id, proposed_by, ...r}) => r)).select(); if (error) throw error; return data; }
   async findAccount(q){ const {data, error} = await this.sb.rpc('find_account', {q}); if (error) throw error; return (data || []).map(x => ({...x, reps: x.reps || []})); }
-  async savePoa(period, rep, data){ const {error} = await this.sb.from('poa_inputs').upsert({period, rep_name: rep, data}); if (error) throw error; }
+  async changeSig(){ const one = (t, c) => this.sb.from(t).select(c).order(c, {ascending: false, nullsFirst: false}).limit(1).then(r => r.error ? '' : ((r.data || [])[0] || {})[c] || '');
+    const cnt = t => this.sb.from(t).select('*', {count: 'exact', head: true}).then(r => r.error ? '' : String(r.count));
+    const v = await Promise.all([one('fc_entries', 'updated_at'), one('submissions', 'submitted_at'), one('submissions', 'reviewed_at'), one('fc_notes', 'at'), one('poa_inputs', 'at'), one('incentive_inputs', 'at'), one('tender_upcoming', 'updated_at'), one('fc_snap', 'at'), one('submit_log', 'at'), cnt('mapping'), cnt('fc_entries')]); return v.join('|'); }
+  async savePoa(period, rep, data){ const {error} = await this.sb.from('poa_inputs').upsert({period, rep_name: rep, data, at: nowIso()}); if (error) throw error; }
   async recentOrders(code){ const {data, error} = await this.sb.rpc('recent_orders', {code}); if (error) throw error; return data || []; }
-  async saveIncInputs(period, rep, data){ const {error} = await this.sb.from('incentive_inputs').upsert({period, rep_name: rep, data}); if (error) throw error; }
+  async saveIncInputs(period, rep, data){ const {error} = await this.sb.from('incentive_inputs').upsert({period, rep_name: rep, data, at: nowIso()}); if (error) throw error; }
   async saveIncCfg(data){ const {error} = await this.sb.from('incentive_cfg').upsert({id: 'current', data}); if (error) throw error; }
   async saveSpTgt(period, rows){ const p = period + '-SP'; const {error} = await this.sb.from('targets').delete().eq('period', p); if (error) throw error;
     if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: p, rep_name: x.rep_name, cust_code: '*', sku: x.sku || 'SELF-PAY', value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
@@ -1696,7 +1699,7 @@ async function refreshData(auto = false, quiet = false){
   try {
     await flushSaves();
     if (SAVE_ERR && !auto && !await confirmBox('Có ô FC chưa lưu được (lỗi mạng). Làm mới bây giờ sẽ mất các số đó.<br><span class="sub">Bấm Hủy để nhập lại ô bị lỗi trước.</span>')) return;
-    const nd = await STORE.loadAll(); D = nd; LOADED_AT = new Date(); SAVE_ERR = false;
+    const nd = await STORE.loadAll(); D = nd; LOADED_AT = new Date(); SAVE_ERR = false; if (!auto) CHG_SIG = null;
     const me = D.members.find(m => lc(m.email) === lc(ME.email));
     if (!me){ await STORE.signOut(); return renderLogin('Email này không còn trong danh sách team. Liên hệ admin.'); }
     ME = me; build(); render(); scrollTo(0, y);
@@ -1707,19 +1710,23 @@ async function refreshData(auto = false, quiet = false){
 }
 // Quay lại tab app sau ≥ 1 phút: tự làm mới (trừ khi đang ở Admin, đang mở hộp thoại hoặc có ô lưu lỗi)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden'){ HIDDEN_AT = Date.now(); return; }
+  if (document.visibilityState === 'hidden'){ HIDDEN_AT = Date.now(); flushSaves().catch(() => {}); return; }   // 4.25.4: rời app (điện thoại chuyển app) → lưu ngay ô đang chờ
   const away = HIDDEN_AT ? Date.now() - HIDDEN_AT : 0; HIDDEN_AT = 0;
   if (away < AUTO_REFRESH_MS || !ME || !D || VIEW.tab === 'admin' || $('.modal-bg') || SAVE_ERR) return;
   refreshData(true);
 });
-// Bản 4.23: RFFM / admin / CFO đang xem Dashboard → tự lấy số mới mỗi 2 phút (MR sửa FC là thấy, không đợi Submit)
-let LAST_ACT = Date.now(); ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { LAST_ACT = Date.now(); }, {passive: true}));
-setInterval(() => {
-  if (Date.now() - LAST_ACT < 45e3) return;   // đang thao tác thì không vẽ lại
-  if (!ME || !D || MODE !== 'cloud' || document.visibilityState !== 'visible' || VIEW.tab !== 'dash' || !(isReviewer() || isCFO())) return;
-  const ae = document.activeElement; if ($('.modal-bg') || SAVE_ERR || (ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) || Date.now() - (LOADED_AT ? +LOADED_AT : 0) < 110e3) return;
-  refreshData(true, true);
-}, 120e3);
+// 4.25.4: RFFM / admin / CFO thấy thay đổi của MR ở mọi thẻ (FC Input, Dashboard, FC POA, Thưởng), không chỉ Dashboard.
+// Mỗi 60 s hỏi database "có gì mới không" (vài request 1 dòng, rất nhẹ); chỉ khi có thay đổi mới tải lại đầy đủ.
+let LAST_ACT = Date.now(), CHG_SIG = null, CHG_PENDING = false; ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { LAST_ACT = Date.now(); }, {passive: true}));
+const autoOK = () => { const ae = document.activeElement; return !$('.modal-bg') && !SAVE_ERR && !(ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) && Date.now() - LAST_ACT >= 20e3 && !Object.keys(saveTimers).length && !Object.keys(tnFlush).length; };
+async function autoTick(){
+  if (!ME || !D || MODE !== 'cloud' || document.visibilityState !== 'visible' || VIEW.tab === 'admin' || !(isReviewer() || isCFO()) || REFRESHING) return;
+  try { if (!CHG_PENDING){ const sig = await STORE.changeSig(); if (CHG_SIG === null){ CHG_SIG = sig; return; } if (sig === CHG_SIG) return; CHG_SIG = sig; CHG_PENDING = true; }
+    if (!autoOK()) return;   // đang thao tác: để lần sau
+    CHG_PENDING = false; await refreshData(true, true); const b = $('#refresh'); if (b){ b.classList.add('new'); setTimeout(() => b.classList.remove('new'), 2500); }
+  } catch(e){ console.warn('changeSig', e); }
+}
+setInterval(autoTick, 60e3);
 // Cảnh báo admin khi database chưa chạy đủ migration: liệt kê đúng các file còn thiếu
 function dbOldNote(){
   if (MODE !== 'cloud' || !isAdmin() || D.dbv >= 18) return '';
@@ -2488,9 +2495,10 @@ function poaLoad(rep){
 function poaSave(rep){
   const l = (D.poa ||= []), x = l.find(p => p.rep_name === rep); if (x) x.data = JSON.parse(JSON.stringify(POA_I)); else l.push({period: PK, rep_name: rep, data: JSON.parse(JSON.stringify(POA_I))});
   const ind = $('#poa-sv'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
-  clearTimeout(POA_T); POA_T = setTimeout(async () => { POA_T = null;
+  const go = async () => { POA_T = null; delete tnFlush['poa'];
     try { await STORE.savePoa(PK, rep, POA_I); const i = $('#poa-sv'); if (i){ i.className = 'save-ind'; i.textContent = 'Đã lưu ' + hm(new Date()); } }
-    catch(e){ const i = $('#poa-sv'); if (i){ i.className = 'save-ind err'; i.textContent = 'Lỗi lưu: ' + e.message; } } }, 600);
+    catch(e){ const i = $('#poa-sv'); if (i){ i.className = 'save-ind err'; i.textContent = 'Lỗi lưu: ' + e.message; } } };
+  clearTimeout(POA_T); POA_T = setTimeout(go, 600); tnTimers['poa'] = POA_T; tnFlush['poa'] = go;   // 4.25.4: flushSaves / rời app lưu ngay
 }
 // Số liệu 2 slide cho 1 MR
 function poaModel(rep, I){
@@ -2810,9 +2818,10 @@ const incData = rep => rep === INC_FOR && INC_I ? INC_I : (((D.incIn || []).find
 function incSave(rep){
   const l = (D.incIn ||= []), x = l.find(p => p.rep_name === rep), d = JSON.parse(JSON.stringify(INC_I)); if (x) x.data = d; else l.push({period: PK, rep_name: rep, data: d});
   const ind = $('#inc-sv'); if (ind){ ind.className = 'save-ind'; ind.textContent = 'Đang lưu…'; }
-  clearTimeout(INC_T); INC_T = setTimeout(async () => { INC_T = null;
+  const go = async () => { INC_T = null; delete tnFlush['inc'];
     try { await STORE.saveIncInputs(PK, rep, INC_I); const i = $('#inc-sv'); if (i){ i.className = 'save-ind'; i.textContent = 'Đã lưu ' + hm(new Date()); } }
-    catch(e){ const i = $('#inc-sv'); if (i){ i.className = 'save-ind err'; i.textContent = 'Lỗi lưu: ' + e.message; } } }, 600);
+    catch(e){ const i = $('#inc-sv'); if (i){ i.className = 'save-ind err'; i.textContent = 'Lỗi lưu: ' + e.message; } } };
+  clearTimeout(INC_T); INC_T = setTimeout(go, 600); tnTimers['inc'] = INC_T; tnFlush['inc'] = go;
 }
 async function incTeamPerf(team, force){
   const c = INC_TP[team]; if (c && !force && Date.now() - c.t < 120e3) return c.d;

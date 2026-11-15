@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.4 — thay đổi của MR đồng bộ sang admin ở mọi thẻ
+- RFFM / admin / CFO: mỗi 60 giây app hỏi database có thay đổi mới không (FC, submit / duyệt, note, FC POA, thưởng, quota dự kiến, account đề xuất); có thì tự tải lại ở thẻ đang mở (FC Input, Dashboard, FC POA, Thưởng), giữ vị trí cuộn. Đang gõ / mở hộp thoại / vừa thao tác < 20 giây thì đợi lần sau. Thẻ Admin không tự tải lại.
+- Thay bản 4.23 (Dashboard tải lại toàn bộ mỗi 2 phút): giờ chỉ tải lại khi có thay đổi → ít dung lượng hơn.
+- MR rời app / chuyển app trên điện thoại: lưu ngay các ô đang chờ (FC, note, FC POA, thưởng).
+- FC POA, thưởng, note ghi thời điểm sửa mỗi lần lưu.
+
 ## Bản 4.25.3 — gọn giao diện: tổng quan trước, chi tiết sau
 - **Admin → Kỳ & nạp dữ liệu → Dữ liệu nhập 1 lần**: Target FY, Scheme thưởng, Target & Actual SFE các quý, Chỉ tiêu Self-pay, Mẫu PowerPoint POA, kèm trạng thái đã có / chưa có. Bỏ các nút này khỏi thẻ Thưởng, FC POA, Dashboard.
 - **Thưởng**: 3 ô tổng (thưởng quý, roll-back nửa năm, tổng); RFFM / admin thấy bảng cả team trước (thêm cột Roll-back), bấm tên xem chi tiết; thứ tự Định lượng → Định tính → 2 quý liên tiếp → Roll-back → Kết quả SFE. Cột kết quả (%Ach, hệ số, tiền) đứng trước, điện thoại thấy ngay. Số quý trước chỉ hiện ô nhập khi bấm "Sửa tay". Chưa có target quý trước (MR mới) thì không tính roll-back.
