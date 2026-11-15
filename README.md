@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.23.2 (15/11/2026) — MR × brand: brand nằm dưới tên MR
+- Bỏ cột Brand riêng: dòng MR (tổng) rồi ↳ từng brand ngay trong cột MR · Brand; MR 1 brand ghi tên brand nhỏ dưới tên MR. Điện thoại thấy thêm 1 cột số. Tổng team theo brand ghi "Team · <brand>". Không đổi database.
+
 ## Phiên bản 4.23.1 (15/11/2026) — Sắp xếp theo cấp (mẹ lẫn con)
 - Bấm tiêu đề cột: dòng cha (MR, merge code / account, nhóm) sắp theo số của dòng cha; dòng con (brand, mã KH, SKU) sắp trong từng cha và luôn đi theo cha. Dòng Total / Tổng team đứng yên.
 - Bảng MR × brand: dòng đầu mỗi MR là Tổng của MR, các brand nằm dưới (↳). MR 1 brand: 1 dòng. Tổng team theo brand + Tổng team ở cuối.

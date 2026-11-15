@@ -368,7 +368,7 @@ input.box.trd.over{border-color:var(--critical);background:#fff5f5}
 .wkt td{white-space:nowrap}.wq{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink3)}.wq.ok{color:var(--ok-ink)}.wq.no{color:var(--bad-ink)}
 .pnotes{margin-top:4px;display:flex;flex-direction:column;gap:2px;max-width:340px}.pn{font-size:11.5px;line-height:1.35;color:var(--ink2);white-space:normal}.pn b{color:var(--ink);font-weight:600}.pnby{font-size:11px;margin-top:2px}
 .mbl td{white-space:nowrap;font-variant-numeric:tabular-nums}.mbl tr.mbp td,.mbl tr.tot td{border-top:2px solid var(--line)}.mbl td.mbn{font-weight:600;min-width:150px}.mbl td.mbb{color:var(--ink2)}
-.mbl tr.mbp td{font-weight:600;background:#f6f8fb}.mbl tr.mbc td.mbb{padding-left:16px}.mbl tr.mbc td.mbn{background:var(--card)}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl tr.mbt-tot.mbc td{font-weight:500}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
+.mbl tr.mbp td{font-weight:600;background:#f6f8fb}.mbl tr.mbc td.mbb{padding-left:22px;background:var(--card)}.mbl .mb1{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:2px}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl tr.mbt-tot.mbc td{font-weight:500}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
 .mbt td.mbf{text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:54px}.mbt .mbat{font-size:11px;font-weight:400}
 .att{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .att .kpi{display:flex;flex-direction:column}
@@ -3562,13 +3562,14 @@ function mbTableHtml(list, o = {}){
   // Nhóm Tổng team đứng yên cuối bảng (tot + sfix).
   const group = (name, nameHtml, cells, tot, cls, fixed) => {
     const bl = [...cells].filter(([, g]) => mbHas(g)).sort((x, y) => bOrd(x[0]) - bOrd(y[0])), pc = fixed ? 'tot' : 'mbp', cc = fixed ? 'sfix mbc' : 'mbc';
-    if (!bl.length) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="8">chưa có số</td></tr>`;
-    if (bl.length === 1) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · ${bl[0][0]}`)}"><td class="l stick mbn">${nameHtml}</td><td class="l mbb">${esc(bl[0][0])}</td>${mbCells(bl[0][1])}</tr>`;
-    const par = `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · tổng`)}"><td class="l stick mbn">${nameHtml}</td><td class="l mbb">Tổng</td>${mbCells(tot || mbSum(bl.map(x => x[1])))}</tr>`;
-    const kids = bl.map(([b, g]) => `<tr class="${cc} ${cls || ''}" data-lbl="${esc(`${name} · ${b}`)}"><td class="l stick mbn">${fixed ? '<span class="muted">Team</span>' : ''}</td><td class="l mbb">${fixed ? '' : '↳ '}${esc(b)}</td>${mbCells(g)}</tr>`).join('');
+    // Bản 4.23.2 (user): brand nằm ngay dưới tên MR, bỏ cột Brand riêng
+    if (!bl.length) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="7">chưa có số</td></tr>`;
+    if (bl.length === 1) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · ${bl[0][0]}`)}"><td class="l stick mbn">${nameHtml}<span class="mb1">${esc(bl[0][0])}</span></td>${mbCells(bl[0][1])}</tr>`;
+    const par = `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · tổng`)}"><td class="l stick mbn">${nameHtml}</td>${mbCells(tot || mbSum(bl.map(x => x[1])))}</tr>`;
+    const kids = bl.map(([b, g]) => `<tr class="${cc} ${cls || ''}" data-lbl="${esc(`${name} · ${b}`)}"><td class="l stick mbb">${fixed ? '<span class="muted">Team ·</span> ' : '↳ '}${esc(b)}</td>${mbCells(g)}</tr>`).join('');
     return fixed ? kids + par : par + kids;   // Tổng team: dòng brand trước, dòng Tổng team dính đáy bảng
   };
-  const head = `<tr><th class="l stick">MR</th><th class="l">Brand</th><th>Target</th><th>Act. QTD</th><th>%Ach QTD</th><th>FC ${P[4].label}</th><th>%Ach FC</th><th>Gr vs LYSP</th><th>Gr vs ${P[3].label}</th></tr>`;
+  const head = `<tr><th class="l stick">MR · Brand</th><th>Target</th><th>Act. QTD</th><th>%Ach QTD</th><th>FC ${P[4].label}</th><th>%Ach FC</th><th>Gr vs LYSP</th><th>Gr vs ${P[3].label}</th></tr>`;
   const body = list.map(x => group(x.rep, `${x.repHtml || esc(x.rep)}${wk && x.wkHtml ? `<span class="mt mbwk">${x.wkHtml}</span>` : ''}`, x.cells, x.tot, VIEW.dRep && VIEW.dRep === x.rep ? 'hl' : '')).join('')
     + group('Tổng team', '<b>Tổng team</b>', bs, mbSum(list.map(x => x.tot).filter(Boolean)), 'mbt-tot', true);
   return `<div class="tw"><table class="t mbl"><thead>${head}</thead><tbody>${body}</tbody></table></div><div class="sub" style="margin-top:6px">Đơn vị: VND. Act. QTD tính đến ${esc(ASOF_DM || 'nay')}.</div>`;
