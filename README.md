@@ -2,6 +2,13 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25 — Target & Actual SFE các quý, tự lưu target quý
+- Admin → thẻ Thưởng → **Target & Actual các quý**: dán bảng Power BI "Performance tracking by REP & SKU" (REP Name · SKU_Name · Target · Actual), chọn quý. SKU tự gộp về brand; tên không có trong app được liệt kê để kiểm tra.
+- Roll-back, thưởng 2 quý liên tiếp và FY dùng target / actual **theo phân công của từng quý** (không theo địa bàn hiện tại). Quý đã nạp SFE thì không lấy raw sales × ratio hiện tại.
+- App tự lưu target và actual QTD theo MR × brand của quý hiện tại mỗi khi admin mở app; sang quý sau dùng lại, không cần nạp lại. Số SFE nạp sau sẽ thay số tự lưu.
+- Thẻ **Kết quả SFE các quý**: target, actual, %Ach theo quý và brand, dòng FY = các quý trước + FC quý này.
+- Roll-back ghi rõ chỉ tính phần định lượng (70%), cột "tính lại" là tổng 2 quý.
+
 ## Bản 4.24.2 — sửa hộp thoại Scheme thưởng
 - Tự làm mới (quay lại app / dashboard 2 phút) không chạy khi đang mở hộp thoại, không hiện thông báo che nút Lưu.
 - JSON scheme hiển thị gọn: mỗi mốc curve / band trên 1 dòng (`[90, 50]`).

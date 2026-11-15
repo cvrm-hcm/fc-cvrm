@@ -1120,6 +1120,7 @@ class DemoStore {
   async saveIncInputs(period, rep, data){ const l = ((this.db.incIn ||= {})[period] ||= {}); l[rep] = {period, rep_name: rep, data, at: nowIso()}; this.persist(); }
   async saveIncCfg(data){ this.db.incCfg = data; this.persist(); }
   async saveSpTgt(period, rows){ (this.db.spTgt ||= {})[period] = rows; this.persist(); }
+  async snapQTgt(pk, rows){ const P = pk + '-RB'; this.db.qTgt = (this.db.qTgt || []).filter(t => !(t.period === P && !/#ACT$/.test(t.sku))).concat(rows.map(x => ({...x, period: P, cust_code: '*'}))); this.persist(); }
   async saveQTgt(rows){ const ps = new Set(rows.map(x => x.period + '-RB')); this.db.qTgt = (this.db.qTgt || []).filter(t => !ps.has(t.period)).concat(rows.map(x => ({...x, period: x.period + '-RB', cust_code: '*'}))); this.persist(); }
   async teamPerf(team){ const rs = ALLROWS.filter(r => (r.team || TEAMS[0]) === team && !r.nl), a = agg(rs); return {n_rep: new Set(rs.map(r => r.rep_name)).size, tgt: a.tgt, fcv: a.fcv, qtd: a.act[4], at: nowIso()}; }
   async savePoaTemplate(b64){ this.db.poaTpl = b64; this.persist(); }
@@ -1247,6 +1248,8 @@ class CloudStore {
   async saveIncCfg(data){ const {error} = await this.sb.from('incentive_cfg').upsert({id: 'current', data}); if (error) throw error; }
   async saveSpTgt(period, rows){ const p = period + '-SP'; const {error} = await this.sb.from('targets').delete().eq('period', p); if (error) throw error;
     if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: p, rep_name: x.rep_name, cust_code: '*', sku: 'SELF-PAY', value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
+  async snapQTgt(pk, rows){ const P = pk + '-RB'; const {error} = await this.sb.from('targets').delete().eq('period', P).not('sku', 'like', '%#ACT'); if (error) throw error;
+    if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: P, rep_name: x.rep_name, cust_code: '*', sku: x.sku, value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
   async saveQTgt(rows){ const ps = [...new Set(rows.map(x => x.period + '-RB'))]; const {error} = await this.sb.from('targets').delete().in('period', ps); if (error) throw error;
     for (let i = 0; i < rows.length; i += 500){ const {error: e2} = await this.sb.from('targets').insert(rows.slice(i, i + 500).map(x => ({period: x.period + '-RB', rep_name: x.rep_name, cust_code: '*', sku: x.sku, value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
   async teamPerf(team){ const {data, error} = await this.sb.rpc('team_perf', {p_team: team}); if (error) throw error; const x = (data || [])[0]; return x ? {n_rep: x.n_rep, tgt: num(x.tgt), fcv: num(x.fcv), qtd: num(x.qtd), at: x.at} : null; }
@@ -1509,7 +1512,9 @@ function scopeData(){
   if (D.notes) D.notes = D.notes.filter(n => codes.has(n.cust_code));   // ghi chú cả team: mã KH của mình (giống quyền DB bản 14)
   D.wlog = (D.wlog || []).filter(e => !e.rep_name || seeR.has(e.rep_name)); D.snaps = (D.snaps || []).filter(s => seeR.has(s.rep_name));
 }
-function build(){
+var RB_T = 0;
+function build(){ clearTimeout(RB_T); RB_T = setTimeout(() => rbAutoSnap(), 4000); build0(); }
+function build0(){
   scopeData(); WKX = null;
   { const pb = new Map(D.prices.map(p => [p.sku, p.brand])); D.mapping.forEach(m => { const b = pb.get(m.sku); if (b && m.brand !== b) m.brand = b; }); }   // brand theo công ty (bảng giá), không theo nhóm file team (bản 4.15.2)
   const s = D.settings; P = periodsOf(s.year, s.quarter); PK = pkey(s.year, s.quarter);
@@ -2839,17 +2844,19 @@ function incModel(rep, scen, I, tp){
 // Quý trước (trong cùng năm) đạt ≥ 100% định lượng? Từ target quý trước (admin nạp / MR nhập) và Act. quý trước. null = chưa có target
 function incPrevAuto(rep, I){ const Y = +D.settings.year, Q = +D.settings.quarter; if (Q < 2) return null; const pkP = pkey(Y, Q - 1), rb = I.rb || {};
   const rows = ALLROWS.filter(r => r.rep_name === rep && !r.nl && !r.co), bs = new Set(rows.map(r => r.brand)); let t = 0, a = 0;
-  bs.forEach(b => { const tIn = pnum((rb.tgt || {})[b]), tp = tIn !== null ? tIn : rbTgtOf(rep, pkP, b); if (!tp) return; const achIn = pnum((rb.ach || {})[b]); t += tp; a += achIn !== null ? tp * achIn / 100 : rows.filter(r => r.brand === b).reduce((s, r) => s + num(r.act[3]), 0); });
+  bs.forEach(b => { const tIn = pnum((rb.tgt || {})[b]), tp = tIn !== null ? tIn : rbTgtOf(rep, pkP, b); if (!tp) return; const achIn = pnum((rb.ach || {})[b]), aS = rbActOf(rep, pkP, b); t += tp; a += achIn !== null ? tp * achIn / 100 : aS !== null ? aS : sfeHas(pkP) ? 0 : rows.filter(r => r.brand === b).reduce((s, r) => s + num(r.act[3]), 0); });
   return t ? a / t >= 1 - 1e-9 : null; }
+const sfeHas = pk => (D.qTgt || []).some(t => t.period === pk + '-RB' && /#(ACT|QTD)$/.test(t.sku));   // quý đã nạp SFE: target / actual theo phân công quý đó, không lấy raw sales × ratio hiện tại
+const rbActOf = (rep, pk, b) => { const L = (D.qTgt || []).filter(t => t.period === pk + '-RB' && t.rep_name === rep), x = L.find(t => t.sku === b + '#ACT') || (L.some(t => /#ACT$/.test(t.sku)) ? null : L.find(t => t.sku === b + '#QTD')); return x ? num(x.value) : null; };   // SFE trước, chưa có thì actual app tự lưu cuối quý   // 4.25: actual SFE do admin nạp
 const rbTgtOf = (rep, pk, b) => { const x = (D.qTgt || []).find(t => t.period === pk + '-RB' && t.rep_name === rep && t.sku === b); return x ? num(x.value) : null; };
 function incRB(rep, M, I){
   const C = M.C, Y = +D.settings.year, Q = +D.settings.quarter; if (Q % 2) return {na: true, Q};
   const Qp = Q - 1, pkP = pkey(Y, Qp), TC = C.teams[M.team], rb = I.rb || {}, pool = M.pool;
-  const rows = ALLROWS.filter(r => r.rep_name === rep && !r.nl && !r.co), brands = [...new Set([...rows.map(r => r.brand), ...Object.keys(TC.quant)])];
+  const rows = ALLROWS.filter(r => r.rep_name === rep && !r.nl && !r.co), brands = [...new Set([...rows.map(r => r.brand), ...Object.keys(TC.quant), ...(D.qTgt || []).filter(t => t.period === pkP + '-RB' && t.rep_name === rep).map(t => t.sku.replace(/#ACT$/, ''))])];
   const cur = new Map(M.all.map(x => [x.b, x]));
   const B = brands.map(b => { const rs = rows.filter(r => r.brand === b), aAuto = rs.reduce((t, r) => t + num(r.act[3]), 0), tIn = pnum((rb.tgt || {})[b]), tP = tIn !== null ? tIn : rbTgtOf(rep, pkP, b), achIn = pnum((rb.ach || {})[b]);
-    const aP = achIn !== null && tP ? tP * achIn / 100 : aAuto, c = cur.get(b) || {tgt: 0, fc: 0};
-    return {b, w: num((M.wEff || TC.quant)[b] || 0), tP, aP, achP: tP ? aP / tP : null, tC: c.tgt, fC: c.fc, tgtSrc: tIn !== null ? 'tay' : tP !== null ? 'admin' : ''}; });
+    const aS = rbActOf(rep, pkP, b), aP = achIn !== null && tP ? tP * achIn / 100 : aS !== null ? aS : sfeHas(pkP) ? 0 : aAuto, c = cur.get(b) || {tgt: 0, fc: 0};
+    return {b, w: num((M.wEff || TC.quant)[b] || 0), tP, aP, achP: tP ? aP / tP : null, tC: c.tgt, fC: c.fc, tgtSrc: tIn !== null ? 'tay' : tP !== null ? 'admin' : '', actSrc: achIn !== null && tP ? 'tay' : (D.qTgt || []).some(t => t.period === pkP + '-RB' && /#ACT$/.test(t.sku)) ? 'sfe' : sfeHas(pkP) ? 'auto' : 'raw'}; });
   const haveT = B.some(x => x.tP), sum = f => B.reduce((t, x) => t + num(f(x)), 0);
   const tPall = sum(x => x.tP), aPall = sum(x => x.aP), achPtot = tPall ? aPall / tPall : null;
   const tH = tPall + sum(x => x.tC), sH = aPall + sum(x => x.fC), achH = tH ? sH / tH : null, gateH = achH !== null && achH >= num(C.gate) - 1e-9, elig = achH !== null && achH >= 1 - 1e-9;
@@ -2867,44 +2874,96 @@ function rbHtml(R, M, ed){
   const Ql = `Q${R.Qp}`, Qc = `Q${R.Q}`;
   return `<div class="card"><h3>Roll-back ${R.hLbl} (${Ql} + ${Qc})</h3>
     <div class="incg ${R.elig ? 'ok' : 'err'}" style="margin-bottom:8px">Tổng portfolio ${R.hLbl} ${R.achH === null ? '–' : pct1(R.achH)}${R.haveT ? '' : ` (chưa có target ${Ql})`}. ${R.elig ? `Đủ điều kiện ≥ 100%: roll-back ước tính <b>${mm(R.amt)} VND</b>, trả ${R.payMonth} nếu ${R.nextQ} đạt ≥ 90%.` : `Cần tổng ${R.hLbl} ≥ 100%: thêm ${mm(R.need)} VND.`}</div>
-    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th><th>%Ach ${R.hLbl}</th><th>Hệ số ${R.hLbl}</th><th>Thưởng ${R.hLbl} (2 quý)</th><th>${Ql} (ước)</th><th>${Qc} (ước)</th></tr></thead><tbody>
+    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th><th>%Ach ${R.hLbl}</th><th>Hệ số ${R.hLbl}</th><th>Định lượng ${R.hLbl} tính lại (2 quý)</th><th>Đã trả ${Ql}</th><th>${Qc} (ước)</th></tr></thead><tbody>
       ${R.B.map(x => { const k = R.K.find(y => y.b === x.b);
-        return `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${x.w ? '' : '<div class="sub">không tính thưởng</div>'}</td><td>${inp('rbt:' + x.b, (rb.tgt || {})[x.b], x.tP !== null && x.tgtSrc === 'admin' ? nf0.format(Math.round(x.tP)) : 'nhập')}</td><td>${mm(x.aP)}</td>
+        return `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${x.w ? '' : '<div class="sub">không tính thưởng</div>'}</td><td>${inp('rbt:' + x.b, (rb.tgt || {})[x.b], x.tP !== null && x.tgtSrc === 'admin' ? nf0.format(Math.round(x.tP)) : 'nhập')}</td><td>${mm(x.aP)}${x.actSrc === 'sfe' ? '<div class="sub">SFE</div>' : x.actSrc === 'auto' ? '<div class="sub">app lưu</div>' : ''}</td>
           <td>${inp('rba:' + x.b, (rb.ach || {})[x.b], x.achP === null ? '%' : (Math.round(x.achP * 1000) / 10).toString(), 'w70')}</td><td>${mm(x.tC)}</td><td>${mm(x.fC)}</td>
           <td>${k && k.achHb !== null ? achHtml(k.achHb) : '–'}</td><td>${k ? `<b>${k.payH}%</b>` : '–'}</td><td>${k ? mm(k.amtH) : '–'}</td><td>${k ? mm(k.amtP) : '–'}</td><td>${k ? mm(k.amtC) : '–'}</td></tr>`; }).join('')}
       <tr class="tot"><td class="l stick">Tổng</td><td>${mm(R.B.reduce((t, x) => t + num(x.tP), 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.aP, 0))}</td><td>${R.achPtot === null ? '–' : pct1(R.achPtot)}</td><td>${mm(R.B.reduce((t, x) => t + x.tC, 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.fC, 0))}</td><td>${R.achH === null ? '–' : pct1(R.achH)}</td><td></td><td>${mm(R.totH)}</td><td>${mm(R.paidP)}</td><td>${mm(R.paidC)}</td></tr></tbody></table></div>
     <div class="bar" style="gap:8px;margin-top:8px"><label class="sub">Thưởng định lượng ${Ql} đã nhận (VND)</label>${inp('rbpaid', rb.paid, mm(R.K.reduce((t, x) => t + x.amtP, 0)), 'w120')}
-      <span class="sub">Roll-back = thưởng ${R.hLbl} ${mm(R.totH)} − ${Ql} ${mm(R.paidP)} − ${Qc} ${mm(R.paidC)}${R.elig ? ` = <b>${mm(R.amt)}</b>` : ''}.</span></div>
-    <div class="sub" style="margin-top:4px">Act. ${Ql} lấy từ raw sales × ratio hiện tại; có số SFE thì nhập %Ach ${Ql}. Target ${Ql} do admin nạp, ô trống thì nhập tay.</div></div>`;
+      <span class="sub">Roll-back = định lượng ${R.hLbl} tính lại ${mm(R.totH)} − đã trả ${Ql} ${mm(R.paidP)} − ${Qc} ${mm(R.paidC)}${R.elig ? ` = <b>${mm(R.amt)}</b>` : ''}.</span></div>
+    <div class="sub" style="margin-top:4px">Chỉ tính phần định lượng (${Math.round(num(M.C.quantW) * 100)}% hạn mức); định tính trả theo từng quý, không hồi tố. Cột "tính lại" là tổng 2 quý: tối đa 2 × ${mm(M.pool)} × ${Math.round(num(M.C.quantW) * 100)}% × ${Math.max(...(M.C.curve || [[0, 150]]).map(c => num(c[1])))}% = ${mm(2 * M.pool * num(M.C.quantW) * Math.max(...(M.C.curve || [[0, 150]]).map(c => num(c[1]))) / 100)}, không phải 1 quý.</div>
+    <div class="sub" style="margin-top:4px">Target và Act. ${Ql} theo số SFE admin nạp (địa bàn đã phân công ở ${Ql}, không theo địa bàn hiện tại); quý chưa nạp SFE thì Act. tạm lấy raw sales × ratio hiện tại. Ô trống thì nhập tay.</div></div>`;
 }
 // Admin: nạp target các quý theo MR × brand (dán từ Excel: MR · Quý · Brand · Target, hoặc MR · Quý · cột từng brand)
-const parseQ = s => { const t = String(s || '').toUpperCase().replace(/\s+/g, ''); let m = t.match(/^(\d{4})Q([1-4])$/) || t.match(/^Q([1-4])[^\d]?(\d{2,4})$/);
-  if (!m) return null; if (/^\d{4}Q/.test(t)) return pkey(+m[1], +m[2]); const y = m[2].length === 2 ? 2000 + +m[2] : +m[2]; return pkey(y, +m[1]); };
-function rbTgtParse(text){
+const parseQ = s => { const t = String(s || '').toUpperCase().replace(/\s+/g, ''); let m = t.match(/^(\d{4})[-._]?Q([1-4])$/) || t.match(/^Q([1-4])[^\d]?(\d{2,4})$/);
+  if (!m) return null; if (/^\d{4}[-._]?Q/.test(t)) return pkey(+m[1], +m[2]); const y = m[2].length === 2 ? 2000 + +m[2] : +m[2]; return pkey(y, +m[1]); };
+// 4.25: nạp target + actual SFE theo quý. Nhận 3 dạng (có dòng tiêu đề):
+//  - Power BI "Export data" / copy bảng: REP Name · SKU_Name · Target · Actual (SKU tự gộp về brand, quý chọn ở hộp thoại)
+//  - dọc: MR · Quý · Brand · Target · (Actual)    - ngang: MR · Quý · XARELTO · ADALAT …
+function rbTgtParse(text, defPk){
   const L = text.split(/\r?\n/).map(l => l.split('\t').map(c => c.trim())).filter(r => r.some(Boolean)); if (!L.length) return {rows: [], err: 'Chưa có dữ liệu'};
-  const brands = new Set(D.prices.map(p => (p.brand || '').toUpperCase()).filter(Boolean)), h = L[0].map(c => c.toUpperCase());
-  const iR = h.findIndex(c => /MR|REP|TÊN|NAME/.test(c)), iQ = h.findIndex(c => /QUÝ|QUY|QUARTER|PERIOD|KỲ/.test(c)), iB = h.findIndex(c => /BRAND|PRODUCT|SẢN PHẨM/.test(c)), iV = h.findIndex(c => /TARGET|CHỈ TIÊU|VALUE|VND/.test(c));
-  const wide = h.map((c, i) => brands.has(c) ? i : -1).filter(i => i >= 0), out = [], bad = [];
-  const reps = repList(), rp = n => reps.find(r => fold(r) === fold(n)) || null;
-  if (iR < 0 || iQ < 0) return {rows: [], err: 'Cần dòng tiêu đề có cột MR và Quý'};
-  L.slice(1).forEach(r => { const rep = rp(r[iR]), pk = parseQ(r[iQ]); if (!rep || !pk){ bad.push(r[iR] || '?'); return; }
-    if (iB >= 0 && iV >= 0){ const v = pnum(r[iV]); if (v !== null) out.push({rep_name: rep, period: pk, sku: String(r[iB]).toUpperCase(), value: v}); }
-    else wide.forEach(i => { const v = pnum(r[i]); if (v !== null) out.push({rep_name: rep, period: pk, sku: h[i], value: v}); }); });
-  return {rows: out, bad: [...new Set(bad)]};
+  const brands = [...new Set(D.prices.map(p => (p.brand || '').toUpperCase()).filter(Boolean))], h = L[0].map(c => c.toUpperCase());
+  const bOf = v => { const u = String(v || '').toUpperCase().trim(); if (!u) return null; if (brands.includes(u)) return u; const f = fold(v); return brands.find(b => f.startsWith(fold(b))) || null; };
+  const iB = h.findIndex(c => /SKU|BRAND|PRODUCT|SẢN PHẨM|SAN PHAM/.test(c)), iR = h.findIndex((c, i) => i !== iB && /REP|^MR|TÊN|NAME|TDV/.test(c)), iQ = h.findIndex(c => /QUÝ|QUY|QUARTER|PERIOD|KỲ/.test(c));
+  let iV = h.findIndex(c => /TARGET|CHỈ TIÊU|CHI TIEU/.test(c) && !/LY/.test(c)); if (iV < 0) iV = h.findIndex(c => /^VALUE$|VND/.test(c));
+  const iA = h.findIndex(c => /ACTUAL|THỰC ĐẠT|THUC DAT|DOANH SỐ|^ACT\b/.test(c) && !/LY|LAST/.test(c));
+  const wide = iB < 0 ? h.map((c, i) => brands.includes(c) ? i : -1).filter(i => i >= 0) : [];
+  if (iR < 0) return {rows: [], err: 'Cần dòng tiêu đề có cột MR / REP Name'};
+  if (iQ < 0 && !defPk) return {rows: [], err: 'Không có cột Quý: chọn quý ở trên'};
+  if (iB >= 0 && iV < 0) return {rows: [], err: 'Thiếu cột Target'};
+  if (iB < 0 && !wide.length) return {rows: [], err: 'Cần cột SKU / Brand, hoặc cột từng brand (XARELTO, ADALAT…)'};
+  const names = [...new Set([...D.members.map(m => m.rep_name), ...ALLROWS.map(r => r.rep_name)])], rp = n => names.find(r => fold(r) === fold(n)) || null;
+  const acc = new Map(), bad = new Set(), badB = new Set(); let last = '';
+  const add = (rep, pk, b, t, a) => { const k = rep + '|' + pk + '|' + b, x = acc.get(k) || {rep_name: rep, period: pk, b, t: 0, a: 0, hasT: false, hasA: false}; if (t !== null){ x.t += t; x.hasT = true; } if (a !== null){ x.a += a; x.hasA = true; } acc.set(k, x); };
+  L.slice(1).forEach(r => { let nm = r[iR] || ''; if (/^(TOTAL|TỔNG|TONG)/i.test(nm)) return; if (!nm) nm = last; else last = nm; if (!nm) return;
+    const rep = rp(nm), pk = iQ >= 0 ? parseQ(r[iQ]) || defPk : defPk; if (!rep){ bad.add(nm); return; } if (!pk){ bad.add(nm + ' (quý?)'); return; }
+    if (iB >= 0){ const v = pnum(r[iV]), av0 = iA >= 0 ? pnum(r[iA]) : null; if (v === null && av0 === null) return; const av = iA >= 0 ? (av0 ?? 0) : null; /* có cột Actual: ô trống = 0 */ const b = bOf(r[iB]); if (!b){ badB.add(`${nm}: ${r[iB] || '(trống)'}`); return; } add(rep, pk, b, v, av); }
+    else wide.forEach(i => { const v = pnum(r[i]); if (v !== null) add(rep, pk, h[i], v, null); }); });
+  const rows = []; acc.forEach(x => { if (x.hasT) rows.push({rep_name: x.rep_name, period: x.period, sku: x.b, value: x.t}); if (x.hasA) rows.push({rep_name: x.rep_name, period: x.period, sku: x.b + '#ACT', value: x.a}); });
+  return {rows, agg: [...acc.values()], bad: [...bad], badB: [...badB], hasAct: iA >= 0};
 }
 function rbTgtDialog(){
-  const bg = modal(`<h3>Target các quý (Roll-back)</h3><div class="sub">Dán từ Excel, có dòng tiêu đề. Dạng dọc: MR · Quý · Brand · Target. Hoặc dạng ngang: MR · Quý · XARELTO · ADALAT · … Quý ghi Q3'26 / 2026Q3. Target VND theo MR (đã tính ratio). Nạp lại cùng quý = thay số quý đó.</div>
-    <textarea id="rb-p" style="width:100%;min-height:180px;margin-top:8px" placeholder="MR&#9;Quý&#9;XARELTO&#9;ADALAT"></textarea><div id="rb-m" class="sub" style="margin:6px 0"></div>
+  const Y = +D.settings.year, Q = +D.settings.quarter, qs = []; for (let k = 1; k <= 6; k++){ const q = ((Q - k - 1) % 4 + 4) % 4 + 1, y = Y - Math.floor((k - Q + 4) / 4) * (k >= Q ? 1 : 0); qs.push(pkey(Q - k >= 1 ? Y : y, Q - k >= 1 ? Q - k : q)); }
+  const have = new Set((D.qTgt || []).map(t => t.period.replace(/-RB$/, '')));
+  const bg = modal(`<h3>Target & Actual các quý (SFE)</h3><div class="sub">Dùng cho Roll-back và thưởng 2 quý liên tiếp. Cách nhanh nhất: Power BI → bảng <b>Performance tracking by REP &amp; SKU</b> → ⋯ → Export data → mở Excel, copy cả bảng (có dòng tiêu đề) dán vào đây. SKU tự gộp về brand. Hoặc dán MR · Quý · Brand · Target · Actual. Nạp lại cùng quý = thay toàn bộ số quý đó.</div>
+    <div class="bar" style="gap:8px;margin-top:8px"><label class="sub">Quý (khi bảng không có cột Quý)</label><select id="rb-q">${qs.map((k, i) => `<option value="${k}" ${i === 0 ? 'selected' : ''}>${qDot(+k.slice(0, 4), +k.slice(5))}${have.has(k) ? ' · đã có' : ''}</option>`).join('')}</select></div>
+    <textarea id="rb-p" style="width:100%;min-height:160px;margin-top:8px" placeholder="REP Name&#9;SKU_Name&#9;Target&#9;Actual"></textarea><div id="rb-m" class="sub" style="margin:6px 0"></div>
     <div class="acts"><button class="btn" data-a="0">Đóng</button><button class="btn" data-a="c">Kiểm tra</button><button class="btn pri" data-a="s">Lưu</button></div>`);
   bg.firstElementChild.classList.add('wide');
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove(); if (a !== 'c' && a !== 's') return;
-    const P = rbTgtParse($('#rb-p', bg).value), m = $('#rb-m', bg);
+    const P = rbTgtParse($('#rb-p', bg).value, $('#rb-q', bg).value), m = $('#rb-m', bg);
     if (P.err){ m.textContent = P.err; return; }
-    const by = {}; P.rows.forEach(x => { by[x.period] = (by[x.period] || 0) + x.value; });
-    m.innerHTML = `${P.rows.length} dòng · ${Object.entries(by).map(([k, v]) => `${k}: ${vnd(Math.round(v))}`).join(' · ')}${P.bad.length ? `<br><span style="color:var(--bad-ink)">Không khớp tên MR / quý: ${esc(P.bad.join(', '))}</span>` : ''}`;
+    const per = {}; P.agg.forEach(x => { const k = x.period, r = ((per[k] ||= {})[x.rep_name] ||= {t: 0, a: 0, hasA: false}); r.t += x.t; r.a += x.a; r.hasA ||= x.hasA; });
+    const tbl = Object.entries(per).map(([pk, R]) => { const E = Object.entries(R).sort((x, y) => x[0].localeCompare(y[0])), T = E.reduce((s, [, r]) => s + r.t, 0), A = E.reduce((s, [, r]) => s + r.a, 0), hasA = E.some(([, r]) => r.hasA);
+      return `<div style="margin-top:6px"><b>${qDot(+pk.slice(0, 4), +pk.slice(5))}</b>${have.has(pk) ? ' <span class="sub">(sẽ thay số đã có)</span>' : ''}</div><div class="tw" style="max-height:34vh"><table class="t nosort"><thead><tr><th class="l">MR</th><th>Target</th>${hasA ? '<th>Actual</th><th>%Ach</th>' : ''}</tr></thead><tbody>
+        ${E.map(([n, r]) => `<tr><td class="l">${esc(n)}</td><td>${vnd(r.t)}</td>${hasA ? `<td>${vnd(r.a)}</td><td>${r.t ? pct1(r.a / r.t) : '–'}</td>` : ''}</tr>`).join('')}
+        <tr class="tot"><td class="l">Tổng ${E.length} MR</td><td>${vnd(T)}</td>${hasA ? `<td>${vnd(A)}</td><td>${T ? pct1(A / T) : '–'}</td>` : ''}</tr></tbody></table></div>`; }).join('');
+    m.innerHTML = `${P.hasAct ? '' : 'Không thấy cột Actual: chỉ nạp target. '}${P.bad.length ? `<div style="color:var(--bad-ink)">Bỏ qua tên không có trong app: ${esc(P.bad.join(', '))}</div>` : ''}${P.badB.length ? `<div style="color:var(--bad-ink)">Không nhận ra brand: ${esc(P.badB.slice(0, 8).join(' · '))}${P.badB.length > 8 ? '…' : ''}</div>` : ''}${tbl}`;
     if (a !== 's' || !P.rows.length) return;
-    try { await STORE.saveQTgt(P.rows.map(x => ({...x, team: incTeamOf(x.rep_name)}))); D.qTgt = (D.qTgt || []).filter(t => !by[t.period.replace(/-RB$/, '')]).concat(P.rows.map(x => ({...x, period: x.period + '-RB'})));
-      toast(`Đã lưu ${P.rows.length} dòng target`); bg.remove(); viewINC(); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
+    try { await STORE.saveQTgt(P.rows.map(x => ({...x, team: incTeamOf(x.rep_name)}))); const ps = new Set(P.rows.map(x => x.period)); D.qTgt = (D.qTgt || []).filter(t => !ps.has(t.period.replace(/-RB$/, ''))).concat(P.rows.map(x => ({...x, period: x.period + '-RB'})));
+      toast(`Đã lưu target${P.hasAct ? ' + actual' : ''} ${[...ps].map(k => qDot(+k.slice(0, 4), +k.slice(5))).join(', ')}`); bg.remove(); viewINC(); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
+}
+// 4.25: tự lưu target quý hiện tại theo MR × brand (đúng phân công lúc đó) → quý sau Roll-back / 2 quý liên tiếp / FY dùng lại, không phải nạp lại.
+// Chỉ admin ghi; quý đã nạp số SFE (có Actual) thì giữ số SFE, không ghi đè.
+let RB_SNAP_KEY = '';
+async function rbAutoSnap(){
+  if (MODE !== 'cloud' && MODE !== 'demo') return; if (!isAdmin() || !incOn() || !D || !ALLROWS) return;
+  const pk = pkey(+D.settings.year, +D.settings.quarter), P = pk + '-RB', cur = (D.qTgt || []).filter(t => t.period === P);
+  if (cur.some(t => /#ACT$/.test(t.sku))) return;
+  const m = new Map(), add = (k, v) => m.set(k, (m.get(k) || 0) + v);
+  ALLROWS.filter(r => !r.nl && !r.co).forEach(r => { if (num(r.tgt)) add(r.rep_name + '|' + r.brand, num(r.tgt)); if (num(r.act[4])) add(r.rep_name + '|' + r.brand + '#QTD', num(r.act[4])); });
+  const rows = [...m].map(([k, v]) => { const [rep_name, sku] = k.split('|'); return {rep_name, sku, value: Math.round(v), team: incTeamOf(rep_name)}; }).filter(x => x.value);
+  if (!rows.length) return;
+  const sig = rows.map(x => x.rep_name + x.sku + x.value).sort().join(), old = cur.map(t => t.rep_name + t.sku + Math.round(num(t.value))).sort().join();
+  if (sig === old || sig === RB_SNAP_KEY) return; RB_SNAP_KEY = sig;
+  try { await STORE.snapQTgt(pk, rows); D.qTgt = (D.qTgt || []).filter(t => t.period !== P).concat(rows.map(x => ({...x, period: P}))); } catch(e){ RB_SNAP_KEY = ''; console.warn('rbAutoSnap', e); }
+}
+// 4.25: lịch sử SFE của MR theo quý (target / actual admin nạp)
+const AUTO_Q = {};
+function sfeHistHtml(rep, M){
+  const by = {}; (D.qTgt || []).filter(t => t.rep_name === rep && /-RB$/.test(t.period)).forEach(t => { const pk = t.period.replace(/-RB$/, ''), f = /#ACT$/.test(t.sku) ? 'a' : /#QTD$/.test(t.sku) ? 'q' : 't', b = t.sku.replace(/#(ACT|QTD)$/, ''); const x = ((by[pk] ||= {})[b] ||= {t: null, a: null, q: null}); x[f] = num(t.value); });
+  const PKn = pkey(+D.settings.year, +D.settings.quarter); delete by[PKn];
+  Object.keys(by).forEach(k => { const V = Object.values(by[k]), sfe = V.some(x => x.a !== null); AUTO_Q[k] = !sfe; if (!sfe) V.forEach(x => { x.a = x.q; }); });
+  const pks = Object.keys(by).sort(); if (!pks.length) return '';
+  const Y = +D.settings.year, PKc = pkey(Y, +D.settings.quarter), yq = pks.filter(k => k.startsWith(Y + 'Q') && k < PKc);
+  const fyT = yq.reduce((s, k) => s + Object.values(by[k]).reduce((t, x) => t + num(x.t), 0), 0) + (M ? M.tT : 0), fyA = yq.reduce((s, k) => s + Object.values(by[k]).reduce((t, x) => t + num(x.a), 0), 0) + (M ? M.tF : 0);
+  const bs = [...new Set(pks.flatMap(k => Object.keys(by[k])))].sort(), ach = (a, t) => a !== null && t ? achHtml(a / t) : '–';
+  return `<div class="card"><h3>Kết quả SFE các quý</h3><div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Quý</th><th>Target</th><th>Actual</th><th>%Ach</th>${bs.map(b => `<th>%Ach ${esc(b)}</th>`).join('')}</tr></thead><tbody>
+    ${pks.map(k => { const X = by[k], T = Object.values(X).reduce((s, x) => s + num(x.t), 0), hasA = Object.values(X).some(x => x.a !== null), A = Object.values(X).reduce((s, x) => s + num(x.a), 0);
+      return `<tr data-lbl="${k}"><td class="l stick"><b>${qDot(+k.slice(0, 4), +k.slice(5))}</b>${AUTO_Q[k] ? '<div class="sub">app tự lưu</div>' : ''}</td><td>${vnd(T)}</td><td>${hasA ? vnd(A) : '–'}</td><td>${hasA ? ach(A, T) : '–'}</td>${bs.map(b => `<td>${X[b] ? ach(X[b].a, X[b].t) : '–'}</td>`).join('')}</tr>`; }).join('')}
+    ${M && yq.length ? `<tr class="tot" data-lbl="FY ${Y}"><td class="l stick">FY ${Y}<div class="sub">${yq.map(k => 'Q' + k.slice(5)).join(' + ')} SFE + Q${PKc.slice(5)} FC</div></td><td>${vnd(fyT)}</td><td>${vnd(fyA)}</td><td>${ach(fyA, fyT)}</td>${bs.map(() => '<td></td>').join('')}</tr>` : ''}</tbody></table></div>
+    <div class="sub" style="margin-top:4px">Số SFE admin nạp từ Power BI, theo địa bàn đã phân công từng quý. Quý chưa nạp SFE: app tự lưu target và actual cuối quý. Roll-back và FY tính theo các số này.</div></div>`;
 }
 
 function viewINC(){
@@ -2929,7 +2988,7 @@ function viewINC(){
     return `<tr data-lbl="${esc(lab)}"><td class="l stick">${esc(lab)}${q.src && q.k !== 'test' ? `<div class="sub">${esc(q.src)}</div>` : ''}</td><td>${Math.round(q.w * 100)}%</td><td class="l">${cell}</td><td><b>${q.pay}%</b></td><td><b>${mm(q.amt)}</b></td></tr>`; };
   const pct0 = v => M.pool ? Math.round(v / M.pool * 100) + '%' : '';
   V.innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">Ước tính thưởng ${Qd}</h3>${ME.role === 'MR' ? '' : `<select id="inc-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
-      <span class="grow"></span><span id="inc-sv" class="save-ind"></span>${isAdmin() ? '<button class="btn sm" id="inc-rb">Target các quý</button><button class="btn sm" id="inc-sp">Chỉ tiêu Self-pay</button><button class="btn sm" id="inc-cfg">Scheme</button>' : ''}</div>
+      <span class="grow"></span><span id="inc-sv" class="save-ind"></span>${isAdmin() ? '<button class="btn sm" id="inc-rb">Target &amp; Actual các quý</button><button class="btn sm" id="inc-sp">Chỉ tiêu Self-pay</button><button class="btn sm" id="inc-cfg">Scheme</button>' : ''}</div>
       <div class="sub" style="margin-top:4px">Ước tính theo ${esc(C.name || 'scheme')}, team ${esc(team)}. Số chính thức theo SFE.</div>
       <div class="incseg" style="margin-top:10px">${scBtn('base', 'FC base')}${scBtn('best', 'Best case', !incBest(rep))}${scBtn('cust', 'Tự chỉnh %Ach')}</div>
       <div class="inctot"><div><div class="sub">Tổng thưởng ước tính</div><div class="incbig">${mm(M.total)} <span class="sub">VND</span></div><div class="sub">${pct0(M.total)} hạn mức ${mm(M.pool)}</div></div>
@@ -2944,6 +3003,7 @@ function viewINC(){
       <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Chỉ tiêu</th><th>Tỷ trọng</th><th class="l">Kết quả</th><th>Hệ số</th><th>Thưởng (VND)</th></tr></thead>
       <tbody>${M.qual.map(qlRow).join('')}<tr class="tot"><td class="l stick">Tổng</td><td></td><td></td><td></td><td>${mm(M.ql)}</td></tr></tbody></table></div></div>
     ${rbHtml(incRB(rep, M, I), M, ed)}
+    ${sfeHistHtml(rep, M)}
     <div class="card"><h3>Thưởng thêm</h3><label class="bar" style="gap:8px"><input type="checkbox" class="inc-i" data-f="prev" ${M.prevOk ? 'checked' : ''} ${dis}> Quý trước đạt ≥ 100% định lượng${M.prevAuto === null ? '' : ` <span class="sub">(theo target quý trước: ${M.prevAuto ? 'đạt' : 'chưa đạt'})</span>`}</label>
       <div class="sub" style="margin-top:4px">${M.prevOk ? (M.tA !== null && M.tA >= 1 ? `Quý này cũng ≥ 100% → +${mm(M.pool * num(C.quantW) * num(C.bonus2Q))} VND (trả quý sau).` : `Quý này cần tổng portfolio ≥ 100% để nhận +${mm(M.pool * num(C.quantW) * num(C.bonus2Q))} VND.`) : 'Đạt định lượng 2 quý liên tiếp: thưởng thêm, tối đa 3 lần / năm.'}</div></div>
     ${isReviewer() ? `<div class="card"><h3>Cả team · FC base</h3><div id="inc-team"></div></div>` : ''}`;
