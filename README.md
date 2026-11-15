@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.24.2 — sửa hộp thoại Scheme thưởng
+- Tự làm mới (quay lại app / dashboard 2 phút) không chạy khi đang mở hộp thoại, không hiện thông báo che nút Lưu.
+- JSON scheme hiển thị gọn: mỗi mốc curve / band trên 1 dòng (`[90, 50]`).
+
 ## Phiên bản 4.24.1 (15/11/2026) — Thưởng: MR không phụ trách brand
 - MR không có target quý của 1 brand trong KPI định lượng (vd không phụ trách Xarelto): tỷ trọng brand đó dồn sang brand còn lại theo tỷ lệ (CVRM: toàn bộ phần định lượng cho Adalat). Áp cho cả Roll-back. Tắt theo team bằng `"reallocate": false` trong Scheme (WHC đang tắt).
 

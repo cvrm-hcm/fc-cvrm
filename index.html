@@ -1681,7 +1681,7 @@ async function reload(){ D = await STORE.loadAll(); LOADED_AT = new Date(); buil
 let LOADED_AT = null, REFRESHING = false, HIDDEN_AT = 0; const AUTO_REFRESH_MS = 60000;
 const hhmm = d => d ? hm(d) : '';
 async function refreshData(auto = false, quiet = false){
-  if (REFRESHING || !ME) return; REFRESHING = true;
+  if (REFRESHING || !ME || (auto && $('.modal-bg'))) return; REFRESHING = true;
   const btn = $('#refresh'); if (btn){ btn.disabled = true; btn.classList.add('spin'); }
   const ae = document.activeElement, focus = ae && ae !== document.body ? {id: ae.id, did: ae.dataset?.id, f: ae.dataset?.f} : null; const y = scrollY;
   try {
@@ -1692,7 +1692,7 @@ async function refreshData(auto = false, quiet = false){
     if (!me){ await STORE.signOut(); return renderLogin('Email này không còn trong danh sách team. Liên hệ admin.'); }
     ME = me; build(); render(); scrollTo(0, y);
     if (focus){ const el = focus.id ? document.getElementById(focus.id) : (focus.did ? $(`[data-id="${focus.did}"][data-f="${focus.f}"]`) : null); if (el && el.focus) el.focus({preventScroll: true}); }
-    if (!quiet) toast(auto ? `Đã tự cập nhật số mới nhất (${hhmm(LOADED_AT)})` : `Đã cập nhật số mới nhất (${hhmm(LOADED_AT)})`);
+    if (!quiet && !(auto && $('.modal-bg'))) toast(auto ? `Đã tự cập nhật số mới nhất (${hhmm(LOADED_AT)})` : `Đã cập nhật số mới nhất (${hhmm(LOADED_AT)})`);   // 4.24.2: đang mở hộp thoại thì làm mới im lặng, không che nút
   } catch(e){ toast('Không tải được dữ liệu: ' + e.message, 4500); }
   finally { REFRESHING = false; const b = $('#refresh'); if (b){ b.disabled = false; b.classList.remove('spin'); } }
 }
@@ -2968,10 +2968,12 @@ function incTeamTable(){
 `;
   el.onclick = e => { const a = e.target.closest('[data-incr]'); if (!a) return; e.preventDefault(); VIEW.incRep = a.dataset.incr; INC_FOR = null; viewINC(); window.scrollTo(0, 0); };
 }
+// JSON dễ đọc: mảng chỉ chứa số / chữ nằm trên 1 dòng ([90, 50]), mỗi cấp thụt 2 khoảng
+const jsonTidy = o => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, x) => m.includes('\n') ? '[' + x.split(/,\s*\n\s*/).join(', ') + ']' : m);
 function incCfgDialog(){
   const C = incCfg() || INC_DEMO;
   const bg = modal(`<h3>Scheme thưởng</h3><div class="sub">Lưu trong database, chỉ thành viên đăng nhập đọc được. pool: hạn mức quý (VND) · quantW: tỷ trọng định lượng · gate: cổng tổng portfolio · curve: [mốc %, hệ số %] từng 1% · band: mức định tính · teams: tỷ trọng brand (tên brand viết hoa như bảng giá), KPI định tính (ef, sp, ac, test) · tests: quý → loại test (pk, poa, pres).</div>
-    <textarea id="ic-j" spellcheck="false" style="width:100%;min-height:52vh;font:12px/1.4 ui-monospace,monospace;margin-top:8px">${esc(JSON.stringify(C, null, 1))}</textarea><div id="ic-m"></div>
+    <textarea id="ic-j" spellcheck="false" style="width:100%;min-height:52vh;font:12px/1.4 ui-monospace,monospace;margin-top:8px">${esc(jsonTidy(C))}</textarea><div id="ic-m"></div>
     <div class="acts"><button class="btn" data-a="0">Đóng</button><button class="btn pri" data-a="s">Lưu</button></div>`);
   bg.firstElementChild.classList.add('wide');
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove(); if (a !== 's') return;
