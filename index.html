@@ -2803,7 +2803,11 @@ function incModel(rep, scen, I, tp){
   for (const [b, rs] of by){ const g = agg(rs), fc = fcOf(b, g), box = rs.reduce((t, r) => t + num(r.box), 0), lp = rs.map(r => num(r.price)).filter(x => x > 0);
     B.set(b, {g, fc, px: box > 0 && g.fcv > 0 ? g.fcv / box : lp.length ? lp.reduce((s, x) => s + x, 0) / lp.length : 0}); tT += g.tgt; tF += fc; }
   const tA = tT ? tF / tT : null, gateOk = tA !== null && tA >= num(C.gate) - 1e-9;
-  const quant = Object.entries(TC.quant).map(([b, w]) => { const o = B.get(b) || {g: {tgt: 0, fcv: 0}, fc: 0, px: 0}, ach = o.g.tgt ? o.fc / o.g.tgt : null, pay = incCurve(C, ach);
+  // Brand MR không phụ trách (target quý = 0): dồn tỷ trọng sang brand còn lại theo tỷ lệ (user 15/11: không phụ trách Xarelto → 70% cho Adalat)
+  const wEff = (() => { const e = Object.entries(TC.quant), has = e.filter(([b]) => (B.get(b) || {g: {tgt: 0}}).g.tgt > 0), sw = has.reduce((t, [, w]) => t + num(w), 0), all = e.reduce((t, [, w]) => t + num(w), 0);
+    if (TC.reallocate === false || !has.length || has.length === e.length) return Object.fromEntries(e.map(([b, w]) => [b, num(w)]));
+    return Object.fromEntries(e.map(([b, w]) => [b, has.some(x => x[0] === b) ? num(w) * all / sw : 0])); })();
+  const quant = Object.entries(wEff).map(([b, w]) => { const o = B.get(b) || {g: {tgt: 0, fcv: 0}, fc: 0, px: 0}, ach = o.g.tgt ? o.fc / o.g.tgt : null, pay = incCurve(C, ach);
     // mốc kế tiếp: chưa tới 90 / 95 / 100 thì nhắm vách gần nhất, đã ≥ 100 thì +1 mốc
     let nx = null; if (ach !== null && o.g.tgt){ const p = pctInt(ach), cv = C.curve, top = cv[cv.length - 1][0];
       if (p < top){ const jumps = cv.filter(([x, y], i) => x > p && i && y - cv[i - 1][1] >= 10).map(x => x[0]); const tgtP = p < cv[0][0] ? cv[0][0] : p < 100 && jumps.length ? jumps[0] : p + 1;
@@ -2825,7 +2829,7 @@ function incModel(rep, scen, I, tp){
   const ql = qual.reduce((t, x) => t + x.amt, 0), bonus = prevOk && tA !== null && tA >= 1 - 1e-9 ? pool * num(C.quantW) * num(C.bonus2Q) : 0;
   const all = [...B].map(([b, o]) => { const q = quant.find(x => x.b === b); return {b, tgt: o.g.tgt, fc: o.fc, amt: q ? q.amt : 0}; });
   Object.keys(TC.quant).forEach(b => { if (!B.has(b)) all.push({b, tgt: 0, fc: 0, amt: 0}); });
-  return {rep, team, scen, pool, tT, tF, tA, gateOk, gate: num(C.gate), quant, qa, qual, ql, qgOk, qgKnown, mccp, clm, bonus, prevOk, prevAuto, all, total: qa + ql + bonus, tk, hasBest: !!best, C};
+  return {rep, team, scen, pool, tT, tF, tA, gateOk, gate: num(C.gate), quant, qa, qual, ql, qgOk, qgKnown, mccp, clm, bonus, prevOk, prevAuto, all, wEff, total: qa + ql + bonus, tk, hasBest: !!best, C};
 }
 /* ---------- Roll-back nửa năm (bản 4.24) ----------
    Nửa năm = Q1+Q2 hoặc Q3+Q4. Tính khi đang ở quý 2 của nửa năm (Q2 / Q4): quý trước đã chốt (Act.), quý này theo kịch bản.
@@ -2845,7 +2849,7 @@ function incRB(rep, M, I){
   const cur = new Map(M.all.map(x => [x.b, x]));
   const B = brands.map(b => { const rs = rows.filter(r => r.brand === b), aAuto = rs.reduce((t, r) => t + num(r.act[3]), 0), tIn = pnum((rb.tgt || {})[b]), tP = tIn !== null ? tIn : rbTgtOf(rep, pkP, b), achIn = pnum((rb.ach || {})[b]);
     const aP = achIn !== null && tP ? tP * achIn / 100 : aAuto, c = cur.get(b) || {tgt: 0, fc: 0};
-    return {b, w: num(TC.quant[b] || 0), tP, aP, achP: tP ? aP / tP : null, tC: c.tgt, fC: c.fc, tgtSrc: tIn !== null ? 'tay' : tP !== null ? 'admin' : ''}; });
+    return {b, w: num((M.wEff || TC.quant)[b] || 0), tP, aP, achP: tP ? aP / tP : null, tC: c.tgt, fC: c.fc, tgtSrc: tIn !== null ? 'tay' : tP !== null ? 'admin' : ''}; });
   const haveT = B.some(x => x.tP), sum = f => B.reduce((t, x) => t + num(f(x)), 0);
   const tPall = sum(x => x.tP), aPall = sum(x => x.aP), achPtot = tPall ? aPall / tPall : null;
   const tH = tPall + sum(x => x.tC), sH = aPall + sum(x => x.fC), achH = tH ? sH / tH : null, gateH = achH !== null && achH >= num(C.gate) - 1e-9, elig = achH !== null && achH >= 1 - 1e-9;
@@ -2916,7 +2920,7 @@ function viewINC(){
   const inp = (f, v, ph, cls = 'w70') => `<input class="inp inc-i ${cls}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(ph)}" inputmode="decimal" ${dis} aria-label="${esc(f)}">`;
   const scBtn = (k, l, off) => `<button class="incseg-b ${scen === k ? 'on' : ''}" data-sc="${k}" ${off ? 'disabled data-tip="Chưa điền best case ở thẻ FC POA"' : ''}>${l}</button>`;
   const nxT = x => !x.nx ? '' : !M.gateOk ? '' : `<span class="incnx">+${mm(x.nx.need)} VND${x.nx.box ? ` (~${nf0.format(x.nx.box)} box)` : ''} → mốc ${x.nx.p}% · thưởng +${mm(x.nx.gain)}</span>`;
-  const qRows = M.quant.map(x => `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b></td><td>${Math.round(x.w * 100)}%</td><td>${mm(x.tgt)}</td>
+  const qRows = M.quant.map(x => `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${!x.tgt ? '<div class="sub">không phụ trách</div>' : ''}</td><td>${Math.round(x.w * 100)}%${x.w !== num(C.teams[M.team].quant[x.b]) ? ` <span class="sub">(gốc ${Math.round(num(C.teams[M.team].quant[x.b]) * 100)}%)</span>` : ''}</td><td>${mm(x.tgt)}</td>
       <td>${scen === 'cust' ? inp('cust:' + x.b, (I.cust || {})[x.b], x.ach === null ? '' : (Math.round(x.ach * 1000) / 10).toString(), 'w70') + '<span class="sub">%</span>' : mm(x.fc)}</td><td>${x.ach === null ? '–' : achHtml(x.ach)}</td><td>${x.ach === null ? '–' : pctInt(x.ach) + '%'}</td><td><b>${x.pay}%</b></td><td><b>${mm(x.amt)}</b></td><td class="l">${nxT(x)}</td></tr>`).join('');
   const gateNeed = M.tT ? Math.max(0, M.tT * M.gate - M.tF) : 0;
   const qlRow = q => { const lab = q.k === 'test' ? `${INC_QL.test}: ${INC_TEST[M.tk].label}` : INC_QL[q.k];

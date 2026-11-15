@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.24.1 (15/11/2026) — Thưởng: MR không phụ trách brand
+- MR không có target quý của 1 brand trong KPI định lượng (vd không phụ trách Xarelto): tỷ trọng brand đó dồn sang brand còn lại theo tỷ lệ (CVRM: toàn bộ phần định lượng cho Adalat). Áp cho cả Roll-back. Tắt theo team bằng `"reallocate": false` trong Scheme (WHC đang tắt).
+
 ## Phiên bản 4.24 + Database bản 18 (15/11/2026) — Ước tính thưởng (PBR) + Roll-back
 - Thẻ **Thưởng** (cạnh FC POA): ước tính thưởng quý theo Incentive Plan của SFE. Kịch bản FC base · Best case (thẻ FC POA) · Tự chỉnh %Ach.
   - Định lượng: hạn mức × tỷ trọng brand × hệ số theo mốc %Ach (mỗi 1% là 1 mốc, lấy phần nguyên của %Ach 1 số lẻ), có cổng tổng portfolio. Dòng "Lên mốc kế tiếp": cần thêm bao nhiêu VND / box, thưởng tăng bao nhiêu.
