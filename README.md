@@ -13,7 +13,7 @@ App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện),
 - `migration_v17.sql`: `poa_inputs` (MR ghi của mình, RFFM / admin đọc), `app_assets` (thành viên đọc, admin ghi), policy MR gỡ dòng đề xuất của mình, `sales_agg.last_date` (ngày hoá đơn cuối, có từ lần nạp raw sau), hàm `recent_orders(code)`. `schema.sql` đã gộp.
 
 ## Nâng cấp từ bản 16
-1. Supabase → **SQL Editor** → chạy `migration_v17.sql` (kết quả `db_version = 17`).
+1. Supabase → **SQL Editor** → chạy `migration_v17.sql` (kết quả `db_version = 17`). App thật đã chạy 15/11 (`v17_poa_orders`).
 2. Admin → thẻ FC POA → **Mẫu PPT** → chọn bài POA có 2 slide Forecast (chỉ cần làm 1 lần).
 3. Nạp lại raw sales để có ngày hoá đơn cuối ở Đơn gần nhất.
 
