@@ -2501,9 +2501,31 @@ function poaSave(rep){
   clearTimeout(POA_T); POA_T = setTimeout(go, 600); tnTimers['poa'] = POA_T; tnFlush['poa'] = go;   // 4.25.4: flushSaves / rời app lưu ngay
 }
 // Số liệu 2 slide cho 1 MR
+// 4.25.8: slide New launch riêng: account × SKU, FC box từng tháng, FC mil VND, %Contri, tháng có FC đầu tiên, Act. đến nay
+function poaNL(rep, I, Y, Q){
+  const rows = ALLROWS.filter(r => r.rep_name === rep && !r.co && r.nl && (r.fcv > 0 || r.box > 0 || r.act[4] > 0));
+  if (!rows.length) return null;
+  const A = new Map(); rows.forEach(r => { const k = r.mc || r.cust_code, a = A.get(k) || {mc: k, name: r.mn || r.cust_name || k, rows: []}; a.rows.push(r); A.set(k, a); });
+  const accs = [...A.values()].map(a => ({...a, fcv: a.rows.reduce((t, r) => t + r.fcv, 0)})).sort((x, y) => y.fcv - x.fcv || x.name.localeCompare(y.name));
+  const mon = MS.map(m => mlabel(Y, m)), out = [];
+  accs.forEach(a => { const by = new Map(); a.rows.forEach(r => { const x = by.get(r.sku) || []; x.push(r); by.set(r.sku, x); });
+    const sk = [...by].sort((x, y) => x[0].localeCompare(y[0], 'en', {numeric: true}));
+    sk.forEach(([sku, rs], i) => { const bm = [0, 1, 2].map(j => rs.reduce((t, r) => t + num(r.boxM[j]), 0)), fi = bm.findIndex(b => b > 0), seg = rs[0].segment || '';
+      out.push({k: `${a.mc}|${sku}`, acc: norm((I.alias || {})[a.mc]) || bvName(a.name), sub: '', brand: nlSku(sku), seg: segName(seg), bm, box: bm[0] + bm[1] + bm[2], fcv: rs.reduce((t, r) => t + r.fcv, 0), qtd: rs.reduce((t, r) => t + r.act[4], 0),
+        first: fi < 0 ? '-' : mon[fi], star: rs.some(r => num(r.ratio) < 0.999), ratio: rs[0].ratio, first0: i === 0}); }); });
+  const T = {box: out.reduce((t, x) => t + x.box, 0), fcv: out.reduce((t, x) => t + x.fcv, 0), qtd: out.reduce((t, x) => t + x.qtd, 0), bm: [0, 1, 2].map(j => out.reduce((t, x) => t + x.bm[j], 0))};
+  const bySku = new Map(); out.forEach(x => bySku.set(x.brand, (bySku.get(x.brand) || 0) + x.box));
+  const segs = new Map(); out.forEach(x => segs.set(x.seg, (segs.get(x.seg) || 0) + x.fcv));
+  const segTxt = [...segs].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${T.fcv ? Math.round(v / T.fcv * 100) : 0}%`).join(', ');
+  const fo = out.map(x => x.first).filter(x => x !== '-').sort((a, b) => mon.indexOf(a) - mon.indexOf(b))[0];
+  const s3a = `FC New launch ${qDot(Y, Q)}: ${nf0.format(Math.round(T.box))} box (${milT(T.fcv)} mil VND) tại ${accs.length} BV / PK${fo ? `, first order ${fo}` : ''}`;   // ngắn để subtitle 1 dòng; tách SKU / type BV có trong bảng
+  const s3 = s3a + (norm(I.s3) ? ', ' + norm(I.s3) : '');
+  const st = out.filter(x => x.star); const note = st.length ? `*Box và mil VND tính theo ratio ${[...new Set(st.map(x => `${x.acc}: ${Math.round(num(x.ratio) * 100)}%`))].join(', ')}.` : '';
+  return {out, T, s3a, s3, note, mon, nAcc: accs.length};
+}
 function poaModel(rep, I){
   const S = D.settings, Y = +S.year, Q = +S.quarter, ly = P[0], lq = P[3];
-  const rows = ALLROWS.filter(r => r.rep_name === rep && !r.co && (!r.nl || (r.filled && r.fcv > 0)));
+  const rows = ALLROWS.filter(r => r.rep_name === rep && !r.co && !r.nl);   // 4.25.8: New launch tách slide riêng (poaNL), không cộng vào FC / %Achie
   const A = new Map(); for (const r of rows){ const a = A.get(r.mc) || {mc: r.mc, name: r.mn || r.cust_name || r.mc, rows: []}; a.rows.push(r); A.set(r.mc, a); }
   const accs = [...A.values()].map(a => { const g = agg(a.rows); return {...a, tgt: g.tgt, fcv: g.fcv, w: Math.max(g.tgt, g.fcv, g.act[0], 0)}; }).filter(a => a.w > 0 || a.rows.some(r => r.filled)).sort((x, y) => y.w - x.w || x.name.localeCompare(y.name));
   const tot = accs.reduce((t, a) => t + a.w, 0);
@@ -2548,7 +2570,7 @@ function poaModel(rep, I){
   const nFullR = rt.length, oR = new Set(others.flatMap(a => a.rows.map(r => Math.round(num(r.ratio) * 1000) / 1000)));
   if ([...oR].some(x => x < 0.999)) rt.push(oR.size === 1 ? `Others: ${ratioTxt([...oR][0])}` : 'Others: theo ratio từng account');
   const note = rt.length ? `*Box và mil VND tính theo ratio ${rt.join(', ')}${nFullR < fulls.length ? ', account khác: 100%' : ''}.` : '';
-  return {rep, Y, Q, Qd, LYd, LQd, accs, full, out, T, s1: s1a + (norm(I.s1) ? ' ' + norm(I.s1) : ''), s2: s2a + (norm(I.s2) ? ' ' + norm(I.s2) : ''), s1a, s2a, note, tot};
+  return {rep, Y, Q, Qd, LYd, LQd, accs, full, out, T, s1: s1a + (norm(I.s1) ? ' ' + norm(I.s1) : ''), s2: s2a + (norm(I.s2) ? ' ' + norm(I.s2) : ''), s1a, s2a, note, tot, N: poaNL(rep, I, Y, Q)};
 }
 // Ô hiển thị (web + slide): số box, mil VND, quota còn lại
 const poaBox = (v, star) => Math.round(v) ? nf0.format(Math.round(v)) + (star ? '*' : '') : '-';
@@ -2580,7 +2602,13 @@ function viewPOA(){
     <div class="card"><h3>Slide 2 · Forecast value + best case</h3><div class="poa-sub"><b>${esc(M.s2a)}</b> ${ed || norm(I.s2) ? `<input class="inp poa-g" data-g="s2" value="${esc(I.s2 || '')}" placeholder="thêm ý (không bắt buộc)" ${dis}>` : ''}</div>${t2}
       <div class="bar" style="margin-top:8px;gap:8px"><label class="sub" for="poa-fy">Target FY ${M.Y} (mil VND)</label><input id="poa-fy" class="inp poa-g w90" data-g="tgtFY" value="${esc(I.tgtFY ?? '')}" placeholder="điền" ${dis}>
         <span class="sub">${M.T.fy !== null ? `FY base ${pct1(M.T.fy)} · best case ${pct1(M.T.fyB)} (YTD ${milT(M.T.ytd)} + ${M.Qd})` : 'Điền để tính %Achie FY trên subtitle.'}</span></div>
-      ${M.note ? `<div class="sub" style="margin-top:6px"><i>${esc(M.note)}</i></div>` : ''}</div>`;
+      ${M.note ? `<div class="sub" style="margin-top:6px"><i>${esc(M.note)}</i></div>` : ''}</div>
+    ${M.N ? (() => { const N = M.N, NT = N.T, sp = N.out.map((x, i) => i && N.out[i - 1].acc === x.acc ? 0 : N.out.filter(y => y.acc === x.acc).length);
+      return `<div class="card"><h3>Slide 3 · New launch <span class="sub" style="font-weight:400">· không tính vào FC / %Achie ở slide 1–2</span></h3><div class="poa-sub"><b>${esc(N.s3a)}</b> ${ed || norm(I.s3) ? `<input class="inp poa-g" data-g="s3" value="${esc(I.s3 || '')}" placeholder="thêm ý (listing, HĐT, first order…)" ${dis}>` : ''}</div>
+      <div class="tw"><table class="t poat nosort"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th class="l">Type BV</th>${N.mon.map(m => `<th>FC ${m} (box)</th>`).join('')}<th>FC ${M.Qd} (box)</th><th>FC ${M.Qd} (mil VND)</th><th>%Contri</th><th>First order (FC)</th><th>Actual ${M.Qd} up to date (mil VND)</th></tr></thead><tbody>
+      ${N.out.map((x, i) => `<tr data-lbl="${esc(x.acc + ' · ' + x.brand)}">${sp[i] ? `<td class="l stick poa-a" ${sp[i] > 1 ? `rowspan="${sp[i]}"` : ''}><b>${esc(x.acc)}</b></td>` : ''}<td class="l">${esc(x.brand)}</td><td class="l">${esc(x.seg)}</td>${x.bm.map(b => `<td>${poaBox(b, x.star)}</td>`).join('')}<td><b>${poaBox(x.box, x.star)}</b></td><td><b>${milT(x.fcv)}${st(x.star)}</b></td><td>${NT.fcv ? pct(x.fcv / NT.fcv) : '-'}</td><td>${esc(x.first)}</td><td>${Math.round(x.qtd / 1e6) ? nf0.format(Math.round(x.qtd / 1e6)) : '-'}</td></tr>`).join('')}
+      <tr class="tot"><td class="l stick">Grand total</td><td></td><td></td>${NT.bm.map(b => `<td>${nf0.format(Math.round(b))}</td>`).join('')}<td>${nf0.format(Math.round(NT.box))}</td><td>${milT(NT.fcv)}</td><td>100%</td><td></td><td>${Math.round(NT.qtd / 1e6) ? nf0.format(Math.round(NT.qtd / 1e6)) : '-'}</td></tr></tbody></table></div>
+      ${N.note ? `<div class="sub" style="margin-top:6px"><i>${esc(N.note)}</i></div>` : ''}</div>`; })() : ''}`;
   $('#poa-rep') && ($('#poa-rep').onchange = e => { VIEW.poaRep = e.target.value; POA_FOR = null; viewPOA(); });
   $('#poa-ppt').onclick = e => poaDownload(rep, e.currentTarget);
   $('#poa-tpl') && ($('#poa-tpl').onclick = () => poaTplDialog());
@@ -2641,13 +2669,17 @@ function poaSlideXml(xml, kind, M, rows, last, labels){
   const spans = rows.map((x, i) => { if (i > 0 && rows[i - 1].acc === x.acc && rows[i - 1].sub === x.sub) return 0; let k = 1; while (i + k < n && rows[i + k].acc === x.acc && rows[i + k].sub === x.sub) k++; return k; });
   let band = false;
   const body = rows.map((x, i) => { if (spans[i]) band = !band ? true : false; const accV = x.sub ? [[{t: x.acc, b: true}], [{t: `(${x.sub})`, b: false, i: true}]] : [[{t: x.acc, b: true}]];
-    const vals = kind === 1
+    const vals = kind === 3
+      ? [accV, x.brand, x.seg, ...x.bm.map(b => [ST(poaBox(b), x.star)]), [ST(poaBox(x.box), x.star)], [ST(milT(x.fcv), x.star)], M.N.T.fcv ? pct(x.fcv / M.N.T.fcv) : '-', x.first, Math.round(x.qtd / 1e6) ? nf0.format(Math.round(x.qtd / 1e6)) : '-']
+      : kind === 1
       ? [accV, x.brand, x.rqIn ? x.rqIn : x.rqAuto === null ? '-' : [ST(poaBox(x.rqAuto), x.star), ...(x.up && x.upEff ? [[{t: `(Est ${two(x.upEff.getMonth() + 1)}.${String(x.upEff.getFullYear()).slice(-2)})`, i: true}]] : [])],
          x.so || 'NA', poaBox(x.avg4), x.st || 'NA', [ST(poaBox(x.box), x.star)], [ST(milT(x.fcv), x.star)], x.tgt ? milT(x.tgt) : '-', x.ach === null ? '-' : pct1(x.ach), Math.round(x.qtd / 1e6) ? nf0.format(Math.round(x.qtd / 1e6)) : '-']
       : [accV, x.brand, [ST(milT(x.fcv), x.star)], x.tgt ? milT(x.tgt) : '-', x.ach === null ? '-' : pct1(x.ach), grT(x.gLy), grT(x.gLq),
          [[{t: milT(x.best), c: x.bcIn !== null ? '0091DF' : undefined}]], [[{t: x.achB === null ? '-' : pct1(x.achB), c: x.bcIn !== null ? '0091DF' : undefined}]], grT(x.gB), x.nb];
     return poaRowXml(P, vals, {h, sz, span: spans[i], vm: !spans[i], band: !band}); }).join('');
-  const T = M.T, tv = kind === 1
+  const T = kind === 3 ? M.N.T : M.T, tv = kind === 3
+    ? ['Grand total', '', '', ...T.bm.map(b => nf0.format(Math.round(b))), nf0.format(Math.round(T.box)), milT(T.fcv), '100%', '', Math.round(T.qtd / 1e6) ? nf0.format(Math.round(T.qtd / 1e6)) : '-']
+    : kind === 1
     ? ['Grand total', T.brand, T.rq === null ? '-' : nf0.format(Math.round(T.rq)), T.so === null ? '-' : nf0.format(Math.round(T.so)), nf0.format(Math.round(T.avg4)), T.st === null ? '-' : nf0.format(Math.round(T.st)), nf0.format(Math.round(T.box)), milT(T.fcv), milT(T.tgt), T.ach === null ? '-' : pct1(T.ach), nf0.format(Math.round(T.qtd / 1e6))]
     : ['Grand total', T.brand, milT(T.fcv), milT(T.tgt), T.ach === null ? '-' : pct1(T.ach), grT(T.gLy), grT(T.gLq), milT(T.best), T.achB === null ? '-' : pct1(T.achB), grT(T.gB), ''];
   const tot = last ? poaRowXml(Tr, tv, {h: hT, sz}) : '';
@@ -2657,9 +2689,9 @@ function poaSlideXml(xml, kind, M, rows, last, labels){
   // tiêu đề, subtitle, chú thích ratio
   const sps = x.match(/<p:sp>[\s\S]*?<\/p:sp>/g) || [];
   for (const sp of sps){ let y = sp;
-    if (/<p:ph[^>]*type="title"/.test(sp) || /<p:ph[^>]*type="ctrTitle"/.test(sp)) y = txSet(sp, 'p:txBody', `FORECAST Q${M.Q}’${M.Y}`);
-    else if (/name="Subtitle/.test(sp) || /<p:ph[^>]*type="subTitle"/.test(sp)) y = txSet(sp, 'p:txBody', kind === 1 ? M.s1 : M.s2);
-    else if (/txBox="1"/.test(sp) && /<a:t>\*/.test(sp)) y = txSet(sp, 'p:txBody', M.note);
+    if (/<p:ph[^>]*type="title"/.test(sp) || /<p:ph[^>]*type="ctrTitle"/.test(sp)) y = txSet(sp, 'p:txBody', kind === 3 ? `FORECAST Q${M.Q}’${M.Y} · NEW LAUNCH` : `FORECAST Q${M.Q}’${M.Y}`);
+    else if (/name="Subtitle/.test(sp) || /<p:ph[^>]*type="subTitle"/.test(sp)) y = txSet(sp, 'p:txBody', kind === 3 ? M.N.s3 : kind === 1 ? M.s1 : M.s2);
+    else if (/txBox="1"/.test(sp) && /<a:t>\*/.test(sp)) y = txSet(sp, 'p:txBody', kind === 3 ? M.N.note : M.note);
     if (y !== sp) x = x.replace(sp, y); }
   return x;
 }
@@ -2732,6 +2764,9 @@ async function poaBuild(buf, M){
   const L2 = ['Account', 'Product', `FC ${M.Qd} (mil VND)`, `Target ${M.Qd} (mil VND)`, '% Achie', `%Growth vs ${M.LYd}`, `%Growth vs last quarter (${M.LQd})`, `FC ${M.Qd} Best case* (mil VND)`, '% Achie Best case', `Gr vs ${M.LYd} Best case*`, 'Note Best case'];
   const PER = 10, pages = []; for (let i = 0; i < Math.max(1, M.out.length); i += PER) pages.push(M.out.slice(i, i + PER));
   const order = [...pages.map((rs, i) => ({src: s1, xml: poaSlideXml(s1.xml, 1, M, rs, i === pages.length - 1, L1)})), ...pages.map((rs, i) => ({src: s2, xml: poaSlideXml(s2.xml, 2, M, rs, i === pages.length - 1, L2)}))];
+  if (M.N && M.N.out.length){   // 4.25.8: slide New launch riêng, dùng khung slide 1, đổi tiêu đề cột
+    const L3 = ['Account', 'Product', 'Type BV', ...M.N.mon.map(m => `FC ${m} (box)`), `FC ${M.Qd} (box)`, `FC ${M.Qd} (mil VND)`, '%Contri', 'First order (FC)', `Actual ${M.Qd} up to date (mil VND)`];
+    for (let i = 0; i < M.N.out.length; i += PER){ const rs = M.N.out.slice(i, i + PER); order.push({src: s1, xml: poaSlideXml(s1.xml, 3, M, rs, i + PER >= M.N.out.length, L3)}); } }
   await pkgSetSlides(zip, P0, order); await pkgPrune(zip);
   return zip.generateAsync({type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', compression: 'DEFLATE'});
 }

@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.8 — FC POA: New launch tách slide riêng
+- Slide 1–2 chỉ tính In-market (khớp FC / %Achie trên app, giống FC Input, Dashboard, Thưởng); trước đây dòng Firialta có FC bị cộng vào Grand total.
+- Thẻ FC POA thêm **Slide 3 · New launch**: account × SKU, type BV, FC box từng tháng, FC box / mil VND quý, %Contri, tháng first order (theo FC), Act. đến nay; subtitle tự viết + ô thêm ý. File PowerPoint có thêm slide "FORECAST Qx’yy · NEW LAUNCH" (dùng khung slide 1 của mẫu); MR không có FC New launch thì không có slide này.
+
 ## Bản 4.25.7 — biểu đồ quý / tháng
 - Sales by quarter: dưới mỗi quý ghi % tăng trưởng so với quý trước (quý FC tính theo FC). Rê chuột / chạm cột xem số chi tiết.
 - By month: cạnh mỗi tháng ghi % phasing (tỷ trọng tháng trong FC quý), ghi chú phasing chuẩn của các quý trước.
