@@ -1183,7 +1183,7 @@ class CloudStore {
       this.all('promos', '*', q => q.order('id')).catch(() => []), this.all('poa_inputs', '*', q => q.eq('period', pk)).catch(() => []),
       this.all('incentive_cfg').catch(() => []), this.all('incentive_inputs', '*', q => q.eq('period', pk)).catch(() => []), this.all('targets', '*', q => q.eq('period', pk + '-SP')).catch(() => []), this.all('targets', '*', q => q.like('period', '%-RB')).catch(() => [])]);   // ước tính thưởng: DB bản 18   // chương trình trade: DB bản 15 · FC POA: DB bản 17
     const fc = {}; fcRows.forEach(r => fc[r.mapping_id] = r); const subs = {}; subRows.forEach(r => subs[r.rep_name] = r);
-    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, promos: dbv >= 15 ? promos : [], poa: dbv >= 17 ? poa : [], inc_cfg: dbv >= 18 && incC[0] ? incC[0].data : null, incIn: dbv >= 18 ? incIn : [], spTgt: spTgt.map(x => ({rep_name: x.rep_name, value: num(x.value), team: x.team})), qTgt: qTgt.map(x => ({period: x.period, rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team}))};   // promos.channels từ DB bản 16
+    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, promos: dbv >= 15 ? promos : [], poa: dbv >= 17 ? poa : [], inc_cfg: dbv >= 18 && incC[0] ? incC[0].data : null, incIn: dbv >= 18 ? incIn : [], spTgt: spTgt.map(x => ({rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team})), qTgt: qTgt.map(x => ({period: x.period, rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team}))};   // promos.channels từ DB bản 16
   }
   // Bản 4 (migration_v4.sql): MR chỉ đọc được số của mình. Bản 5 (migration_v5.sql): tự trừ sales mới vào FC. 0 = database chưa nâng cấp.
   async dbVersion(){ const {data, error} = await this.sb.rpc('app_db_version'); return error ? 0 : num(data); }
@@ -1247,7 +1247,7 @@ class CloudStore {
   async saveIncInputs(period, rep, data){ const {error} = await this.sb.from('incentive_inputs').upsert({period, rep_name: rep, data}); if (error) throw error; }
   async saveIncCfg(data){ const {error} = await this.sb.from('incentive_cfg').upsert({id: 'current', data}); if (error) throw error; }
   async saveSpTgt(period, rows){ const p = period + '-SP'; const {error} = await this.sb.from('targets').delete().eq('period', p); if (error) throw error;
-    if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: p, rep_name: x.rep_name, cust_code: '*', sku: 'SELF-PAY', value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
+    if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: p, rep_name: x.rep_name, cust_code: '*', sku: x.sku || 'SELF-PAY', value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
   async snapQTgt(pk, rows){ const P = pk + '-RB'; const {error} = await this.sb.from('targets').delete().eq('period', P).not('sku', 'like', '%#ACT'); if (error) throw error;
     if (rows.length){ const {error: e2} = await this.sb.from('targets').insert(rows.map(x => ({period: P, rep_name: x.rep_name, cust_code: '*', sku: x.sku, value: Math.round(x.value), team: x.team || 'CVRM'}))); if (e2) throw e2; } }
   async saveQTgt(rows){ const ps = [...new Set(rows.map(x => x.period + '-RB'))]; const {error} = await this.sb.from('targets').delete().in('period', ps); if (error) throw error;
@@ -2768,7 +2768,7 @@ const incCfg = () => (D && D.inc_cfg && D.inc_cfg.teams) ? D.inc_cfg : null;
 // Scheme mẫu cho bản demo (số giả, không phải scheme thật)
 const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate: 0.85, bonus2Q: 0.1,
   curve: Array.from({length: 31}, (_, i) => [90 + i, 90 + i]), band: [[90, 50], [100, 100], [110, 150]], qualGate: {mccp: 90, clm: 90},
-  teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic']},
+  teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay']},
           WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
   tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
 const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay / kênh tư nhân', ac: 'Active Clinic', test: 'Điểm test'};
@@ -2824,9 +2824,9 @@ function incModel(rep, scen, I, tp){
   const Q = +D.settings.quarter, tk = (C.tests || {})[Q] || 'pk';
   const qual = (TC.qual || []).map(q => { let ach = null, pay = 0, src = '', lvl = null;
     if (q.k === 'ef'){ const ov = pnum(I.efo); if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (tp && tp.tgt){ ach = tp.fcv / tp.tgt; src = `FC team ${team} (${tp.n_rep} MR)`; } pay = incBand(C, ach); }
-    else if (q.k === 'sp'){ const t = (D.spTgt || []).find(x => x.rep_name === rep), ch = TC.spChannels || ['Self-pay', 'Clinic'];
-      const rs = rows.filter(r => ch.includes(r.channel)), fc = rs.reduce((s, r) => { const o = B.get(r.brand); return s + (o && o.g.fcv ? r.fcv * o.fc / o.g.fcv : r.fcv); }, 0), ov = pnum(I.spo);
-      if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (t && num(t.value)){ ach = fc / num(t.value); src = `FC ${vnd(fc)} / chỉ tiêu ${vnd(t.value)}`; } else src = 'chưa có chỉ tiêu Self-pay'; pay = incBand(C, ach); }
+    else if (q.k === 'sp'){ const ch = TC.spChannels || ['Self-pay'], tg = spTgtOf(rep), tS = Object.values(tg).reduce((a, v) => a + v, 0);
+      const rs = rows.filter(r => ch.includes(r.channel)), fc = rs.reduce((s, r) => { const o = B.get(r.brand); return s + (o && o.g.fcv ? r.fcv * o.fc / o.g.fcv : r.fcv); }, 0), qtd = rs.reduce((s, r) => s + num(r.act[4]), 0), ov = pnum(I.spo);
+      if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (tS){ ach = fc / tS; src = `kênh ${ch.join(' + ')}: FC ${vnd(fc)} (Act. QTD ${vnd(qtd)}) / chỉ tiêu ${vnd(tS)}`; } else src = 'chưa có chỉ tiêu Self-pay'; pay = incBand(C, ach); }
     else if (q.k === 'ac'){ const ov = pnum(I.ac); if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } pay = incBand(C, ach); }
     else if (q.k === 'test'){ lvl = I['t_' + tk] || ''; pay = {'1': 50, '2': 100, '3': 150}[lvl] || 0; src = INC_TEST[tk].label; }
     return {k: q.k, w: num(q.w), ach, pay, lvl, src, amt: qgOk ? pool * num(q.w) * pay / 100 : 0}; });
@@ -3040,19 +3040,47 @@ function incCfgDialog(){
     let d; try { d = JSON.parse($('#ic-j', bg).value); if (!d.pool || !Array.isArray(d.curve) || !d.teams) throw new Error('Thiếu pool / curve / teams'); } catch(err){ $('#ic-m', bg).innerHTML = `<div class="msg err">${esc(err.message)}</div>`; return; }
     try { await STORE.saveIncCfg(d); D.inc_cfg = d; toast('Đã lưu scheme'); bg.remove(); viewINC(); } catch(err){ $('#ic-m', bg).innerHTML = `<div class="msg err">Lỗi: ${esc(err.message)}</div>`; } });
 }
-// Admin: chỉ tiêu Self-pay theo MR (VND / quý). Dán 2 cột từ Excel: Tên MR · Chỉ tiêu
+// Chỉ tiêu Self-pay theo MR × brand (4.25.1). Bản cũ lưu 1 dòng SELF-PAY = tổng.
+const spTgtOf = rep => { const o = {}; (D.spTgt || []).filter(x => x.rep_name === rep && num(x.value)).forEach(x => { const k = x.sku && x.sku !== 'SELF-PAY' ? x.sku : 'TỔNG'; o[k] = (o[k] || 0) + num(x.value); }); return o; };
+// Đọc file "CVRM Self-Pay Target Allocation" (sheet By Rep: RFFM · REP Name · Group Product · … · Final Target 2026-Q4)
+function spParseWb(wb){
+  const names = [...new Set([...D.members.map(m => m.rep_name), ...ALLROWS.map(r => r.rep_name)])], rp = n => names.find(r => fold(r) === fold(n)) || null;
+  const brands = [...new Set(D.prices.map(p => (p.brand || '').toUpperCase()).filter(Boolean))], bOf = v => { const f = fold(v); return brands.find(b => f.startsWith(fold(b))) || null; };
+  const order = [...wb.SheetNames].sort((x, y) => (/by rep/i.test(y) ? 1 : 0) - (/by rep/i.test(x) ? 1 : 0));
+  for (const sn of order){ const A = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header: 1, raw: true, defval: null});
+    const hi = A.findIndex(r => r && r.some(c => /^REP\s*NAME$/i.test(String(c || '').trim())) && r.some(c => /FINAL\s*TARGET/i.test(String(c || '')))); if (hi < 0) continue;
+    const H = A[hi].map(c => String(c || '').trim()), iR = H.findIndex(c => /^REP\s*NAME$/i.test(c)), iF = H.findIndex(c => /^RFFM$/i.test(c)), iB = H.findIndex(c => /GROUP\s*PRODUCT|BRAND|PRODUCT/i.test(c)), iV = H.findIndex(c => /FINAL\s*TARGET/i.test(c));
+    const m = H[iV].match(/(\d{4})\s*[-.]?\s*Q([1-4])/i), pk = m ? pkey(+m[1], +m[2]) : null;
+    const out = new Map(), bad = new Set(); let other = 0;
+    A.slice(hi + 1).forEach(r => { if (!r) return; const nm = String(r[iR] || '').trim(), ff = iF >= 0 ? String(r[iF] || '') : ''; if (!nm || /total/i.test(ff) || /total/i.test(nm)) return;
+      const v = pnum(r[iV]), b = bOf(r[iB]); if (v === null || !b) return; const rep = rp(nm); if (!rep){ other++; bad.add(nm); return; }
+      const k = rep + '|' + b; out.set(k, (out.get(k) || 0) + v); });
+    return {pk, sheet: sn, rows: [...out].map(([k, v]) => { const [rep_name, sku] = k.split('|'); return {rep_name, sku, value: Math.round(v)}; }), bad: [...bad]}; }
+  return {err: 'Không thấy sheet có cột REP Name và Final Target (form CVRM Self-Pay Target Allocation, sheet By Rep).'};
+}
+// Admin: chỉ tiêu Self-pay theo MR × brand: tải file form SFE hoặc nhập tay
 function incSpDialog(){
-  const reps = repList().filter(r => incTeamOf(r) === 'CVRM' || (D.spTgt || []).some(x => x.rep_name === r)), cur = new Map((D.spTgt || []).map(x => [x.rep_name, x.value]));
-  const bg = modal(`<h3>Chỉ tiêu Self-pay ${qDot(+D.settings.year, +D.settings.quarter)}</h3><div class="sub">VND theo MR (tính theo ratio). Dán 2 cột từ Excel (Tên MR, chỉ tiêu) vào ô dưới rồi bấm Điền.</div>
-    <textarea id="sp-p" placeholder="Nguyen Van A&#9;1,200,000,000" style="width:100%;min-height:70px;margin-top:8px"></textarea><div class="bar"><button class="btn sm" data-a="p">Điền</button><span id="sp-m" class="sub"></span></div>
-    <div class="tw" style="max-height:46vh"><table class="t nosort"><thead><tr><th class="l">MR</th><th>Chỉ tiêu Self-pay (VND)</th></tr></thead><tbody>${reps.map(r => `<tr><td class="l">${esc(r)}</td><td><input class="inp" data-sp="${esc(r)}" value="${cur.has(r) ? Math.round(num(cur.get(r))) : ''}" style="width:150px;text-align:right" inputmode="numeric"></td></tr>`).join('')}</tbody></table></div>
+  const C = incCfg() || INC_DEMO, bs = Object.keys(((C.teams || {}).CVRM || {}).quant || {XARELTO: 1, ADALAT: 1});
+  const reps = [...new Set([...repList().filter(r => incTeamOf(r) === 'CVRM'), ...(D.spTgt || []).map(x => x.rep_name)])].sort();
+  const val = (r, b) => { const t = spTgtOf(r); return t[b] !== undefined ? Math.round(t[b]) : ''; };
+  const bg = modal(`<h3>Chỉ tiêu Self-pay ${qDot(+D.settings.year, +D.settings.quarter)}</h3><div class="sub">VND theo MR × brand. Tải file <b>CVRM Self-Pay Target Allocation</b> (sheet By Rep, cột Final Target) hoặc nhập tay. %Ach so với FC / Act. kênh ${esc(((C.teams || {}).CVRM || {}).spChannels ? C.teams.CVRM.spChannels.join(' + ') : 'Self-pay')}.</div>
+    <div class="bar" style="gap:8px;margin-top:8px"><label class="btn sm">Tải file Excel<input type="file" id="sp-f" accept=".xlsx,.xlsm,.xls" hidden></label><span id="sp-m" class="sub"></span></div>
+    <div class="tw" style="max-height:50vh;margin-top:8px"><table class="t nosort"><thead><tr><th class="l">MR</th>${bs.map(b => `<th>${esc(b)}</th>`).join('')}<th>Tổng</th></tr></thead><tbody>${reps.map(r => `<tr><td class="l">${esc(r)}</td>${bs.map(b => `<td><input class="inp" data-sp="${esc(r)}" data-b="${esc(b)}" value="${val(r, b)}" style="width:130px;text-align:right" inputmode="numeric"></td>`).join('')}<td class="sp-t"></td></tr>`).join('')}</tbody></table></div>
     <div class="acts"><button class="btn" data-a="0">Đóng</button><button class="btn pri" data-a="s">Lưu</button></div>`);
-  bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove();
-    if (a === 'p'){ let n = 0, miss = []; $('#sp-p', bg).value.split(/\r?\n/).forEach(l => { const c = l.split(/\t|;|\s{2,}/).map(s => s.trim()).filter(Boolean); if (c.length < 2) return; const v = pnum(c[c.length - 1]); const nm = c[0];
-        const el = $$('[data-sp]', bg).find(i => fold(i.dataset.sp) === fold(nm)); if (el && v !== null){ el.value = Math.round(v); n++; } else if (v !== null) miss.push(nm); });
-      $('#sp-m', bg).textContent = `Đã điền ${n} MR${miss.length ? ` · không khớp tên: ${miss.join(', ')}` : ''}`; return; }
-    if (a !== 's') return; const rows = $$('[data-sp]', bg).map(i => ({rep_name: i.dataset.sp, value: pnum(i.value)})).filter(x => x.value);
-    try { await STORE.saveSpTgt(PK, rows.map(x => ({...x, team: 'CVRM'}))); D.spTgt = rows.map(x => ({...x, team: 'CVRM'})); toast(`Đã lưu chỉ tiêu Self-pay ${rows.length} MR`); bg.remove(); viewINC(); }
+  bg.firstElementChild.classList.add('wide');
+  const tot = () => $$('tbody tr', bg).forEach(tr => { const t = $$('[data-sp]', tr).reduce((a, i) => a + num(pnum(i.value)), 0); $('.sp-t', tr).textContent = t ? vnd(t) : ''; }); tot();
+  bg.addEventListener('input', tot);
+  let FILE_PK = null;
+  $('#sp-f', bg).onchange = async e => { const f = e.target.files[0]; if (!f) return; const m = $('#sp-m', bg); m.textContent = 'Đang đọc…';
+    try { const P = spParseWb(await readWorkbook(f)); if (P.err){ m.textContent = P.err; return; }
+      $$('[data-sp]', bg).forEach(i => { i.value = ''; }); let n = 0;
+      P.rows.forEach(x => { const i = $$('[data-sp]', bg).find(el => el.dataset.sp === x.rep_name && el.dataset.b === x.sku); if (i){ i.value = x.value; n++; } });
+      FILE_PK = P.pk; tot(); const cur = pkey(+D.settings.year, +D.settings.quarter);
+      m.innerHTML = `Sheet ${esc(P.sheet)} · ${P.pk ? qDot(+P.pk.slice(0, 4), +P.pk.slice(5)) : '?'} · ${n} ô · ${new Set(P.rows.map(x => x.rep_name)).size} MR trong app${P.pk && P.pk !== cur ? ` <b style="color:var(--bad-ink)">File là ${qDot(+P.pk.slice(0, 4), +P.pk.slice(5))}, kỳ app ${qDot(+D.settings.year, +D.settings.quarter)}: lưu vào ${qDot(+P.pk.slice(0, 4), +P.pk.slice(5))}</b>` : ''}${P.bad.length ? `<br>Bỏ qua ${P.bad.length} MR không có trong app (MR vùng khác, Vacant…)` : ''}. Kiểm tra rồi bấm Lưu.`;
+    } catch(err){ m.textContent = 'Không đọc được file: ' + err.message; } };
+  bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove(); if (a !== 's') return;
+    const rows = $$('[data-sp]', bg).map(i => ({rep_name: i.dataset.sp, sku: i.dataset.b, value: pnum(i.value), team: 'CVRM'})).filter(x => x.value), pk = FILE_PK || PK;
+    try { await STORE.saveSpTgt(pk, rows); if (pk === PK) D.spTgt = rows; toast(`Đã lưu chỉ tiêu Self-pay ${new Set(rows.map(x => x.rep_name)).size} MR · ${qDot(+pk.slice(0, 4), +pk.slice(5))}`); bg.remove(); viewINC(); }
     catch(err){ $('#sp-m', bg).textContent = 'Lỗi: ' + err.message; } });
 }
 
