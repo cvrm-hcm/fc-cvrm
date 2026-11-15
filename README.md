@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.7 — biểu đồ quý / tháng
+- Sales by quarter: dưới mỗi quý ghi % tăng trưởng so với quý trước (quý FC tính theo FC). Rê chuột / chạm cột xem số chi tiết.
+- By month: cạnh mỗi tháng ghi % phasing (tỷ trọng tháng trong FC quý), ghi chú phasing chuẩn của các quý trước.
+- Đơn vị tự chọn: số dưới 1 tỷ (vd 1 MR) ghi theo tr VND thay vì 0.2 / 0.3 tỷ. Nhãn Target có nền trắng, không đè lên cột.
+
 ## Bản 4.25.6 — sửa hiển thị Bridge target → FC trên điện thoại
 - Số VND đầy đủ bị tràn khỏi thẻ, nhãn bị cắt ("Vượt target ở …"): điện thoại xếp nhãn + số trên 1 dòng, thanh bên dưới; máy tính cột số tự giãn theo độ dài số.
 - FC vs target by MR: khi lọc 1 MR, MR đó lên đầu, chữ đậm; MR khác mờ đi như cũ.

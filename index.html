@@ -251,9 +251,9 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .cols .c{width:30px;border-radius:4px 4px 0 0;position:relative;min-height:1px}
 .cols .c span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink2);white-space:nowrap;padding-bottom:2px}
 .cols .tline{position:absolute;left:4px;right:4px;height:2px;background:var(--ink);border-radius:1px}
-.cols .tline span{position:absolute;right:0;bottom:3px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap}
+.cols .tline span{position:absolute;right:0;bottom:3px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;background:rgba(255,255,255,.88);padding:0 3px;border-radius:3px}
 .xl{display:flex;gap:14px;padding:6px 4px 0}
-.xl div{flex:1;text-align:center;font-size:12px;color:var(--ink2)}
+.xl div{flex:1;text-align:center;font-size:12px;color:var(--ink2);line-height:1.45}.xl .gx{font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums}.xl .gx.up{color:var(--up)}.xl .gx.down{color:var(--down)}.xl .ph{color:var(--ink);font-weight:600}.cunit{margin-top:8px}
 #tip{position:fixed;pointer-events:none;background:#1a2130;color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:99;max-width:280px;display:none;white-space:pre-line}
 .login{max-width:420px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px}
 .login h1{font-size:20px;margin:0 0 4px;color:var(--navy)}
@@ -3751,19 +3751,26 @@ function dimTableHtml(dim, sel){
     ${keys.map(([k, g, rs]) => `<tr${subB ? ' class="dgrp"' : ''}><td class="l stick">${esc(lab(k))}</td>${cells(g)}</tr>${subB ? subRows(rs) : ''}`).join('')}
     ${keys.length > 1 ? `<tr class="tot sfix"><td class="l stick">Total</td>${cells(tot)}</tr>` : ''}</tbody></table></div>${note}</div>`;   // 4.25.5: dòng Total
 }
+// 4.25.7: đơn vị tự chọn (dưới 1 tỷ → tr), Gr vs quý trước dưới mỗi quý, % phasing dưới mỗi tháng
+const chUnit = mx => mx >= 1e9 ? {lab: v => v ? nf1.format(v / 1e9) : '', u: 'tỷ'} : {lab: v => v ? nf0.format(Math.round(v / 1e6)) : '', u: 'tr'};
+const grMini = g => { if (g === null || g === undefined || !isFinite(g)) return '<span class="gx">–</span>'; const x = Math.round(g * 100); return `<span class="gx ${x > 0 ? 'up' : x < 0 ? 'down' : ''}">${x > 0 ? '+' : x < 0 ? '−' : ''}${nf0.format(Math.abs(x))}%</span>`; };
 function qChartHtml(a, height){
-  const vals = [...a.act, a.fcv, a.tgt]; const my = Math.max(1, ...vals); const h = v2 => Math.max(0, v2 / my * 100); const lab = v2 => v2 ? nf1.format(v2 / 1e9) : '';
+  const vals = [...a.act, a.fcv, a.tgt]; const my = Math.max(1, ...vals); const h = v2 => Math.max(0, v2 / my * 100); const U = chUnit(my), lab = U.lab;
   const totQ = a.filled ? Math.max(a.fcv, a.act[4]) : a.act[4], nearT = a.tgt && Math.abs(h(totQ) - h(a.tgt)) < 10;   // FC sát target: gộp 1 nhãn để không đè chữ
+  const qv = i => i < 4 ? a.act[i] : (a.filled ? a.fcv : null), gq = i => i === 0 ? null : (qv(i) === null ? null : growth(qv(i), a.act[i - 1]));
   return `<div class="cols${nearT ? ' tall' : ''}" ${height ? `style="height:${height}px"` : ''}>${P.map((p, i) => i < 4
-      ? `<div class="g"><div class="c" style="height:${h(a.act[i])}%;background:var(--s1)" data-tip="${p.label}\nAct.: ${big(a.act[i])}"><span>${lab(a.act[i])}</span></div></div>`
-      : `<div class="g">${(() => { const tot = a.filled ? Math.max(a.fcv, a.act[4]) : a.act[4], rem = tot - a.act[4]; return `<div class="c stk" style="height:${h(tot)}%" data-tip="${p.label}\nAct. QTD: ${big(a.act[4])}${a.filled ? `\nFC remain: ${big(rem)}\nFC ${p.label}: ${big(a.fcv)} · %Ach ${pct1(a.ach)}` : '\nChưa nhập FC'}">${rem > 0 ? `<i class="o" style="height:${rem / tot * 100}%"></i>` : ''}<i class="b" style="height:${tot ? a.act[4] / tot * 100 : 0}%"></i><span${nearT ? ' class="two"' : ''}>${nearT ? (totQ >= a.tgt ? `FC ${lab(totQ)}<br>Target ${lab(a.tgt)}` : '') : lab(tot)}</span></div>`; })()}${a.tgt ? `<div class="tline" style="bottom:${h(a.tgt)}%" data-tip="Target ${p.label}: ${big(a.tgt)}"><span${nearT ? ' class="two"' : ''}>${nearT ? (totQ >= a.tgt ? '' : `FC ${lab(totQ)}<br>Target ${lab(a.tgt)}`) : `Target ${lab(a.tgt)}`}</span></div>` : ''}</div>`).join('')}</div>
-    <div class="xl">${P.map((p, i) => `<div>${i === 4 ? '<b>' + p.label + '</b>' : p.label}${i === 0 ? ' (LYSP)' : ''}</div>`).join('')}</div>`;
+      ? `<div class="g"><div class="c" style="height:${h(a.act[i])}%;background:var(--s1)" data-tip="${p.label}\nAct.: ${big(a.act[i])}${i ? `\nvs ${P[i - 1].label}: ${gq(i) === null ? '–' : pct1(gq(i))}` : ''}"><span>${lab(a.act[i])}</span></div></div>`
+      : `<div class="g">${(() => { const tot = a.filled ? Math.max(a.fcv, a.act[4]) : a.act[4], rem = tot - a.act[4]; return `<div class="c stk" style="height:${h(tot)}%" data-tip="${p.label}\nAct. QTD: ${big(a.act[4])}${a.filled ? `\nFC remain: ${big(rem)}\nFC ${p.label}: ${big(a.fcv)} · %Ach ${pct1(a.ach)}\nFC vs ${P[3].label}: ${gq(4) === null ? '–' : pct1(gq(4))}` : '\nChưa nhập FC'}">${rem > 0 ? `<i class="o" style="height:${rem / tot * 100}%"></i>` : ''}<i class="b" style="height:${tot ? a.act[4] / tot * 100 : 0}%"></i><span${nearT ? ' class="two"' : ''}>${nearT ? (totQ >= a.tgt ? `FC ${lab(totQ)}<br>Target ${lab(a.tgt)}` : '') : lab(tot)}</span></div>`; })()}${a.tgt ? `<div class="tline" style="bottom:${h(a.tgt)}%" data-tip="Target ${p.label}: ${big(a.tgt)}"><span${nearT ? ' class="two"' : ''}>${nearT ? (totQ >= a.tgt ? '' : `FC ${lab(totQ)}<br>Target ${lab(a.tgt)}`) : `Target ${lab(a.tgt)}`}</span></div>` : ''}</div>`).join('')}</div>
+    <div class="xl">${P.map((p, i) => `<div>${i === 4 ? '<b>' + p.label + '</b>' : p.label}<br>${i === 0 ? '<span class="gx">LYSP</span>' : grMini(gq(i))}</div>`).join('')}</div>
+    <div class="sub cunit">Đơn vị: ${U.u} VND · % so với quý trước${a.filled ? ` (${P[4].label} theo FC)` : ''}</div>`;
 }
 function mChartHtml(a, u){
-  const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay', lab = v2 => !v2 ? '' : u === 'tr' ? tr(v2).replace('–', '') : nf1.format(v2 / 1e9), mm = Math.max(1, ...a.actM, ...a.fcvM);
-  return `<div class="cols" style="height:180px">${MS.map((m, i) => { const act = a.actM[i], tot = Math.max(act, a.fcvM[i]), rem = tot - act;
-      return `<div class="g"><div class="c stk" style="height:${tot / mm * 100}%;width:46px" data-tip="${mlabel(D.settings.year, m)}\n${MST[i] === 'closed' ? `Act.: ${big(act)} (FC khoá = Act.)` : MST[i] === 'current' ? `Act. đến ${ASOF_DM}: ${big(act)}\nFC từ ${NEXT_DM}: ${big(rem)}\nCả tháng: ${big(tot)}` : `FC: ${big(tot)}`}">${rem > 0 ? `<i class="o" style="height:${rem / tot * 100}%"></i>` : ''}${act > 0 ? `<i class="b" style="height:${act / tot * 100}%"></i>` : ''}<span>${lab(tot)}</span></div></div>`; }).join('')}</div>
-    <div class="xl">${MS.map((m, i) => `<div>${mlabel(D.settings.year, m)}<br><span class="sub">${MST[i] === 'closed' ? 'đã chốt' : MST[i] === 'current' ? 'đến ' + asof : 'chưa tới'}</span></div>`).join('')}</div><div class="sub" style="margin-top:6px">Đơn vị: ${u === 'tr' ? 'tr' : 'tỷ'} VND.</div>`;
+  const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay', mm = Math.max(1, ...a.actM, ...a.fcvM), U = u === 'tr' ? chUnit(0) : chUnit(mm), lab = U.lab;
+  const tots = MS.map((m, i) => Math.max(a.actM[i], a.fcvM[i])), qt = tots.reduce((x, y) => x + y, 0), std = SEAS && SEAS.sh && SEAS.sh.length === 3 ? SEAS.sh : null;   // phasing chuẩn: TB các quý trước
+  return `<div class="cols" style="height:180px">${MS.map((m, i) => { const act = a.actM[i], tot = tots[i], rem = tot - act;
+      return `<div class="g"><div class="c stk" style="height:${tot / mm * 100}%;width:46px" data-tip="${mlabel(D.settings.year, m)}\n${MST[i] === 'closed' ? `Act.: ${big(act)} (FC khoá = Act.)` : MST[i] === 'current' ? `Act. đến ${ASOF_DM}: ${big(act)}\nFC từ ${NEXT_DM}: ${big(rem)}\nCả tháng: ${big(tot)}` : `FC: ${big(tot)}`}${qt ? `\nPhasing: ${pct(tot / qt)} quý${std ? ` (chuẩn ${pct(std[i])})` : ''}` : ''}">${rem > 0 ? `<i class="o" style="height:${rem / tot * 100}%"></i>` : ''}${act > 0 ? `<i class="b" style="height:${act / tot * 100}%"></i>` : ''}<span>${lab(tot)}</span></div></div>`; }).join('')}</div>
+    <div class="xl">${MS.map((m, i) => `<div>${mlabel(D.settings.year, m)} <b class="ph">${qt ? pct(tots[i] / qt) : '–'}</b><br><span class="sub">${MST[i] === 'closed' ? 'đã chốt' : MST[i] === 'current' ? 'đến ' + asof : 'chưa tới'}</span></div>`).join('')}</div>
+    <div class="sub cunit">Đơn vị: ${U.u} VND · % phasing trong quý${std ? ` (chuẩn ${std.map(x => Math.round(x * 100)).join(' / ')}%)` : ''}</div>`;
 }
 function mrBarsHtml(byRep){
   const list = [...byRep].sort((x, y) => (VIEW.dRep ? (y.rep === VIEW.dRep) - (x.rep === VIEW.dRep) : 0) || (y.ach ?? -1) - (x.ach ?? -1)); const mx = Math.max(1, ...list.map(x => Math.max(x.fcv, x.tgt)));
@@ -4180,7 +4187,7 @@ function dashOV(c){
     ${tradeCardHtml(c.sel, true)}
     ${dimTableHtml('channel', c.sel)}${dimTableHtml('atype', c.sel)}
     <div class="grid2">
-      <div class="card"><h3>Sales by quarter ${VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q">${qChartHtml(a)}</div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND.</div></div>
+      <div class="card"><h3>Sales by quarter ${VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q">${qChartHtml(a)}</div></div>
       <div class="card"><h3>By month ${P[4].label}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act. / đơn đã lên</span><span><i style="background:var(--s2)"></i>FC remain</span></div><div id="ch-m">${mChartHtml(a)}</div></div>
     </div>
 `;
@@ -4611,7 +4618,7 @@ function viewDash(){
       ${todo('', 'Chưa nhập FC / chưa có đơn', ord, 'account', '', o => esc(sig(o, ['nofc', 'noord', 'stop'])), 'Không có')}
     </div>
     <div class="grid2">
-      <div class="card"><h3>Sales by quarter</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND.</div></div>
+      <div class="card"><h3>Sales by quarter</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q"></div></div>
       <div class="card"><h3>By month ${P[4].label}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act. / đơn đã lên</span><span><i style="background:var(--s2)"></i>FC remain</span></div><div id="ch-m"></div></div>
     </div>${tradeCardHtml(sel, false)}${nlMineCard()}`
     : T === 'brand' ? dimTableHtml('brand', sel)
