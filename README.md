@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.23.1 (15/11/2026) — Sắp xếp theo cấp (mẹ lẫn con)
+- Bấm tiêu đề cột: dòng cha (MR, merge code / account, nhóm) sắp theo số của dòng cha; dòng con (brand, mã KH, SKU) sắp trong từng cha và luôn đi theo cha. Dòng Total / Tổng team đứng yên.
+- Bảng MR × brand: dòng đầu mỗi MR là Tổng của MR, các brand nằm dưới (↳). MR 1 brand: 1 dòng. Tổng team theo brand + Tổng team ở cuối.
+- Đơn gần nhất: mỗi dòng ghi đủ tháng, sắp tháng theo thời gian. Bảng xem trước slide FC POA không sắp. Không đổi database.
+
 ## Phiên bản 4.23 + Database bản 17 (15/11/2026) — FC POA, số live cho admin, xem lại account đã add
 - **Thẻ FC POA** (cạnh FC Input): dựng lại 2 slide Forecast của bài POA theo **account (merge code) × brand**. Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out TB 4 quý, tồn kho cuối quý trước, **best case (mil VND) + note**, lý do trên subtitle, target FY (để tính best case FY). Chọn account phân tích full, account bỏ chọn gộp **Others**. Số tự lưu (`poa_inputs`). **⬇ Tải PowerPoint**: app điền vào file mẫu POA (2 slide, quá 10 dòng tự sang trang). File mẫu lưu trong database (`app_assets`, chỉ thành viên đăng nhập đọc), không để trong repo; admin đổi mẫu bằng nút **Mẫu PPT** (chọn bài POA có 2 slide Forecast, app chỉ giữ 2 slide đó, bỏ số cũ).
 - **Đồng bộ FC cho admin không đợi Submit**: mỗi lần MR lưu, app ghi lại số FC theo brand (`fc_snap`) sau vài giây; RFFM / admin xem FC tuần bằng số đang tính; Dashboard tự lấy số mới mỗi 2 phút khi đang mở và không thao tác. Submit chỉ để ghi nhận MR đã chốt (trạng thái + giờ nộp tuần).

@@ -176,7 +176,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 /* FC Input: Subtotal dính dưới tiêu đề bảng (desktop), thanh Subtotal dính đầu danh sách (mobile), chế độ Cả team */
 .t thead tr.stot td{position:sticky;top:var(--hh,44px);z-index:2;background:#eaf1fb;font-weight:700;border-bottom:2px solid #c6d5ec;padding:6px 8px}
 .t thead tr.stot td.stick{left:0;z-index:3;background:#eaf1fb}
-.t thead tr:not(.stot) th{cursor:pointer;user-select:none}.t thead th[data-sort]{color:var(--navy,#1f3864)}.t thead th[data-sort]::after{content:" ▼";font-size:9px}.t thead th[data-sort="asc"]::after{content:" ▲"}
+.t thead tr:not(.stot) th{cursor:pointer;user-select:none}.t.nosort thead th{cursor:default}.t thead th[data-sort]{color:var(--navy,#1f3864)}.t thead th[data-sort]::after{content:" ▼";font-size:9px}.t thead th[data-sort="asc"]::after{content:" ▲"}
 .chip.shc{background:#eef3fb;color:#24456f;border:1px solid #c9d6ea}.shby{font-size:11px;color:#24456f}
 /* Dòng Total / Grand Total luôn hiện ở đáy khung bảng khi cuộn (bản 4.17) */
 .tw .t tbody tr.tot td{position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 #c9d0dc}.tw .t tbody tr.tot td.stick{z-index:3}
@@ -367,8 +367,8 @@ input.box.trd.over{border-color:var(--critical);background:#fff5f5}
 .wkk{margin-bottom:12px}.kpi.k-ok{border-left:3px solid var(--ok)}.kpi.k-bad{border-left:3px solid var(--bad)}.kpi.k-bad .v{color:var(--bad-ink)}
 .wkt td{white-space:nowrap}.wq{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink3)}.wq.ok{color:var(--ok-ink)}.wq.no{color:var(--bad-ink)}
 .pnotes{margin-top:4px;display:flex;flex-direction:column;gap:2px;max-width:340px}.pn{font-size:11.5px;line-height:1.35;color:var(--ink2);white-space:normal}.pn b{color:var(--ink);font-weight:600}.pnby{font-size:11px;margin-top:2px}
-.mbl td{white-space:nowrap;font-variant-numeric:tabular-nums}.mbl tr.mbg td{border-top:2px solid var(--line)}.mbl td.mbn{font-weight:600;min-width:150px}.mbl td.mbb{color:var(--ink2)}
-.mbl tr.mbs td{font-weight:600;background:var(--bg2,#f6f7f9)}.mbl tr.mbs td.mbn{background:var(--card)}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
+.mbl td{white-space:nowrap;font-variant-numeric:tabular-nums}.mbl tr.mbp td,.mbl tr.tot td{border-top:2px solid var(--line)}.mbl td.mbn{font-weight:600;min-width:150px}.mbl td.mbb{color:var(--ink2)}
+.mbl tr.mbp td{font-weight:600;background:#f6f8fb}.mbl tr.mbc td.mbb{padding-left:16px}.mbl tr.mbc td.mbn{background:var(--card)}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl tr.mbt-tot.mbc td{font-weight:500}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
 .mbt td.mbf{text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:54px}.mbt .mbat{font-size:11px;font-weight:400}
 .att{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .att .kpi{display:flex;flex-direction:column}
@@ -2432,8 +2432,8 @@ function ordersHtml(list, code){
   if (!list.length) return '<div class="sub">Chưa có đơn nào trong raw sales đã nạp.</div>';
   const by = new Map(); list.forEach(o => { const k = o.year * 100 + o.month; if (!by.has(k)) by.set(k, []); by.get(k).push(o); });
   const ks = [...by.keys()].sort((a, b) => b - a).slice(0, 4), dmyS = d => d ? `${String(d).slice(8, 10)}/${String(d).slice(5, 7)}/${String(d).slice(0, 4)}` : '';
-  return `<div class="tw lkot"><table class="t"><thead><tr><th class="l">Tháng</th><th class="l">SKU</th><th>Box</th><th>Giá trị (VND)</th><th class="l">Đơn cuối</th></tr></thead><tbody>${ks.map(k => { const xs = by.get(k), last = xs.reduce((m, o) => o.last_date && o.last_date > m ? o.last_date : m, '');
-      return xs.map((o, i) => `<tr class="${i ? '' : 'mbg'}" data-lbl="${esc(mlabel(o.year, o.month) + ' · ' + o.sku)}"><td class="l">${i ? '' : mlabel(o.year, o.month)}</td><td class="l">${esc(o.sku)}${o.cust_code !== code ? ` <span class="muted">· ${esc(o.cust_code)}</span>` : ''}</td><td>${nf0.format(Math.round(o.qty))}</td><td>${vnd(o.value)}</td><td class="l">${i ? '' : dmyS(last) || '<span class="muted">–</span>'}</td></tr>`).join(''); }).join('')}</tbody></table></div>`;
+  // Bản 4.23.1: mỗi dòng đủ tháng + ngày đơn cuối (SKU × tháng) để bấm tiêu đề sắp được
+  return `<div class="tw lkot"><table class="t"><thead><tr><th class="l">Tháng</th><th class="l">SKU</th><th>Box</th><th>Giá trị (VND)</th><th class="l">Đơn cuối</th></tr></thead><tbody>${ks.map(k => by.get(k).map(o => `<tr data-lbl="${esc(mlabel(o.year, o.month) + ' · ' + o.sku)}"><td class="l" data-v="${o.year * 100 + o.month}">${mlabel(o.year, o.month)}</td><td class="l">${esc(o.sku)}${o.cust_code !== code ? ` <span class="muted">· ${esc(o.cust_code)}</span>` : ''}</td><td>${nf0.format(Math.round(o.qty))}</td><td>${vnd(o.value)}</td><td class="l">${dmyS(o.last_date) || '<span class="muted">–</span>'}</td></tr>`).join('')).join('')}</tbody></table></div>`;
 }
 
 /* =========================================================
@@ -2519,11 +2519,11 @@ function viewPOA(){
   const inp = (k, f, v, ph = '', cls = '') => `<input class="inp poa-i ${cls}" data-k="${esc(k)}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(ph)}" ${dis} aria-label="${esc(f)}">`;
   const accCell = x => x.first ? `<td class="l stick poa-a" ${x.span > 1 ? `rowspan="${x.span}"` : ''}><b>${esc(x.acc)}</b>${x.sub ? `<div class="sub"><i>(${esc(x.sub)})</i></div>` : ''}</td>` : '';
   const T = M.T, st = s => s ? '*' : '';
-  const t1 = `<div class="tw"><table class="t poat"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>Remaining Quota (box)</th><th>Average Sell-out (4 quarters – box)</th><th>Average actual performance (4 quarters – box)</th><th>Stock end of ${M.LQd.slice(0, 2)} (box)</th><th>FC ${M.Qd} (box)</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>Actual ${M.Qd} up to date (mil VND)</th></tr></thead><tbody>
+  const t1 = `<div class="tw"><table class="t poat nosort"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>Remaining Quota (box)</th><th>Average Sell-out (4 quarters – box)</th><th>Average actual performance (4 quarters – box)</th><th>Stock end of ${M.LQd.slice(0, 2)} (box)</th><th>FC ${M.Qd} (box)</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>Actual ${M.Qd} up to date (mil VND)</th></tr></thead><tbody>
     ${M.out.map(x => `<tr data-lbl="${esc(x.acc + ' · ' + x.brand)}">${accCell(x)}<td class="l">${esc(x.brand)}</td><td>${inp(x.k, 'rq', x.rqIn, x.rqAuto === null ? '-' : poaRq({...x, rqIn: ''}), 'w90')}</td><td>${inp(x.k, 'so', x.so, 'điền', 'w70')}</td><td>${poaBox(x.avg4, x.star)}</td><td>${inp(x.k, 'st', x.st, 'điền', 'w70')}</td>
       <td><b>${poaBox(x.box, x.star)}</b></td><td><b>${milT(x.fcv)}${st(x.star)}</b></td><td>${x.tgt ? milT(x.tgt) : '-'}</td><td><b>${x.ach === null ? '-' : pct1(x.ach)}</b></td><td>${Math.round(x.qtd / 1e6) ? nf0.format(Math.round(x.qtd / 1e6)) : '-'}</td></tr>`).join('')}
     <tr class="tot"><td class="l stick">Grand total</td><td class="l">${esc(T.brand)}</td><td>${T.rq === null ? '-' : nf0.format(Math.round(T.rq))}</td><td>${T.so === null ? '-' : nf0.format(Math.round(T.so))}</td><td>${nf0.format(Math.round(T.avg4))}</td><td>${T.st === null ? '-' : nf0.format(Math.round(T.st))}</td><td>${nf0.format(Math.round(T.box))}</td><td>${milT(T.fcv)}</td><td>${milT(T.tgt)}</td><td>${T.ach === null ? '-' : pct1(T.ach)}</td><td>${nf0.format(Math.round(T.qtd / 1e6))}</td></tr></tbody></table></div>`;
-  const t2 = `<div class="tw"><table class="t poat"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>%Growth vs ${M.LYd}</th><th>%Growth vs last quarter (${M.LQd})</th><th class="bc">FC ${M.Qd} Best case (mil VND)</th><th>% Achie Best case</th><th>Gr vs ${M.LYd} Best case</th><th class="l">Note Best case</th></tr></thead><tbody>
+  const t2 = `<div class="tw"><table class="t poat nosort"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>%Growth vs ${M.LYd}</th><th>%Growth vs last quarter (${M.LQd})</th><th class="bc">FC ${M.Qd} Best case (mil VND)</th><th>% Achie Best case</th><th>Gr vs ${M.LYd} Best case</th><th class="l">Note Best case</th></tr></thead><tbody>
     ${M.out.map(x => `<tr data-lbl="${esc(x.acc + ' · ' + x.brand)}">${accCell(x)}<td class="l">${esc(x.brand)}</td><td><b>${milT(x.fcv)}${st(x.star)}</b></td><td>${x.tgt ? milT(x.tgt) : '-'}</td><td><b>${x.ach === null ? '-' : pct1(x.ach)}</b></td><td>${grT(x.gLy)}</td><td>${grT(x.gLq)}</td>
       <td>${inp(x.k, 'bc', x.bcIn === null ? '' : x.bcIn, milT(x.fcv), 'w80')}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${x.achB === null ? '-' : pct1(x.achB)}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${grT(x.gB)}</td><td class="l">${inp(x.k, 'nb', x.nb, 'điều kiện best case', 'w220')}</td></tr>`).join('')}
     <tr class="tot"><td class="l stick">Grand total</td><td class="l">${esc(T.brand)}</td><td>${milT(T.fcv)}</td><td>${milT(T.tgt)}</td><td>${T.ach === null ? '-' : pct1(T.ach)}</td><td>${grT(T.gLy)}</td><td>${grT(T.gLq)}</td><td>${milT(T.best)}</td><td>${T.achB === null ? '-' : pct1(T.achB)}</td><td>${grT(T.gB)}</td><td></td></tr></tbody></table></div>`;
@@ -3558,16 +3558,19 @@ function mbTableHtml(list, o = {}){
   MB_LAST = {list, brands, o};
   if (!brands.length) return `<div class="sub">${o.empty || 'Chưa có số FC.'}</div>`;
   const wk = !!o.wk, bOrd = b => { const i = brands.indexOf(b); return i < 0 ? 999 : i; };
-  const group = (name, nameHtml, cells, tot, cls) => {
-    const bl = [...cells].filter(([, g]) => mbHas(g)).sort((x, y) => bOrd(x[0]) - bOrd(y[0]));
-    if (!bl.length) return `<tr class="mbg ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="8">chưa có số</td></tr>`;
-    const rows = bl.map(([b, g], k) => `<tr class="${k ? '' : 'mbg'} ${cls || ''}" data-lbl="${esc(`${name} · ${b}`)}"><td class="l stick mbn">${k ? '' : nameHtml}</td><td class="l mbb">${esc(b)}</td>${mbCells(g)}</tr>`);
-    if (bl.length > 1 && tot) rows.push(`<tr class="mbs ${cls || ''}" data-lbl="${esc(`${name} · tổng`)}"><td class="l stick mbn"></td><td class="l mbb">Tổng</td>${mbCells(tot)}</tr>`);
-    return rows.join('');
+  // Bản 4.23.1: dòng cha = tổng của MR (sắp theo dòng này), dòng con = từng brand (sắp trong MR). MR 1 brand: 1 dòng.
+  // Nhóm Tổng team đứng yên cuối bảng (tot + sfix).
+  const group = (name, nameHtml, cells, tot, cls, fixed) => {
+    const bl = [...cells].filter(([, g]) => mbHas(g)).sort((x, y) => bOrd(x[0]) - bOrd(y[0])), pc = fixed ? 'tot' : 'mbp', cc = fixed ? 'sfix mbc' : 'mbc';
+    if (!bl.length) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="8">chưa có số</td></tr>`;
+    if (bl.length === 1) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · ${bl[0][0]}`)}"><td class="l stick mbn">${nameHtml}</td><td class="l mbb">${esc(bl[0][0])}</td>${mbCells(bl[0][1])}</tr>`;
+    const par = `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · tổng`)}"><td class="l stick mbn">${nameHtml}</td><td class="l mbb">Tổng</td>${mbCells(tot || mbSum(bl.map(x => x[1])))}</tr>`;
+    const kids = bl.map(([b, g]) => `<tr class="${cc} ${cls || ''}" data-lbl="${esc(`${name} · ${b}`)}"><td class="l stick mbn">${fixed ? '<span class="muted">Team</span>' : ''}</td><td class="l mbb">${fixed ? '' : '↳ '}${esc(b)}</td>${mbCells(g)}</tr>`).join('');
+    return fixed ? kids + par : par + kids;   // Tổng team: dòng brand trước, dòng Tổng team dính đáy bảng
   };
   const head = `<tr><th class="l stick">MR</th><th class="l">Brand</th><th>Target</th><th>Act. QTD</th><th>%Ach QTD</th><th>FC ${P[4].label}</th><th>%Ach FC</th><th>Gr vs LYSP</th><th>Gr vs ${P[3].label}</th></tr>`;
   const body = list.map(x => group(x.rep, `${x.repHtml || esc(x.rep)}${wk && x.wkHtml ? `<span class="mt mbwk">${x.wkHtml}</span>` : ''}`, x.cells, x.tot, VIEW.dRep && VIEW.dRep === x.rep ? 'hl' : '')).join('')
-    + group('Tổng team', '<b>Tổng team</b>', bs, mbSum(list.map(x => x.tot).filter(Boolean)), 'mbt-tot');
+    + group('Tổng team', '<b>Tổng team</b>', bs, mbSum(list.map(x => x.tot).filter(Boolean)), 'mbt-tot', true);
   return `<div class="tw"><table class="t mbl"><thead>${head}</thead><tbody>${body}</tbody></table></div><div class="sub" style="margin-top:6px">Đơn vị: VND. Act. QTD tính đến ${esc(ASOF_DM || 'nay')}.</div>`;
 }
 // Tải Excel bảng MR × brand (CFO lấy số): sheet MR × brand (dòng phẳng, lọc được) + sheet Brand (SUMIFS), %Ach / Gr là công thức
@@ -4939,22 +4942,25 @@ const prRow = (p, sg) => `<tr><td class="l"><input data-c="sku" value="${esc(p.s
 
 boot().catch(e => { $('#app').innerHTML = `<div class="login"><h1>Lỗi khởi động</h1><div class="msg err">${esc(e.message || e)}</div></div>`; });
 
-/* ---------- Bấm tiêu đề cột để sắp xếp (bản 4.16, như Power BI) ----------
-   Áp cho mọi bảng .t: lần 1 số lớn → nhỏ (chữ A → Z), lần 2 đảo lại. Dòng Total / Subtotal / tiêu đề nhóm đứng yên;
-   bảng có cấp (merge code → mã KH → SKU, brand → kênh) sắp theo dòng cha, dòng con đi theo. Bảng vẽ lại vẫn giữ cách sắp. */
+/* ---------- Bấm tiêu đề cột để sắp xếp (bản 4.16, như Power BI; bản 4.23 sắp theo cấp) ----------
+   Áp cho mọi bảng .t: lần 1 số lớn → nhỏ (chữ A → Z), lần 2 đảo lại. Dòng Total / Subtotal / tiêu đề nhóm đứng yên.
+   Bảng có cấp: sắp dòng cha theo số của dòng cha, dòng con sắp trong từng cha (mẹ lẫn con), con luôn đi theo cha.
+   Cấp: 0 = merge code / account / nhóm (mg, acc không phải mã con, dgrp, bvt, mbp) · 1 = mã con của merge (acc.mcode) · 2 = dòng lá.
+   Bảng vẽ lại vẫn giữ cách sắp. Bảng xem trước slide (POA) không sắp. */
 const SORT_ST = new Map();
-const sortFixed = tr => /\b(tot|stot|fysub|fynlh|nlsegh)\b/.test(tr.className) || (tr.cells.length === 1 && tr.cells[0].colSpan > 2);
-const sortParent = tr => /\b(mg|dgrp|bvt)\b/.test(tr.className) || (/\bacc\b/.test(tr.className) && !/\bmcode\b/.test(tr.className));
+const sortFixed = tr => /\b(tot|stot|fysub|fynlh|nlsegh|sfix)\b/.test(tr.className) || (tr.cells.length === 1 && tr.cells[0].colSpan > 2);
+const sortLevel = tr => { const c = tr.className; return /\b(mg|dgrp|bvt|mbp)\b/.test(c) || (/\bacc\b/.test(c) && !/\bmcode\b/.test(c)) ? 0 : /\bmcode\b/.test(c) ? 1 : 2; };
 const sortHead = t => t.tHead ? [...t.tHead.rows].filter(r => !r.classList.contains('stot')).pop() : null;   // FC Input: dòng Subtotal nằm trong thead
 const sortKey = t => [...t.classList].filter(c => c !== 't').join('.') + '|' + [...(sortHead(t)?.cells || [])].map(c => c.textContent.trim()).join('|');
 function sortCell(tr, col){ let x = 0; for (const c of tr.cells){ if (col >= x && col < x + c.colSpan) return c; x += c.colSpan; } return null; }
 function sortVal(c){
-  if (!c) return null; const inp = c.querySelector('input'); let t = (inp ? inp.value : c.textContent).trim();
-  if (!t || /^[–—-]$/.test(t)) return null;
-  const n = t.replace(/[−–]/g, '-').replace(/[↑↓▲▼,%\s]|tr\b|tỷ|box/g, '').replace(/^\+/, '');
+  if (!c) return null; if (c.dataset.v !== undefined && c.dataset.v !== '') return +c.dataset.v;   // ô có giá trị sắp riêng (vd tháng)
+  const inp = c.querySelector('input'); let t = (inp ? inp.value : c.textContent).trim();
+  if (!t || /^[–—·-]$/.test(t)) return null;
+  const n = t.replace(/[−–]/g, '-').replace(/[↑↓→▲▼↳,%*\s]|tr\b|tỷ|box/g, '').replace(/^\+/, '');
   if (/^-?\d+(\.\d+)?$/.test(n)) return +n;
   const d = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (d) return +new Date(+d[3], d[2] - 1, +d[1]);
-  return t.toLowerCase();
+  return t.replace(/^↳\s*/, '').toLowerCase();
 }
 function applySort(t){
   const st = SORT_ST.get(sortKey(t)); const hr = sortHead(t); if (!hr) return;
@@ -4962,18 +4968,19 @@ function applySort(t){
   if (!st) return;
   let col = 0, th = null; for (const h of hr.cells){ if (col === st.col){ th = h; break; } col += h.colSpan; } if (!th) return;
   th.setAttribute('data-sort', st.dir);
+  const dir = st.dir === 'asc' ? 1 : -1;
+  const cmp = (a, b) => a.v === null && b.v === null ? a.i - b.i : a.v === null ? 1 : b.v === null ? -1
+    : (typeof a.v === typeof b.v ? (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) : typeof a.v === 'number' ? -1 : 1) * dir || a.i - b.i;
+  const emit = (list, out) => { list.sort(cmp); for (const n of list){ out.push(n.tr); emit(n.kids, out); } };
   for (const tb of t.tBodies){
     const rows = [...tb.rows]; if (rows.length < 2) continue;
-    const hasP = rows.some(sortParent), out = []; let seg = [], blk = null;
-    const flush = () => { if (blk) seg.push(blk); blk = null;
-      const isNum = seg.some(b => typeof b.v === 'number');
-      seg.sort((a, b) => a.v === null && b.v === null ? a.i - b.i : a.v === null ? 1 : b.v === null ? -1
-        : (typeof a.v === typeof b.v ? (a.v < b.v ? -1 : a.v > b.v ? 1 : 0) : typeof a.v === 'number' ? -1 : 1) * (st.dir === 'asc' ? 1 : -1) || a.i - b.i);
-      seg.forEach(b => out.push(...b.rows)); seg = []; };
+    const out = []; let root = [], stack = [];
+    const flush = () => { emit(root, out); root = []; stack = []; };
     rows.forEach((tr, i) => {
       if (sortFixed(tr)){ flush(); out.push(tr); return; }
-      if (!hasP || sortParent(tr) || !blk){ if (blk) seg.push(blk); blk = {i, rows: [tr], v: sortVal(sortCell(tr, st.col))}; }
-      else blk.rows.push(tr);
+      const lv = sortLevel(tr), node = {tr, i, lv, v: sortVal(sortCell(tr, st.col)), kids: []};
+      while (stack.length && stack[stack.length - 1].lv >= lv) stack.pop();
+      (stack.length ? stack[stack.length - 1].kids : root).push(node); stack.push(node);
     });
     flush();
     if (out.some((r, i) => r !== rows[i])) out.forEach(r => tb.appendChild(r));
@@ -4981,7 +4988,7 @@ function applySort(t){
 }
 document.addEventListener('click', e => {
   const th = e.target.closest('table.t > thead > tr > th'); if (!th || e.target.closest('a,button,input,select')) return;
-  const t = th.closest('table'), hr = th.parentElement; if (hr !== sortHead(t)) return; if (!th.textContent.trim() || th.classList.contains('nosort')) return;
+  const t = th.closest('table'), hr = th.parentElement; if (hr !== sortHead(t)) return; if (!th.textContent.trim() || th.classList.contains('nosort') || t.classList.contains('nosort')) return;
   let col = 0; for (const h of hr.cells){ if (h === th) break; col += h.colSpan; }
   const k = sortKey(t), cur = SORT_ST.get(k);
   const first = t.tBodies[0] ? [...t.tBodies[0].rows].filter(r => !sortFixed(r)).map(r => sortVal(sortCell(r, col))).find(v => v !== null) : null;
