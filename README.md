@@ -2,6 +2,21 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.23 + Database bản 17 (15/11/2026) — FC POA, số live cho admin, xem lại account đã add
+- **Thẻ FC POA** (cạnh FC Input): dựng lại 2 slide Forecast của bài POA theo **account (merge code) × brand**. Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out TB 4 quý, tồn kho cuối quý trước, **best case (mil VND) + note**, lý do trên subtitle, target FY (để tính best case FY). Chọn account phân tích full, account bỏ chọn gộp **Others**. Số tự lưu (`poa_inputs`). **⬇ Tải PowerPoint**: app điền vào file mẫu POA (2 slide, quá 10 dòng tự sang trang). File mẫu lưu trong database (`app_assets`, chỉ thành viên đăng nhập đọc), không để trong repo; admin đổi mẫu bằng nút **Mẫu PPT** (chọn bài POA có 2 slide Forecast, app chỉ giữ 2 slide đó, bỏ số cũ).
+- **Đồng bộ FC cho admin không đợi Submit**: mỗi lần MR lưu, app ghi lại số FC theo brand (`fc_snap`) sau vài giây; RFFM / admin xem FC tuần bằng số đang tính; Dashboard tự lấy số mới mỗi 2 phút khi đang mở và không thao tác. Submit chỉ để ghi nhận MR đã chốt (trạng thái + giờ nộp tuần).
+- **FC tuần / By MR → bảng MR × brand dạng dọc**: MR · Brand · Target · Act. QTD · %Ach QTD · FC · %Ach FC · Gr vs LYSP · Gr vs quý trước, số VND đầy đủ, dòng Tổng mỗi MR + Tổng team theo brand. Nút **⬇ Tải Excel** (sheet MR x brand lọc được, sheet Brand dùng SUMIFS, %Ach / Gr là công thức).
+- **%Ach 1 số thập phân** trên toàn app và file Excel (97.3%). **Số tiền đầy đủ VND** thay cho "tỷ" (1,852,345,000); bảng dày vẫn ghi tr, rà chuột vào ô thấy số VND đầy đủ. **Rà chuột vào ô số** hiện tên dòng, tên cột, số đầy đủ, giải thích chữ viết tắt (QTD, TB 2Q, LYSP, RR). Bỏ các dòng hướng dẫn màu (≥100% / 80–99% / <80%).
+- **Merge code**: dòng dẫn (dòng hiện target, %Ach, Gr) theo dòng MR đã nhập FC, không còn theo dòng có sales cũ.
+- **📋 Đã add** (FC Input, New launch, Tra cứu): xem lại BV / phòng khám đã add new hoặc đề xuất, **Gỡ** khi điền nhầm (MR: dòng của mình, kỳ còn mở; admin: mọi dòng).
+- **Tra cứu → account chưa ai phụ trách → 🧾 Đơn gần nhất**: 4 tháng có đơn gần nhất (SKU, box, giá trị VND, ngày hoá đơn cuối). MR chỉ xem được account chưa ai phụ trách.
+- `migration_v17.sql`: `poa_inputs` (MR ghi của mình, RFFM / admin đọc), `app_assets` (thành viên đọc, admin ghi), policy MR gỡ dòng đề xuất của mình, `sales_agg.last_date` (ngày hoá đơn cuối, có từ lần nạp raw sau), hàm `recent_orders(code)`. `schema.sql` đã gộp.
+
+## Nâng cấp từ bản 16
+1. Supabase → **SQL Editor** → chạy `migration_v17.sql` (kết quả `db_version = 17`).
+2. Admin → thẻ FC POA → **Mẫu PPT** → chọn bài POA có 2 slide Forecast (chỉ cần làm 1 lần).
+3. Nạp lại raw sales để có ngày hoá đơn cuối ở Đơn gần nhất.
+
 ## Phiên bản 4.22.3 (14/11/2026) — Ô trên = box thường, ô dưới = box trade
 - Tháng có chương trình trade: **ô trên chỉ là box KHÔNG trong chương trình** (giá thường), **ô dưới là box trade**; FC tháng = cộng 2 ô, MR không phải trừ. Tháng đang chạy: số nhỏ trước ô trên = đơn giá thường đã lên, trước ô trade = trade đã lên. Tháng đã chốt: ô trên = Act. giá thường, dòng dưới = Act. trade.
 - Lưu không đổi (m = tổng box tháng, t = box trade) nên báo cáo, cảnh báo TB 2Q, tự trừ sales, Excel giữ nguyên. Không đổi database.
