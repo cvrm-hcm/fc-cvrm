@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.5 — dòng Total cho các bảng Dashboard
+- Thêm dòng Total (đứng cuối khi sort): By channel, By type BV, By brand (Overview và Dashboard của tôi), By account (RFFM / admin, tính trên cả danh sách đang lọc, không chỉ dòng đang hiện), Top account theo Type BV / kênh, By account của MR, New launch By type BV và By month.
+- Không thêm Total ở Nộp FC tuần, Issue từ Note, Tender quota (cộng box nhiều SKU không có nghĩa).
+
 ## Bản 4.25.4 — thay đổi của MR đồng bộ sang admin ở mọi thẻ
 - RFFM / admin / CFO: mỗi 60 giây app hỏi database có thay đổi mới không (FC, submit / duyệt, note, FC POA, thưởng, quota dự kiến, account đề xuất); có thì tự tải lại ở thẻ đang mở (FC Input, Dashboard, FC POA, Thưởng), giữ vị trí cuộn. Đang gõ / mở hộp thoại / vừa thao tác < 20 giây thì đợi lần sau. Thẻ Admin không tự tải lại.
 - Thay bản 4.23 (Dashboard tải lại toàn bộ mỗi 2 phút): giờ chỉ tải lại khi có thay đổi → ít dung lượng hơn.
