@@ -393,7 +393,7 @@ details.howto{margin-top:8px;font-size:12.5px;color:var(--ink2)}details.howto su
 .t.sgt td:first-child{color:var(--ink3);width:28px}
 .att .more{margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:600;text-decoration:none}
 .story{font-size:13px;color:var(--ink);margin:-4px 0 10px;line-height:1.5}
-.wf{display:grid;grid-template-columns:minmax(118px,180px) 1fr 74px;align-items:center;gap:8px;padding:3px 0;font-size:12.5px}
+.wf{display:grid;grid-template-columns:minmax(118px,200px) 1fr max-content;grid-template-areas:"lb tk vl";align-items:center;gap:8px;padding:3px 0;font-size:12.5px}.wf .lb{grid-area:lb}.wf .tk{grid-area:tk}.wf .vl{grid-area:vl}
 .wf .lb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wf .tk{position:relative;height:22px;background:linear-gradient(90deg,#f3f4f7,#f3f4f7) no-repeat;background-size:100% 1px;background-position:0 50%}
 .wf .tk i{position:absolute;top:3px;bottom:3px;border-radius:3px;min-width:2px}
@@ -471,7 +471,7 @@ a.nolk{text-decoration:none}
 .bvd-s{margin:4px 0 2px}
 @media (max-width:1240px){.att{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:980px){.att,.att.mra,.lv3{grid-template-columns:1fr}.rkh{display:none}.rki{grid-template-columns:1fr}.rki .n4{text-align:left}.rki .n4 i{display:block;font-style:normal;font-size:11px;color:var(--ink3)}}
-@media (max-width:760px){.dnav{width:100%}.dnav button{flex:1;padding:6px 8px}.dnav .lg{display:none}.dnav .sm{display:inline}.bvd-k{grid-template-columns:1fr 1fr}.wf{grid-template-columns:104px 1fr 62px;font-size:12px}.cc{grid-template-columns:minmax(0,1.4fr) 40px 70px 70px}.cc .sh{display:none}.modal.wide{width:100%;padding:14px}}
+@media (max-width:760px){.dnav{width:100%}.dnav button{flex:1;padding:6px 8px}.dnav .lg{display:none}.dnav .sm{display:inline}.bvd-k{grid-template-columns:1fr 1fr}.wf{grid-template-columns:minmax(0,1fr) max-content;grid-template-areas:"lb vl" "tk tk";row-gap:2px;font-size:12.5px;padding:4px 0}.wf .lb{white-space:normal}.cc{grid-template-columns:minmax(0,1.4fr) 40px 70px 70px}.cc .sh{display:none}.modal.wide{width:100%;padding:14px}}
 /* Quý hiện tại: FC sát target thì gộp 2 nhãn, xếp 2 dòng */
 .cols.tall{padding-top:32px}
 .cols .c span.two{text-align:center;line-height:1.25;font-weight:600;color:var(--ink)}
@@ -3766,9 +3766,9 @@ function mChartHtml(a, u){
     <div class="xl">${MS.map((m, i) => `<div>${mlabel(D.settings.year, m)}<br><span class="sub">${MST[i] === 'closed' ? 'đã chốt' : MST[i] === 'current' ? 'đến ' + asof : 'chưa tới'}</span></div>`).join('')}</div><div class="sub" style="margin-top:6px">Đơn vị: ${u === 'tr' ? 'tr' : 'tỷ'} VND.</div>`;
 }
 function mrBarsHtml(byRep){
-  const list = [...byRep].sort((x, y) => (y.ach ?? -1) - (x.ach ?? -1)); const mx = Math.max(1, ...list.map(x => Math.max(x.fcv, x.tgt)));
+  const list = [...byRep].sort((x, y) => (VIEW.dRep ? (y.rep === VIEW.dRep) - (x.rep === VIEW.dRep) : 0) || (y.ach ?? -1) - (x.ach ?? -1)); const mx = Math.max(1, ...list.map(x => Math.max(x.fcv, x.tgt)));
   return list.map(x => `<div class="hb" data-tip="${esc(x.rep)}\nFC: ${big(x.fcv)}\nTarget: ${big(x.tgt)}\n%Ach FC: ${pct1(x.ach)}" style="${VIEW.dRep && VIEW.dRep !== x.rep ? 'opacity:.45' : ''}">
-    <div class="nm">${esc(x.rep)}</div><div class="tr"><div class="b" style="width:${x.fcv / mx * 100}%"></div>${x.tgt ? `<div class="tk" style="left:calc(${x.tgt / mx * 100}% - 1px)"></div>` : ''}</div><div class="pc">${achHtml(x.ach)}</div></div>`).join('') || '<div class="sub">Không có dữ liệu</div>';
+    <div class="nm"${VIEW.dRep === x.rep ? ' style="font-weight:700"' : ''}>${esc(x.rep)}</div><div class="tr"><div class="b" style="width:${x.fcv / mx * 100}%"></div>${x.tgt ? `<div class="tk" style="left:calc(${x.tgt / mx * 100}% - 1px)"></div>` : ''}</div><div class="pc">${achHtml(x.ach)}</div></div>`).join('') || '<div class="sub">Không có dữ liệu</div>';
 }
 
 /* =========================================================

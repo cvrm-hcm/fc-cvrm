@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.6 — sửa hiển thị Bridge target → FC trên điện thoại
+- Số VND đầy đủ bị tràn khỏi thẻ, nhãn bị cắt ("Vượt target ở …"): điện thoại xếp nhãn + số trên 1 dòng, thanh bên dưới; máy tính cột số tự giãn theo độ dài số.
+- FC vs target by MR: khi lọc 1 MR, MR đó lên đầu, chữ đậm; MR khác mờ đi như cũ.
+
 ## Bản 4.25.5 — dòng Total cho các bảng Dashboard
 - Thêm dòng Total (đứng cuối khi sort): By channel, By type BV, By brand (Overview và Dashboard của tôi), By account (RFFM / admin, tính trên cả danh sách đang lọc, không chỉ dòng đang hiện), Top account theo Type BV / kênh, By account của MR, New launch By type BV và By month.
 - Không thêm Total ở Nộp FC tuần, Issue từ Note, Tender quota (cộng box nhiều SKU không có nghĩa).
