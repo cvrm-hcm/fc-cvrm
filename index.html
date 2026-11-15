@@ -2480,15 +2480,22 @@ function poaModel(rep, I){
     for (const r of rs){ o.q4 += r.qty[0] + r.qty[1] + r.qty[2] + r.qty[3]; const rt = num(r.ratio); o.ratios.add(Math.round(rt * 1000) / 1000);
       const t = tqOf(r); if (t && (t.pk.length || t.upE.length)){ o.tq = true; o.rq += t.rem * rt; t.upE.forEach(u => { o.up += num(u.qty) * rt; if (u.eff && (!o.upEff || u.eff < o.upEff)) o.upEff = u.eff; }); }
       for (let q = 1; q < Q; q++) o.ytd += ((SQ.get(`${r.cust_code}|${r.sku}|${Y}|${q}`) || [0])[0]) * rt; }
-    o.star = [...o.ratios].some(x => x < 0.999); return o; };
+    o.star = [...o.ratios].some(x => x < 0.999);
+    // Giá / box để quy best case (box) ra tiền (bản 4.23.3): giá TB của FC dòng này (đã gồm kênh, trade) → giá TB 4 quý → giá bảng giá
+    const hq = rs.reduce((t, r) => t + r.qty[0] + r.qty[1] + r.qty[2] + r.qty[3], 0), hv = rs.reduce((t, r) => t + r.act[0] + r.act[1] + r.act[2] + r.act[3], 0), lp = rs.map(r => num(r.price)).filter(x => x > 0);
+    o.px = o.box > 0 && g.fcv > 0 ? g.fcv / o.box : hq > 0 && hv > 0 ? hv / hq : lp.length ? lp.reduce((a, b) => a + b, 0) / lp.length : 0;
+    return o; };
   const byBrand = rs => { const m = new Map(); rs.forEach(r => { if (!m.has(r.brand)) m.set(r.brand, []); m.get(r.brand).push(r); }); return [...m].map(([b, xs]) => [b, xs, agg(xs)]).sort((x, y) => Math.max(y[2].tgt, y[2].fcv) - Math.max(x[2].tgt, x[2].fcv) || x[0].localeCompare(y[0])); };
   const out = [];
   const mk = (k, acc, sub, brand, rs, first, span) => { const o = G(rs), g = o.g, inp = I.rows[k] || {};
-    const bcIn = inp.bc !== undefined && inp.bc !== null && String(inp.bc).trim() !== '' ? pnum(inp.bc) : null, best = bcIn === null ? g.fcv : bcIn * 1e6;
+    // Best case nhập bằng box (bcb), app quy ra tiền theo giá / box của dòng; bc (mil VND) là dữ liệu bản 4.23 cũ
+    const has = v => v !== undefined && v !== null && String(v).trim() !== '', bbIn = has(inp.bcb) ? pnum(inp.bcb) : null, legacy = bbIn === null && has(inp.bc) ? pnum(inp.bc) : null;
+    const best = bbIn !== null ? bbIn * o.px : legacy !== null ? legacy * 1e6 : g.fcv, bcIn = bbIn !== null || legacy !== null ? best / 1e6 : null;
+    const bestBox = bbIn !== null ? bbIn : o.px ? best / o.px : null;
     const rqAuto = o.tq ? o.rq + o.up : null, rqIn = norm(inp.rq);
     out.push({k, acc, sub, brand, first, span, star: o.star, filled: g.filled > 0, rqAuto, rqIn, upEff: o.upEff, up: o.up, so: norm(inp.so), st: norm(inp.st), avg4: o.q4 / 4, box: o.box,
       fcv: g.fcv, tgt: g.tgt, ach: g.tgt ? g.fcv / g.tgt : null, qtd: g.act[4], ly: g.act[0], lq: g.act[3], gLy: g.act[0] ? g.fcv / g.act[0] - 1 : null, gLq: g.act[3] ? g.fcv / g.act[3] - 1 : null,
-      best, bcIn, achB: g.tgt ? best / g.tgt : null, gB: g.act[0] ? best / g.act[0] - 1 : null, nb: norm(inp.nb), ytd: o.ytd, ratios: o.ratios}); };
+      best, bcIn, bbIn, bestBox, px: o.px, achB: g.tgt ? best / g.tgt : null, gB: g.act[0] ? best / g.act[0] - 1 : null, nb: norm(inp.nb), ytd: o.ytd, ratios: o.ratios}); };
   const fulls = accs.filter(a => full.has(a.mc)), others = accs.filter(a => !full.has(a.mc));
   for (const a of fulls){ const bs = byBrand(a.rows); bs.forEach(([b, xs], i) => mk(`${a.mc}|${b}`, short(a), '', b, xs, i === 0, i === 0 ? bs.length : 0)); }
   if (others.length){ const bs = byBrand(others.flatMap(a => a.rows)), nm = others.map(short), sub = nm.slice(0, 3).join(', ') + (nm.length > 3 ? ` +${nm.length - 3}` : '');
@@ -2523,15 +2530,15 @@ function viewPOA(){
     ${M.out.map(x => `<tr data-lbl="${esc(x.acc + ' · ' + x.brand)}">${accCell(x)}<td class="l">${esc(x.brand)}</td><td>${inp(x.k, 'rq', x.rqIn, x.rqAuto === null ? '-' : poaRq({...x, rqIn: ''}), 'w90')}</td><td>${inp(x.k, 'so', x.so, 'điền', 'w70')}</td><td>${poaBox(x.avg4, x.star)}</td><td>${inp(x.k, 'st', x.st, 'điền', 'w70')}</td>
       <td><b>${poaBox(x.box, x.star)}</b></td><td><b>${milT(x.fcv)}${st(x.star)}</b></td><td>${x.tgt ? milT(x.tgt) : '-'}</td><td><b>${x.ach === null ? '-' : pct1(x.ach)}</b></td><td>${Math.round(x.qtd / 1e6) ? nf0.format(Math.round(x.qtd / 1e6)) : '-'}</td></tr>`).join('')}
     <tr class="tot"><td class="l stick">Grand total</td><td class="l">${esc(T.brand)}</td><td>${T.rq === null ? '-' : nf0.format(Math.round(T.rq))}</td><td>${T.so === null ? '-' : nf0.format(Math.round(T.so))}</td><td>${nf0.format(Math.round(T.avg4))}</td><td>${T.st === null ? '-' : nf0.format(Math.round(T.st))}</td><td>${nf0.format(Math.round(T.box))}</td><td>${milT(T.fcv)}</td><td>${milT(T.tgt)}</td><td>${T.ach === null ? '-' : pct1(T.ach)}</td><td>${nf0.format(Math.round(T.qtd / 1e6))}</td></tr></tbody></table></div>`;
-  const t2 = `<div class="tw"><table class="t poat nosort"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>%Growth vs ${M.LYd}</th><th>%Growth vs last quarter (${M.LQd})</th><th class="bc">FC ${M.Qd} Best case (mil VND)</th><th>% Achie Best case</th><th>Gr vs ${M.LYd} Best case</th><th class="l">Note Best case</th></tr></thead><tbody>
+  const t2 = `<div class="tw"><table class="t poat nosort"><thead><tr><th class="l stick">Account</th><th class="l">Product</th><th>FC ${M.Qd} (mil VND)</th><th>Target ${M.Qd} (mil VND)</th><th>% Achie</th><th>%Growth vs ${M.LYd}</th><th>%Growth vs last quarter (${M.LQd})</th><th class="bc">Best case (box)</th><th class="bc">FC ${M.Qd} Best case (mil VND)</th><th>% Achie Best case</th><th>Gr vs ${M.LYd} Best case</th><th class="l">Note Best case</th></tr></thead><tbody>
     ${M.out.map(x => `<tr data-lbl="${esc(x.acc + ' · ' + x.brand)}">${accCell(x)}<td class="l">${esc(x.brand)}</td><td><b>${milT(x.fcv)}${st(x.star)}</b></td><td>${x.tgt ? milT(x.tgt) : '-'}</td><td><b>${x.ach === null ? '-' : pct1(x.ach)}</b></td><td>${grT(x.gLy)}</td><td>${grT(x.gLq)}</td>
-      <td>${inp(x.k, 'bc', x.bcIn === null ? '' : x.bcIn, milT(x.fcv), 'w80')}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${x.achB === null ? '-' : pct1(x.achB)}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${grT(x.gB)}</td><td class="l">${inp(x.k, 'nb', x.nb, 'điều kiện best case', 'w220')}</td></tr>`).join('')}
-    <tr class="tot"><td class="l stick">Grand total</td><td class="l">${esc(T.brand)}</td><td>${milT(T.fcv)}</td><td>${milT(T.tgt)}</td><td>${T.ach === null ? '-' : pct1(T.ach)}</td><td>${grT(T.gLy)}</td><td>${grT(T.gLq)}</td><td>${milT(T.best)}</td><td>${T.achB === null ? '-' : pct1(T.achB)}</td><td>${grT(T.gB)}</td><td></td></tr></tbody></table></div>`;
+      <td>${inp(x.k, 'bcb', x.bbIn === null ? '' : x.bbIn, Math.round(x.box) ? nf0.format(Math.round(x.box)) : 'box', 'w80')}</td><td class="${x.bcIn !== null ? 'poab' : ''}" data-tip="${esc(x.px ? `${nf0.format(Math.round(x.bestBox || 0))} box × ${vnd(x.px)} VND/box = ${vnd(x.best)} VND` : 'Chưa có giá / box')}">${milT(x.best)}${st(x.star)}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${x.achB === null ? '-' : pct1(x.achB)}</td><td class="${x.bcIn !== null ? 'poab' : ''}">${grT(x.gB)}</td><td class="l">${inp(x.k, 'nb', x.nb, 'điều kiện best case', 'w220')}</td></tr>`).join('')}
+    <tr class="tot"><td class="l stick">Grand total</td><td class="l">${esc(T.brand)}</td><td>${milT(T.fcv)}</td><td>${milT(T.tgt)}</td><td>${T.ach === null ? '-' : pct1(T.ach)}</td><td>${grT(T.gLy)}</td><td>${grT(T.gLq)}</td><td>${nf0.format(Math.round(M.out.reduce((t, x) => t + num(x.bestBox), 0)))}</td><td>${milT(T.best)}</td><td>${T.achB === null ? '-' : pct1(T.achB)}</td><td>${grT(T.gB)}</td><td></td></tr></tbody></table></div>`;
   const accList = M.accs.map(a => `<label class="poa-acc ${M.full.has(a.mc) ? 'on' : ''}"><input type="checkbox" data-full="${esc(a.mc)}" ${M.full.has(a.mc) ? 'checked' : ''} ${dis}><span class="n">${esc(bvName(a.name))}</span>
       <span class="sub">${M.tot ? Math.round(a.w / M.tot * 100) : 0}% · Target ${milT(a.tgt)} · FC ${milT(a.fcv)}</span>${M.full.has(a.mc) ? `<input class="inp poa-al" data-al="${esc(a.mc)}" value="${esc(I.alias[a.mc] || '')}" placeholder="${esc(bvName(a.name))}" ${dis} aria-label="Tên trên slide">` : ''}</label>`).join('');
   V.innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">FC POA ${M.Qd}</h3>${ME.role === 'MR' ? '' : `<select id="poa-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
       <span class="grow"></span><span id="poa-sv" class="save-ind"></span>${isAdmin() ? '<button class="btn sm" id="poa-tpl" data-tip="Đổi file mẫu PowerPoint (chọn bài POA có 2 slide Forecast)">Mẫu PPT</button>' : ''}<button class="btn pri" id="poa-ppt">⬇ Tải PowerPoint</button></div>
-      <div class="sub" style="margin-top:4px">Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out, tồn kho, best case, note.${ed ? '' : ' Chỉ xem.'}</div></div>
+      <div class="sub" style="margin-top:4px">Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out, tồn kho, best case (box, theo ratio, app quy ra tiền), note.${ed ? '' : ' Chỉ xem.'}</div></div>
     <div class="card"><div class="bar" style="margin-bottom:6px"><h3 style="margin:0">Account phân tích full</h3><span class="grow"></span>${ed ? '<button class="btn sm" id="poa-def">Mặc định</button>' : ''}</div>
       <div class="sub" style="margin-bottom:6px">Bỏ chọn thì account gộp vào dòng Others.</div><div class="poa-accs">${accList || '<span class="sub">Chưa có account.</span>'}</div></div>
     <div class="card"><h3>Slide 1 · Forecast volume</h3><div class="poa-sub"><b>${esc(M.s1a)}</b> ${ed || norm(I.s1) ? `<input class="inp poa-g" data-g="s1" value="${esc(I.s1 || '')}" placeholder="nhờ … (lý do chính)" ${dis}>` : ''}</div>${t1}</div>
@@ -2546,7 +2553,7 @@ function viewPOA(){
   const redraw = () => { const ae = document.activeElement, key = ae && ae.dataset ? [ae.dataset.k, ae.dataset.f, ae.dataset.g, ae.dataset.al].join('|') : null; viewPOA();
     if (key) { const el = $$('#view input').find(x => [x.dataset.k, x.dataset.f, x.dataset.g, x.dataset.al].join('|') === key); if (el) el.focus(); } };
   V.oninput = e => { const t = e.target; if (!ed) return;
-    if (t.dataset.k){ const r = (I.rows[t.dataset.k] ||= {}); r[t.dataset.f] = t.value; poaSave(rep); }
+    if (t.dataset.k){ const r = (I.rows[t.dataset.k] ||= {}); r[t.dataset.f] = t.value; if (t.dataset.f === 'bcb') delete r.bc; poaSave(rep); }
     else if (t.dataset.g){ I[t.dataset.g] = t.value; poaSave(rep); }
     else if (t.dataset.al){ I.alias[t.dataset.al] = t.value; poaSave(rep); } };
   V.onchange = e => { const t = e.target; if (!ed) return;

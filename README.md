@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.23.3 (15/11/2026) — FC POA: best case nhập box
+- Thẻ FC POA, slide 2: MR nhập **best case bằng box** (theo ratio, ô gợi ý = FC box hiện tại); app quy ra mil VND = box × giá / box của dòng (giá TB của FC dòng đó, gồm giá kênh và giá trade; dòng chưa có FC lấy giá TB 4 quý, rồi bảng giá). Rà chuột vào ô mil VND thấy cách tính. File PowerPoint giữ nguyên mẫu (cột Best case mil VND). Không đổi database.
+
 ## Phiên bản 4.23.2 (15/11/2026) — MR × brand: brand nằm dưới tên MR
 - Bỏ cột Brand riêng: dòng MR (tổng) rồi ↳ từng brand ngay trong cột MR · Brand; MR 1 brand ghi tên brand nhỏ dưới tên MR. Điện thoại thấy thêm 1 cột số. Tổng team theo brand ghi "Team · <brand>". Không đổi database.
 
