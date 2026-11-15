@@ -2,6 +2,16 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Phiên bản 4.24 + Database bản 18 (15/11/2026) — Ước tính thưởng (PBR) + Roll-back
+- Thẻ **Thưởng** (cạnh FC POA): ước tính thưởng quý theo Incentive Plan của SFE. Kịch bản FC base · Best case (thẻ FC POA) · Tự chỉnh %Ach.
+  - Định lượng: hạn mức × tỷ trọng brand × hệ số theo mốc %Ach (mỗi 1% là 1 mốc, lấy phần nguyên của %Ach 1 số lẻ), có cổng tổng portfolio. Dòng "Lên mốc kế tiếp": cần thêm bao nhiêu VND / box, thưởng tăng bao nhiêu.
+  - Định tính: cổng MCCP & CLM mặc định đạt (MR tick nếu không đạt); Enterprise factor = %Ach FC của team (hàm `team_perf`, từ `fc_snap`), Self-pay (CVRM, theo chỉ tiêu admin nạp) / Active Clinic (WHC, MR nhập), điểm test theo quý.
+  - Thưởng 2 quý liên tiếp: tự xét theo target quý trước, MR sửa được.
+  - **Roll-back nửa năm** (đang ở Q2 / Q4): %Ach nửa năm theo brand (Act. quý trước + FC quý này), thưởng nửa năm 2 quý − thưởng 2 quý, chỉ khi tổng nửa năm ≥ 100%.
+  - RFFM / admin: chọn MR, bảng thưởng ước tính cả team.
+- Scheme (hạn mức, tỷ trọng, khung chi trả) lưu trong database (`incentive_cfg`, admin sửa ở nút Scheme), không nằm trong repo. Admin nạp **Chỉ tiêu Self-pay** (targets kỳ `<kỳ>-SP`) và **Target các quý** cho roll-back (dán từ Excel, targets kỳ `<YYYYQn>-RB`).
+- `migration_v18.sql`: `incentive_cfg`, `incentive_inputs`, `team_perf(team)`. `schema.sql` đã gộp. App thật đã chạy 15/11 (`v18_incentive`).
+
 ## Phiên bản 4.23.3 (15/11/2026) — FC POA: best case nhập box
 - Thẻ FC POA, slide 2: MR nhập **best case bằng box** (theo ratio, ô gợi ý = FC box hiện tại); app quy ra mil VND = box × giá / box của dòng (giá TB của FC dòng đó, gồm giá kênh và giá trade; dòng chưa có FC lấy giá TB 4 quý, rồi bảng giá). Rà chuột vào ô mil VND thấy cách tính. File PowerPoint giữ nguyên mẫu (cột Best case mil VND). Không đổi database.
 
