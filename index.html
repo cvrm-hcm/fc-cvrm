@@ -2763,8 +2763,8 @@ const incCfg = () => (D && D.inc_cfg && D.inc_cfg.teams) ? D.inc_cfg : null;
 // Scheme mẫu cho bản demo (số giả, không phải scheme thật)
 const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate: 0.85, bonus2Q: 0.1,
   curve: Array.from({length: 31}, (_, i) => [90 + i, 90 + i]), band: [[90, 50], [100, 100], [110, 150]], qualGate: {mccp: 90, clm: 90},
-  teams: {CVRM: {quant: {XARELTO: 0.45, ADALAT: 0.25}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic']},
-          WHC: {quant: {VISANNE: 0.3, MIRENA: 0.2, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
+  teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic']},
+          WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
   tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
 const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay / kênh tư nhân', ac: 'Active Clinic', test: 'Điểm test'};
 const INC_TEST = {pk: {label: 'Test kiến thức sản phẩm', lv: [['', '–'], ['1', '1 – Capable (90–<95%)'], ['2', '2 – Capable+ (95–<100%)'], ['3', '3 – Strong (100%)']]},
