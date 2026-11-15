@@ -1761,7 +1761,7 @@ function passwordDialog(force){
   });
 }
 function render(){
-  const s = D.settings; const tabs = [['fc', ME.role === 'MR' ? 'FC của tôi' : (ME.role === 'RFFM' ? 'Xem / duyệt FC' : 'FC Input')], ['dash', 'Dashboard']]; if (poaOn()) tabs.splice(1, 0, ['poa', 'FC POA']); if (incOn()) tabs.splice(poaOn() ? 2 : 1, 0, ['inc', 'Thưởng']); if (isAdmin()) tabs.push(['admin', 'Admin']);
+  const s = D.settings; const tabs = [['fc', ME.role === 'MR' ? 'FC của tôi' : (ME.role === 'RFFM' ? 'Xem / duyệt FC' : 'FC Input')], ['dash', 'Dashboard']]; if (poaOn()) tabs.push(['poa', 'FC POA']); if (incOn()) tabs.push(['inc', 'Thưởng']); if (isAdmin()) tabs.push(['admin', 'Admin']);   // 4.25.2: FC Input → Dashboard → FC POA → Thưởng → Admin
   if (!tabs.find(t => t[0] === VIEW.tab)) VIEW.tab = 'fc';
   const dl = wkOn() ? wkDlText() : s.deadline ? ` · deadline ${ddmm(s.deadline)}` : '';   // bản 4.20: header theo hạn nộp FC tuần
   const wkN = wkBadgeN(), tabLbl = (k, l) => k === 'dash' && wkN ? `${l}<span class="n" data-tip="CFO: MR trễ / chưa nộp FC tuần vừa rồi">${wkN}</span>` : l;

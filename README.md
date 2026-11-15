@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.25.2 — thứ tự thẻ
+- FC Input → Dashboard → FC POA → Thưởng → Admin.
+
 ## Bản 4.25.1 — Chỉ tiêu Self-pay theo MR × brand, tải file form SFE
 - Admin → Thưởng → **Chỉ tiêu Self-pay** → **Tải file Excel**: đọc form "CVRM Self-Pay Target Allocation" (sheet By Rep: REP Name · Group Product · Final Target <quý>), lấy MR có trong app, bỏ dòng Total / Vacant / MR vùng khác. Quý lưu theo cột Final Target. Sửa tay được trước khi Lưu.
 - %Ach Self-pay = FC kênh Self-pay / tổng chỉ tiêu Self-pay (Xarelto + Adalat); hiện kèm Act. QTD kênh Self-pay. Kênh lấy theo `spChannels` trong scheme (mặc định chỉ Self-pay, không gồm Clinic).
