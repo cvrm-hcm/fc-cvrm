@@ -297,6 +297,10 @@ input.box.trd.over{border-color:var(--critical);background:#fff5f5}
 .poa-accs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}.poa-acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
 .poa-acc.on{border-color:#9db7dc;background:#f4f8fd}.poa-acc .n{font-weight:600;flex:1;min-width:0}.poa-acc .sub{flex-basis:100%;font-size:12px}.poa-acc .poa-al{flex-basis:100%;height:28px}
 .incseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.incseg-b{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}.incseg-b+.incseg-b{border-left:1px solid var(--line)}.incseg-b.on{background:#1f3864;color:#fff;font-weight:600}.incseg-b:disabled{opacity:.45;cursor:default}
+.ok-t{color:var(--ok-ink)}.oncel{margin-top:8px;border-top:1px solid var(--line)}.once{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.once>div{flex:1;min-width:0}.once .sub{overflow-wrap:anywhere}
+details.poa-accd>summary{cursor:pointer;list-style-position:inside}
+.inctiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}.inctile{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff}.inctile.main{background:#f3f6fb;border-color:#d6e0ef}.inctile .l{font-size:12.5px;color:var(--ink2)}.inctile .v{font-size:22px;font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px}.inctile.main .v{font-size:28px}.inctile .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
+details.howto{margin-top:8px;font-size:12.5px;color:var(--ink2)}details.howto summary{cursor:pointer;color:#1f3864;font-weight:600}details.howto>div{margin-top:4px;line-height:1.5}
 .inctot{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end;margin-top:12px}.incbig{font-size:30px;font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.15}.incsplit{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink2)}.incsplit b{color:var(--ink,#1d2433)}
 .incnx{font-size:12px;color:#0b6b3a;white-space:nowrap}.inct td{white-space:nowrap}.inct .inp{height:28px;text-align:right}.inct .w70,.card .w70.inc-i{width:74px}.inct .w90{width:118px}.w120.inc-i{width:130px;text-align:right}
 .incg{display:inline-block;font-size:13px;padding:6px 10px;border-radius:8px;background:#eef0f3}.incg.ok{background:#e6f4ea;color:#0b6b3a}.incg.err{background:var(--bad-bg);color:var(--bad-ink)}
@@ -2008,8 +2012,8 @@ function viewFC(){
       ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất<span class="dt"> account/SKU</span></button>' : ''}${!team && addedOn() ? '<button class="btn" id="added" data-tip="Xem lại account đã add new / đề xuất, gỡ dòng điền nhầm">📋<span class="dt"> Đã add</span></button>' : ''}
       ${mob ? '' : histBtn}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
     <div id="fc-body"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
-    <div class="sub" style="margin-top:8px">${team ? `Cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}${shared ? '' : 'Bấm tên MR để mở FC của MR đó.'}`
-      : `Ô tháng nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div>`;
+    <details class="howto"><summary>Cách nhập</summary><div>${team ? `Cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}${shared ? '' : 'Bấm tên MR để mở FC của MR đó.'}`
+      : `Ô tháng nhập theo box. ${MST.includes('closed') ? 'Tháng đã chốt: FC khoá = Act. ' : ''}${MST.includes('current') ? `Tháng đang chạy: chỉ nhập FC từ ${NEXT_DM}, số nhỏ bên trái ô là đơn đã lên đến ${ASOF_DM} (đã cộng sẵn). ` : ''}Tháng tới: FC cả tháng. Dòng có FC lệch quá ${pct(RULE.pct)} so với TB 2Q (và từ ${big(RULE.min)}/quý) cần chọn lý do.`}</div></details>`;
   const body = $('#fc-body');
   const LOCK = '<svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
   /* Tháng có chương trình trade (bản 4.22.3): ô trên = box KHÔNG trong chương trình (giá thường), ô dưới = box trade; FC tháng = cộng 2 ô.
@@ -2560,10 +2564,10 @@ function viewPOA(){
   const accList = M.accs.map(a => `<label class="poa-acc ${M.full.has(a.mc) ? 'on' : ''}"><input type="checkbox" data-full="${esc(a.mc)}" ${M.full.has(a.mc) ? 'checked' : ''} ${dis}><span class="n">${esc(bvName(a.name))}</span>
       <span class="sub">${M.tot ? Math.round(a.w / M.tot * 100) : 0}% · Target ${milT(a.tgt)} · FC ${milT(a.fcv)}</span>${M.full.has(a.mc) ? `<input class="inp poa-al" data-al="${esc(a.mc)}" value="${esc(I.alias[a.mc] || '')}" placeholder="${esc(bvName(a.name))}" ${dis} aria-label="Tên trên slide">` : ''}</label>`).join('');
   V.innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">FC POA ${M.Qd}</h3>${ME.role === 'MR' ? '' : `<select id="poa-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
-      <span class="grow"></span><span id="poa-sv" class="save-ind"></span>${isAdmin() ? '<button class="btn sm" id="poa-tpl" data-tip="Đổi file mẫu PowerPoint (chọn bài POA có 2 slide Forecast)">Mẫu PPT</button>' : ''}<button class="btn pri" id="poa-ppt">⬇ Tải PowerPoint</button></div>
-      <div class="sub" style="margin-top:4px">Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out, tồn kho, best case (box, theo ratio, app quy ra tiền), note.${ed ? '' : ' Chỉ xem.'}</div></div>
-    <div class="card"><div class="bar" style="margin-bottom:6px"><h3 style="margin:0">Account phân tích full</h3><span class="grow"></span>${ed ? '<button class="btn sm" id="poa-def">Mặc định</button>' : ''}</div>
-      <div class="sub" style="margin-bottom:6px">Bỏ chọn thì account gộp vào dòng Others.</div><div class="poa-accs">${accList || '<span class="sub">Chưa có account.</span>'}</div></div>
+      <span class="grow"></span><span id="poa-sv" class="save-ind"></span><button class="btn pri" id="poa-ppt">⬇ Tải PowerPoint</button></div>
+      <details class="howto"><summary>Cách dùng${ed ? '' : ' · chỉ xem'}</summary><div>Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out, tồn kho, best case (box, theo ratio, app quy ra tiền), note. Số tự lưu.</div></details></div>
+    <details class="card poa-accd" id="poa-accd" ${VIEW.poaAccOpen ? 'open' : ''}><summary><b>Account phân tích full</b> <span class="sub">· ${M.full.size} account${M.accs.length > M.full.size ? ` · ${M.accs.length - M.full.size} account gộp Others` : ''} · bấm để đổi</span></summary>
+      <div class="bar" style="margin:8px 0 6px"><span class="sub">Bỏ chọn thì account gộp vào dòng Others. Đổi tên ngắn hiện trên slide ở ô dưới tên.</span><span class="grow"></span>${ed ? '<button class="btn sm" id="poa-def">Mặc định</button>' : ''}</div><div class="poa-accs">${accList || '<span class="sub">Chưa có account.</span>'}</div></details>
     <div class="card"><h3>Slide 1 · Forecast volume</h3><div class="poa-sub"><b>${esc(M.s1a)}</b> ${ed || norm(I.s1) ? `<input class="inp poa-g" data-g="s1" value="${esc(I.s1 || '')}" placeholder="nhờ … (lý do chính)" ${dis}>` : ''}</div>${t1}</div>
     <div class="card"><h3>Slide 2 · Forecast value + best case</h3><div class="poa-sub"><b>${esc(M.s2a)}</b> ${ed || norm(I.s2) ? `<input class="inp poa-g" data-g="s2" value="${esc(I.s2 || '')}" placeholder="thêm ý (không bắt buộc)" ${dis}>` : ''}</div>${t2}
       <div class="bar" style="margin-top:8px;gap:8px"><label class="sub" for="poa-fy">Target FY ${M.Y} (mil VND)</label><input id="poa-fy" class="inp poa-g w90" data-g="tgtFY" value="${esc(I.tgtFY ?? '')}" placeholder="điền" ${dis}>
@@ -2573,6 +2577,7 @@ function viewPOA(){
   $('#poa-ppt').onclick = e => poaDownload(rep, e.currentTarget);
   $('#poa-tpl') && ($('#poa-tpl').onclick = () => poaTplDialog());
   $('#poa-def') && ($('#poa-def').onclick = () => { delete I.full; poaSave(rep); viewPOA(); });
+  $('#poa-accd') && $('#poa-accd').addEventListener('toggle', e => { VIEW.poaAccOpen = e.target.open; });
   const redraw = () => { const ae = document.activeElement, key = ae && ae.dataset ? [ae.dataset.k, ae.dataset.f, ae.dataset.g, ae.dataset.al].join('|') : null; viewPOA();
     if (key) { const el = $$('#view input').find(x => [x.dataset.k, x.dataset.f, x.dataset.g, x.dataset.al].join('|') === key); if (el) el.focus(); } };
   V.oninput = e => { const t = e.target; if (!ed) return;
@@ -2749,6 +2754,26 @@ async function poaTplFromFile(f, save){
   if (save){ await STORE.savePoaTemplate(bufToB64(buf)); toast(`Đã lưu file mẫu POA (${nf0.format(Math.round(buf.byteLength / 1024))} KB)`); }
   return buf;
 }
+// 4.25.3: các dữ liệu nhập 1 lần / quý / năm gom về Admin → Kỳ & nạp dữ liệu; lưu xong vẽ lại đúng thẻ đang mở
+const afterOnceSave = () => VIEW.tab === 'admin' ? viewAdmin() : VIEW.tab === 'inc' ? viewINC() : VIEW.tab === 'dash' ? viewDashTeam() : render();
+function onceCardHtml(){
+  const Y = +D.settings.year, PKc = pkey(Y, +D.settings.quarter), qs = [...new Set((D.qTgt || []).map(t => t.period.replace(/-RB$/, '')))].sort();
+  const sfe = qs.filter(k => (D.qTgt || []).some(t => t.period === k + '-RB' && /#ACT$/.test(t.sku))), auto = qs.filter(k => !sfe.includes(k));
+  const ql = k => qDot(+k.slice(0, 4), +k.slice(5)), spN = new Set((D.spTgt || []).map(x => x.rep_name)).size, fyN = (D.tgtFY || []).length;
+  const row = (id, name, st, ok, when) => `<div class="once"><div><b>${name}</b><div class="sub">${when} · <span class="${ok ? 'ok-t' : 'warn'}">${st}</span></div></div><button class="btn sm" id="${id}">${ok ? 'Cập nhật' : 'Nhập'}</button></div>`;
+  return `<div class="card"><h3>Dữ liệu nhập 1 lần</h3><div class="sub">Nhập khi có file mới; các thẻ khác tự dùng, không cần nhập lại.</div>
+    <div class="oncel">
+    ${row('once-fy', `Target FY${Y} theo brand`, fyN ? `${fyN} brand` : 'chưa có', !!fyN, 'Mỗi năm')}
+    ${incOn() ? row('once-cfg', 'Scheme thưởng', incCfg() ? esc(incCfg().name || 'đã có') : 'chưa có', !!incCfg(), 'Khi SFE đổi scheme') : ''}
+    ${incOn() ? row('once-rb', 'Target & Actual SFE các quý', sfe.length ? `SFE ${sfe.map(ql).join(', ')}${auto.length ? ` · app tự lưu ${auto.map(ql).join(', ')}` : ''}` : auto.length ? `app tự lưu ${auto.map(ql).join(', ')}` : 'chưa có', !!sfe.length, 'Mỗi quý, dán bảng Power BI') : ''}
+    ${incOn() ? row('once-sp', `Chỉ tiêu Self-pay ${ql(PKc)}`, spN ? `${spN} MR` : 'chưa có', !!spN, 'Mỗi quý, form Self-Pay Target Allocation') : ''}
+    ${poaOn() ? row('once-tpl', 'Mẫu PowerPoint FC POA', '<span id="once-tpl-st">…</span>', true, 'Khi đổi template POA') : ''}
+    </div></div>`;
+}
+function onceCardBind(){
+  $('#once-fy') && ($('#once-fy').onclick = fyEdit); $('#once-cfg') && ($('#once-cfg').onclick = incCfgDialog); $('#once-rb') && ($('#once-rb').onclick = rbTgtDialog); $('#once-sp') && ($('#once-sp').onclick = incSpDialog); $('#once-tpl') && ($('#once-tpl').onclick = () => poaTplDialog());
+  const st = $('#once-tpl-st'); if (st) STORE.poaTemplate().then(x => { st.textContent = x ? 'đã có' : 'chưa có'; st.parentElement.className = x ? 'ok-t' : 'warn'; }, () => { st.textContent = '?'; });
+}
 async function poaTplDialog(){
   const has = !!(await STORE.poaTemplate().catch(() => null));
   if (!await confirmBox(`${has ? 'Đã có file mẫu PowerPoint POA.' : 'Chưa có file mẫu PowerPoint POA.'}<br><span class="sub">Chọn bài POA (.pptx) có 2 slide Forecast: app chỉ giữ 2 slide này (bỏ số cũ trong bảng) và lưu làm mẫu cho cả team.</span>`)) return;
@@ -2771,7 +2796,7 @@ const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate
   teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay']},
           WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
   tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
-const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay / kênh tư nhân', ac: 'Active Clinic', test: 'Điểm test'};
+const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay (kênh Self-pay)', ac: 'Active Clinic', test: 'Điểm test'};
 const INC_TEST = {pk: {label: 'Test kiến thức sản phẩm', lv: [['', '–'], ['1', '1 – Capable (90–<95%)'], ['2', '2 – Capable+ (95–<100%)'], ['3', '3 – Strong (100%)']]},
   poa: {label: 'Điểm POA', lv: [['', '–'], ['1', '1 – Developing'], ['2', '2 – Capable'], ['3', '3 – Strong']]},
   pres: {label: 'Kỹ năng thuyết trình', lv: [['', '–'], ['1', '1 – Developing'], ['2', '2 – Capable'], ['3', '3 – Strong']]}};
@@ -2859,31 +2884,37 @@ function incRB(rep, M, I){
     return {b, w: num((M.wEff || TC.quant)[b] || 0), tP, aP, achP: tP ? aP / tP : null, tC: c.tgt, fC: c.fc, tgtSrc: tIn !== null ? 'tay' : tP !== null ? 'admin' : '', actSrc: achIn !== null && tP ? 'tay' : (D.qTgt || []).some(t => t.period === pkP + '-RB' && /#ACT$/.test(t.sku)) ? 'sfe' : sfeHas(pkP) ? 'auto' : 'raw'}; });
   const haveT = B.some(x => x.tP), sum = f => B.reduce((t, x) => t + num(f(x)), 0);
   const tPall = sum(x => x.tP), aPall = sum(x => x.aP), achPtot = tPall ? aPall / tPall : null;
-  const tH = tPall + sum(x => x.tC), sH = aPall + sum(x => x.fC), achH = tH ? sH / tH : null, gateH = achH !== null && achH >= num(C.gate) - 1e-9, elig = achH !== null && achH >= 1 - 1e-9;
+  const tH = tPall + sum(x => x.tC), sH = aPall + sum(x => x.fC), achH = haveT && tH ? sH / tH : null,   // 4.25.3: chưa có target quý trước (MR mới) → không tính roll-back
+ gateH = achH !== null && achH >= num(C.gate) - 1e-9, elig = achH !== null && achH >= 1 - 1e-9;
   const gateP = achPtot !== null && achPtot >= num(C.gate) - 1e-9;
   const K = B.filter(x => x.w).map(x => { const T = num(x.tP) + x.tC, S = x.aP + x.fC, a = T ? S / T : null, payP = incCurve(C, x.achP), payH = incCurve(C, a), c = cur.get(x.b);
     return {...x, achHb: a, payP, payH, amtP: gateP && x.tP ? pool * x.w * payP / 100 : 0, amtC: c ? c.amt : 0, amtH: gateH ? 2 * pool * x.w * payH / 100 : 0}; });
   const paidIn = pnum(rb.paid), paidP = paidIn !== null ? paidIn : K.reduce((t, x) => t + x.amtP, 0), paidC = K.reduce((t, x) => t + x.amtC, 0), totH = K.reduce((t, x) => t + x.amtH, 0);
-  const amt = elig ? Math.max(0, totH - paidP - paidC) : 0, need = tH && !elig ? tH - sH + 1 : 0;
+  const amt = elig ? Math.max(0, totH - paidP - paidC) : 0, need = haveT && tH && !elig ? tH - sH + 1 : 0;
   return {Q, Qp, pkP, haveT, B, K, achPtot, achH, tH, sH, gateH, elig, paidP, paidIn, paidC, totH, amt, need, hLbl: Q <= 2 ? 'H1' : 'H2', payMonth: Q <= 2 ? 'tháng 11' : 'tháng 5 năm sau', nextQ: Q <= 2 ? `Q3'${String(Y).slice(-2)}` : `Q1'${String(Y + 1).slice(-2)}`};
 }
 function rbHtml(R, M, ed){
   const mm = v => vnd(Math.round(v)), dis = ed ? '' : 'disabled', I = INC_I || {}, rb = I.rb || {};
   if (R.na) return `<div class="card"><h3>Roll-back nửa năm</h3><div class="sub">Tính ở quý ${R.Q + 1} (quý 2 của nửa năm), khi quý ${R.Q} đã chốt.</div></div>`;
-  const inp = (f, v, ph, w = 'w90') => `<input class="inp inc-i ${w}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(ph)}" inputmode="decimal" ${dis}>`;
-  const Ql = `Q${R.Qp}`, Qc = `Q${R.Q}`;
-  return `<div class="card"><h3>Roll-back ${R.hLbl} (${Ql} + ${Qc})</h3>
-    <div class="incg ${R.elig ? 'ok' : 'err'}" style="margin-bottom:8px">Tổng portfolio ${R.hLbl} ${R.achH === null ? '–' : pct1(R.achH)}${R.haveT ? '' : ` (chưa có target ${Ql})`}. ${R.elig ? `Đủ điều kiện ≥ 100%: roll-back ước tính <b>${mm(R.amt)} VND</b>, trả ${R.payMonth} nếu ${R.nextQ} đạt ≥ 90%.` : `Cần tổng ${R.hLbl} ≥ 100%: thêm ${mm(R.need)} VND.`}</div>
-    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th><th>%Ach ${R.hLbl}</th><th>Hệ số ${R.hLbl}</th><th>Định lượng ${R.hLbl} tính lại (2 quý)</th><th>Đã trả ${Ql}</th><th>${Qc} (ước)</th></tr></thead><tbody>
+  const man = [rb.paid, ...Object.values(rb.tgt || {}), ...Object.values(rb.ach || {})].some(v => v !== undefined && String(v).trim() !== ''), editOn = ed && (VIEW.rbEdit || man);   // 4.25.3: số quý trước đã có từ SFE → chỉ hiện ô nhập khi bấm Sửa tay
+  const inp0 = (f, v, ph, w = 'w90') => `<input class="inp inc-i ${w}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(ph)}" inputmode="decimal" ${dis}>`;
+  const inp = (f, v, ph, w, shown) => editOn ? inp0(f, v, ph, w) : shown;
+  const Ql = `Q${R.Qp}`, Qc = `Q${R.Q}`, qw = Math.round(num(M.C.quantW) * 100), cmax = Math.max(...(M.C.curve || [[0, 150]]).map(c => num(c[1])));
+  // 4.25.3: cột kết quả trước (điện thoại thấy ngay), số đầu vào của 2 quý phía sau
+  return `<div class="card" id="inc-rb-card"><h3>Roll-back ${R.hLbl} (${Ql} + ${Qc})</h3>
+    <div class="incg ${R.elig ? 'ok' : 'err'}" style="margin-bottom:8px">${!R.haveT ? `Chưa có target ${Ql} nên chưa tính roll-back. MR vào sau ngày 17 tháng đầu của nửa năm thì không đủ điều kiện; có số ${Ql} thì admin nạp ở Target &amp; Actual các quý hoặc nhập tay bên dưới.` : `Tổng portfolio ${R.hLbl} ${R.achH === null ? '–' : pct1(R.achH)}. ${R.elig ? `Đủ điều kiện ≥ 100%: roll-back ước tính <b>${mm(R.amt)} VND</b>, trả ${R.payMonth} nếu ${R.nextQ} đạt ≥ 90%.` : `Cần tổng ${R.hLbl} ≥ 100%: thêm ${mm(R.need)} VND.`}`}</div>
+    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>%Ach ${R.hLbl}</th><th>Hệ số ${R.hLbl}</th><th>Định lượng ${R.hLbl} tính lại (2 quý)</th><th>Đã trả ${Ql}</th><th>${Qc} (ước)</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th></tr></thead><tbody>
       ${R.B.map(x => { const k = R.K.find(y => y.b === x.b);
-        return `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${x.w ? '' : '<div class="sub">không tính thưởng</div>'}</td><td>${inp('rbt:' + x.b, (rb.tgt || {})[x.b], x.tP !== null && x.tgtSrc === 'admin' ? nf0.format(Math.round(x.tP)) : 'nhập')}</td><td>${mm(x.aP)}${x.actSrc === 'sfe' ? '<div class="sub">SFE</div>' : x.actSrc === 'auto' ? '<div class="sub">app lưu</div>' : ''}</td>
-          <td>${inp('rba:' + x.b, (rb.ach || {})[x.b], x.achP === null ? '%' : (Math.round(x.achP * 1000) / 10).toString(), 'w70')}</td><td>${mm(x.tC)}</td><td>${mm(x.fC)}</td>
-          <td>${k && k.achHb !== null ? achHtml(k.achHb) : '–'}</td><td>${k ? `<b>${k.payH}%</b>` : '–'}</td><td>${k ? mm(k.amtH) : '–'}</td><td>${k ? mm(k.amtP) : '–'}</td><td>${k ? mm(k.amtC) : '–'}</td></tr>`; }).join('')}
-      <tr class="tot"><td class="l stick">Tổng</td><td>${mm(R.B.reduce((t, x) => t + num(x.tP), 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.aP, 0))}</td><td>${R.achPtot === null ? '–' : pct1(R.achPtot)}</td><td>${mm(R.B.reduce((t, x) => t + x.tC, 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.fC, 0))}</td><td>${R.achH === null ? '–' : pct1(R.achH)}</td><td></td><td>${mm(R.totH)}</td><td>${mm(R.paidP)}</td><td>${mm(R.paidC)}</td></tr></tbody></table></div>
-    <div class="bar" style="gap:8px;margin-top:8px"><label class="sub">Thưởng định lượng ${Ql} đã nhận (VND)</label>${inp('rbpaid', rb.paid, mm(R.K.reduce((t, x) => t + x.amtP, 0)), 'w120')}
-      <span class="sub">Roll-back = định lượng ${R.hLbl} tính lại ${mm(R.totH)} − đã trả ${Ql} ${mm(R.paidP)} − ${Qc} ${mm(R.paidC)}${R.elig ? ` = <b>${mm(R.amt)}</b>` : ''}.</span></div>
-    <div class="sub" style="margin-top:4px">Chỉ tính phần định lượng (${Math.round(num(M.C.quantW) * 100)}% hạn mức); định tính trả theo từng quý, không hồi tố. Cột "tính lại" là tổng 2 quý: tối đa 2 × ${mm(M.pool)} × ${Math.round(num(M.C.quantW) * 100)}% × ${Math.max(...(M.C.curve || [[0, 150]]).map(c => num(c[1])))}% = ${mm(2 * M.pool * num(M.C.quantW) * Math.max(...(M.C.curve || [[0, 150]]).map(c => num(c[1]))) / 100)}, không phải 1 quý.</div>
-    <div class="sub" style="margin-top:4px">Target và Act. ${Ql} theo số SFE admin nạp (địa bàn đã phân công ở ${Ql}, không theo địa bàn hiện tại); quý chưa nạp SFE thì Act. tạm lấy raw sales × ratio hiện tại. Ô trống thì nhập tay.</div></div>`;
+        return `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${x.w ? '' : '<div class="sub">không tính thưởng</div>'}</td>
+          <td>${k && k.achHb !== null ? achHtml(k.achHb) : '–'}</td><td>${k ? `<b>${k.payH}%</b>` : '–'}</td><td><b>${k ? mm(k.amtH) : '–'}</b></td><td>${k ? mm(k.amtP) : '–'}</td><td>${k ? mm(k.amtC) : '–'}</td>
+          <td>${inp('rbt:' + x.b, (rb.tgt || {})[x.b], x.tP !== null && x.tgtSrc === 'admin' ? nf0.format(Math.round(x.tP)) : 'nhập', 'w90', x.tP === null ? '–' : mm(x.tP))}</td><td>${mm(x.aP)}${x.actSrc === 'sfe' ? '<div class="sub">SFE</div>' : x.actSrc === 'auto' ? '<div class="sub">app lưu</div>' : ''}</td>
+          <td>${inp('rba:' + x.b, (rb.ach || {})[x.b], x.achP === null ? '%' : (Math.round(x.achP * 1000) / 10).toString(), 'w70', x.achP === null ? '–' : achHtml(x.achP))}</td><td>${mm(x.tC)}</td><td>${mm(x.fC)}</td></tr>`; }).join('')}
+      <tr class="tot"><td class="l stick">Tổng</td><td>${R.achH === null ? '–' : pct1(R.achH)}</td><td></td><td>${mm(R.totH)}</td><td>${mm(R.paidP)}</td><td>${mm(R.paidC)}</td><td>${mm(R.B.reduce((t, x) => t + num(x.tP), 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.aP, 0))}</td><td>${R.achPtot === null ? '–' : pct1(R.achPtot)}</td><td>${mm(R.B.reduce((t, x) => t + x.tC, 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.fC, 0))}</td></tr></tbody></table></div>
+    <div class="bar" style="gap:8px;margin-top:8px">${editOn ? `<label class="sub">Thưởng định lượng ${Ql} đã nhận (VND)</label>${inp0('rbpaid', rb.paid, mm(R.K.reduce((t, x) => t + x.amtP, 0)), 'w120')}` : ''}
+      <span class="sub">Roll-back = ${mm(R.totH)} − ${mm(R.paidP)} − ${mm(R.paidC)}${R.elig ? ` = <b>${mm(R.amt)}</b>` : ''}</span><span class="grow"></span>${ed && !man ? `<button class="btn sm ghost2" id="rb-edit">${editOn ? 'Xong' : `✎ Sửa tay số ${Ql}`}</button>` : ''}</div>
+    <details class="howto"><summary>Cách tính</summary><div>Roll-back = định lượng ${R.hLbl} tính lại − định lượng đã trả ${Ql} − ${Qc}, chỉ khi tổng ${R.hLbl} ≥ 100%. Chỉ tính phần định lượng (${qw}% hạn mức); định tính trả theo từng quý, không hồi tố.<br>
+      Cột "tính lại" là tổng 2 quý: tối đa 2 × ${mm(M.pool)} × ${qw}% × ${cmax}% = ${mm(2 * M.pool * num(M.C.quantW) * cmax / 100)}, không phải 1 quý.<br>
+      Target và Act. ${Ql} theo số SFE admin nạp (địa bàn đã phân công ở ${Ql}, không theo địa bàn hiện tại); quý chưa nạp SFE thì Act. tạm lấy raw sales × ratio hiện tại. Ô trống thì nhập tay.</div></details></div>`;
 }
 // Admin: nạp target các quý theo MR × brand (dán từ Excel: MR · Quý · Brand · Target, hoặc MR · Quý · cột từng brand)
 const parseQ = s => { const t = String(s || '').toUpperCase().replace(/\s+/g, ''); let m = t.match(/^(\d{4})[-._]?Q([1-4])$/) || t.match(/^Q([1-4])[^\d]?(\d{2,4})$/);
@@ -2932,7 +2963,7 @@ function rbTgtDialog(){
     m.innerHTML = `${P.hasAct ? '' : 'Không thấy cột Actual: chỉ nạp target. '}${P.bad.length ? `<div style="color:var(--bad-ink)">Bỏ qua tên không có trong app: ${esc(P.bad.join(', '))}</div>` : ''}${P.badB.length ? `<div style="color:var(--bad-ink)">Không nhận ra brand: ${esc(P.badB.slice(0, 8).join(' · '))}${P.badB.length > 8 ? '…' : ''}</div>` : ''}${tbl}`;
     if (a !== 's' || !P.rows.length) return;
     try { await STORE.saveQTgt(P.rows.map(x => ({...x, team: incTeamOf(x.rep_name)}))); const ps = new Set(P.rows.map(x => x.period)); D.qTgt = (D.qTgt || []).filter(t => !ps.has(t.period.replace(/-RB$/, ''))).concat(P.rows.map(x => ({...x, period: x.period + '-RB'})));
-      toast(`Đã lưu target${P.hasAct ? ' + actual' : ''} ${[...ps].map(k => qDot(+k.slice(0, 4), +k.slice(5))).join(', ')}`); bg.remove(); viewINC(); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
+      toast(`Đã lưu target${P.hasAct ? ' + actual' : ''} ${[...ps].map(k => qDot(+k.slice(0, 4), +k.slice(5))).join(', ')}`); bg.remove(); afterOnceSave(); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
 }
 // 4.25: tự lưu target quý hiện tại theo MR × brand (đúng phân công lúc đó) → quý sau Roll-back / 2 quý liên tiếp / FY dùng lại, không phải nạp lại.
 // Chỉ admin ghi; quý đã nạp số SFE (có Actual) thì giữ số SFE, không ghi đè.
@@ -2971,7 +3002,8 @@ function viewINC(){
   if (!incOn()){ V.innerHTML = '<div class="card"><h3>Ước tính thưởng</h3><div class="sub">Database cần bản 18: admin chạy migration_v18.sql.</div></div>'; return; }
   if (!C){ V.innerHTML = `<div class="card"><h3>Ước tính thưởng</h3><div class="sub">Admin chưa nhập scheme thưởng.</div>${isAdmin() ? '<button class="btn" id="inc-cfg" style="margin-top:8px">Nhập scheme</button>' : ''}</div>`; $('#inc-cfg') && ($('#inc-cfg').onclick = incCfgDialog); return; }
   const reps = poaReps(); if (!reps.length){ V.innerHTML = '<div class="card"><div class="sub">Chưa có MR nào có số FC.</div></div>'; return; }
-  const rep = ME.role === 'MR' ? ME.rep_name : (reps.includes(VIEW.incRep) ? VIEW.incRep : reps[0]); VIEW.incRep = rep;
+  const isMRn = r => (D.members.find(m => m.rep_name === r) || {}).role === 'MR';   // 4.25.3: reviewer mở thẻ → MR đầu tiên, không phải admin
+  const rep = ME.role === 'MR' ? ME.rep_name : (reps.includes(VIEW.incRep) ? VIEW.incRep : reps.includes(ME.rep_name) ? ME.rep_name : (reps.find(isMRn) || reps[0])); VIEW.incRep = rep;
   const team = incTeamOf(rep), I = incLoad(rep), ed = canPoa(rep), dis = ed ? '' : 'disabled', scen = ['base', 'best', 'cust'].includes(VIEW.incScen) ? VIEW.incScen : 'base';
   const tpC = INC_TP[team], tp = tpC ? tpC.d : null; if (!tpC || Date.now() - tpC.t > 120e3) incTeamPerf(team).then(() => { if (VIEW.tab === 'inc') viewINC(); });
   const M = incModel(rep, scen, I, tp); if (!M || M.err){ V.innerHTML = `<div class="card"><div class="msg err">${esc((M && M.err) || 'Lỗi scheme')}</div></div>`; return; }
@@ -2979,37 +3011,39 @@ function viewINC(){
   const inp = (f, v, ph, cls = 'w70') => `<input class="inp inc-i ${cls}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(ph)}" inputmode="decimal" ${dis} aria-label="${esc(f)}">`;
   const scBtn = (k, l, off) => `<button class="incseg-b ${scen === k ? 'on' : ''}" data-sc="${k}" ${off ? 'disabled data-tip="Chưa điền best case ở thẻ FC POA"' : ''}>${l}</button>`;
   const nxT = x => !x.nx ? '' : !M.gateOk ? '' : `<span class="incnx">+${mm(x.nx.need)} VND${x.nx.box ? ` (~${nf0.format(x.nx.box)} box)` : ''} → mốc ${x.nx.p}% · thưởng +${mm(x.nx.gain)}</span>`;
-  const qRows = M.quant.map(x => `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${!x.tgt ? '<div class="sub">không phụ trách</div>' : ''}</td><td>${Math.round(x.w * 100)}%${x.w !== num(C.teams[M.team].quant[x.b]) ? ` <span class="sub">(gốc ${Math.round(num(C.teams[M.team].quant[x.b]) * 100)}%)</span>` : ''}</td><td>${mm(x.tgt)}</td>
-      <td>${scen === 'cust' ? inp('cust:' + x.b, (I.cust || {})[x.b], x.ach === null ? '' : (Math.round(x.ach * 1000) / 10).toString(), 'w70') + '<span class="sub">%</span>' : mm(x.fc)}</td><td>${x.ach === null ? '–' : achHtml(x.ach)}</td><td>${x.ach === null ? '–' : pctInt(x.ach) + '%'}</td><td><b>${x.pay}%</b></td><td><b>${mm(x.amt)}</b></td><td class="l">${nxT(x)}</td></tr>`).join('');
+  const qRows = M.quant.map(x => `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${!x.tgt ? '<div class="sub">không phụ trách</div>' : ''}</td><td>${x.ach === null ? '–' : achHtml(x.ach)}</td><td><b>${x.pay}%</b>${x.ach === null ? '' : `<div class="sub">mốc ${pctInt(x.ach)}%</div>`}</td><td><b>${mm(x.amt)}</b></td>
+      <td>${mm(x.tgt)}</td><td>${scen === 'cust' ? inp('cust:' + x.b, (I.cust || {})[x.b], x.ach === null ? '' : (Math.round(x.ach * 1000) / 10).toString(), 'w70') + '<span class="sub">%</span>' : mm(x.fc)}</td><td>${Math.round(x.w * 100)}%${x.w !== num(C.teams[M.team].quant[x.b]) ? ` <span class="sub">(gốc ${Math.round(num(C.teams[M.team].quant[x.b]) * 100)}%)</span>` : ''}</td><td class="l">${nxT(x)}</td></tr>`).join('');
   const gateNeed = M.tT ? Math.max(0, M.tT * M.gate - M.tF) : 0;
   const qlRow = q => { const lab = q.k === 'test' ? `${INC_QL.test}: ${INC_TEST[M.tk].label}` : INC_QL[q.k];
     const cell = q.k === 'test' ? `<select class="inp inc-i" data-f="t_${M.tk}" ${dis}>${INC_TEST[M.tk].lv.map(([v, l]) => `<option value="${v}" ${String(q.lvl || '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
       : `${q.ach === null ? '<span class="muted">–</span>' : achHtml(q.ach)} ${inp(q.k === 'ef' ? 'efo' : q.k === 'sp' ? 'spo' : 'ac', I[q.k === 'ef' ? 'efo' : q.k === 'sp' ? 'spo' : 'ac'], q.k === 'ac' ? '% đạt' : 'sửa %', 'w70')}`;
-    return `<tr data-lbl="${esc(lab)}"><td class="l stick">${esc(lab)}${q.src && q.k !== 'test' ? `<div class="sub">${esc(q.src)}</div>` : ''}</td><td>${Math.round(q.w * 100)}%</td><td class="l">${cell}</td><td><b>${q.pay}%</b></td><td><b>${mm(q.amt)}</b></td></tr>`; };
-  const pct0 = v => M.pool ? Math.round(v / M.pool * 100) + '%' : '';
-  V.innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">Ước tính thưởng ${Qd}</h3>${ME.role === 'MR' ? '' : `<select id="inc-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
-      <span class="grow"></span><span id="inc-sv" class="save-ind"></span>${isAdmin() ? '<button class="btn sm" id="inc-rb">Target &amp; Actual các quý</button><button class="btn sm" id="inc-sp">Chỉ tiêu Self-pay</button><button class="btn sm" id="inc-cfg">Scheme</button>' : ''}</div>
+    return `<tr data-lbl="${esc(lab)}"><td class="l stick">${esc(lab)}${q.src && q.k !== 'test' ? `<div class="sub">${esc(q.src)}</div>` : ''}</td><td class="l">${cell}</td><td><b>${q.pay}%</b></td><td><b>${mm(q.amt)}</b></td><td>${Math.round(q.w * 100)}%</td></tr>`; };
+  const pct0 = v => M.pool ? Math.round(v / M.pool * 100) + '%' : '', RB = incRB(rep, M, I);
+  V.innerHTML = `<div class="card" id="inc-detail"><div class="bar"><h3 style="margin:0">Ước tính thưởng ${Qd}</h3>${ME.role === 'MR' ? '' : `<select id="inc-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
+      <span class="grow"></span><span id="inc-sv" class="save-ind"></span></div>
       <div class="sub" style="margin-top:4px">Ước tính theo ${esc(C.name || 'scheme')}, team ${esc(team)}. Số chính thức theo SFE.</div>
       <div class="incseg" style="margin-top:10px">${scBtn('base', 'FC base')}${scBtn('best', 'Best case', !incBest(rep))}${scBtn('cust', 'Tự chỉnh %Ach')}</div>
-      <div class="inctot"><div><div class="sub">Tổng thưởng ước tính</div><div class="incbig">${mm(M.total)} <span class="sub">VND</span></div><div class="sub">${pct0(M.total)} hạn mức ${mm(M.pool)}</div></div>
-        <div class="incsplit"><span>Định lượng <b>${mm(M.qa)}</b></span><span>Định tính <b>${mm(M.ql)}</b></span>${M.bonus ? `<span>Thưởng 2 quý liên tiếp <b>${mm(M.bonus)}</b></span>` : ''}</div></div></div>
+      <div class="inctiles"><div class="inctile main"><div class="l">Thưởng ${Qd} ước tính</div><div class="v">${mm(M.total)} <span class="sub">VND</span></div><div class="d">${pct0(M.total)} hạn mức ${mm(M.pool)} · định lượng ${mm(M.qa)} · định tính ${mm(M.ql)}${M.bonus ? ` · 2 quý liên tiếp ${mm(M.bonus)}` : ''}</div></div>
+        ${RB.na ? '' : `<div class="inctile"><div class="l">Roll-back ${RB.hLbl} ước tính</div><div class="v">${mm(RB.amt)}</div><div class="d">${RB.elig ? `tổng ${RB.hLbl} ${pct1(RB.achH)} · trả ${RB.payMonth}` : RB.achH === null ? 'chưa đủ số liệu' : `tổng ${RB.hLbl} ${pct1(RB.achH)} · cần thêm ${mm(RB.need)}`}</div></div>`}
+        <div class="inctile"><div class="l">Tổng phần quý + roll-back</div><div class="v">${mm(M.total + (RB.na ? 0 : RB.amt))}</div><div class="d">${M.gateOk ? `portfolio ${M.tA === null ? '–' : pct1(M.tA)} · qua cổng ${Math.round(M.gate * 100)}%` : `portfolio ${M.tA === null ? '–' : pct1(M.tA)} · dưới cổng ${Math.round(M.gate * 100)}%`}</div></div></div></div>
     <div class="card"><h3>Định lượng (${Math.round(num(C.quantW) * 100)}%)</h3>
       <div class="incg ${M.gateOk ? 'ok' : 'err'}" style="margin-bottom:8px">Tổng portfolio ${pp(M.tA)} (FC ${mm(M.tF)} / target ${mm(M.tT)}). ${M.gateOk ? `Qua cổng ${Math.round(M.gate * 100)}%.` : `Dưới cổng ${Math.round(M.gate * 100)}%: phần định lượng = 0. Cần thêm ${mm(gateNeed)} VND.`}</div>
-      <div class="tw"><table class="t inct"><thead><tr><th class="l stick">Brand</th><th>Tỷ trọng</th><th>Target</th><th>${scen === 'cust' ? '%Ach tự chỉnh' : scen === 'best' ? 'FC best case' : 'FC'}</th><th>%Ach</th><th>Mốc</th><th>Hệ số</th><th>Thưởng (VND)</th><th class="l">Lên mốc kế tiếp</th></tr></thead>
-      <tbody>${qRows}<tr class="tot"><td class="l stick">Tổng</td><td>${Math.round(M.quant.reduce((t, x) => t + x.w, 0) * 100)}%</td><td></td><td></td><td></td><td></td><td></td><td>${mm(M.qa)}</td><td></td></tr></tbody></table></div></div>
+      <div class="tw"><table class="t inct"><thead><tr><th class="l stick">Brand</th><th>%Ach</th><th>Hệ số</th><th>Thưởng (VND)</th><th>Target</th><th>${scen === 'cust' ? '%Ach tự chỉnh' : scen === 'best' ? 'FC best case' : 'FC'}</th><th>Tỷ trọng</th><th class="l">Lên mốc kế tiếp</th></tr></thead>
+      <tbody>${qRows}<tr class="tot"><td class="l stick">Tổng</td><td>${M.tA === null ? '–' : pct1(M.tA)}</td><td></td><td>${mm(M.qa)}</td><td>${mm(M.tT)}</td><td>${mm(M.tF)}</td><td>${Math.round(M.quant.reduce((t, x) => t + x.w, 0) * 100)}%</td><td></td></tr></tbody></table></div></div>
     <div class="card"><h3>Định tính (${Math.round(M.qual.reduce((t, x) => t + x.w, 0) * 100)}%)</h3>
       <div class="bar" style="gap:10px;margin-bottom:8px"><span class="incg ${M.qgOk ? 'ok' : 'err'}">${M.qgOk ? `Cổng MCCP & CLM ≥ ${(C.qualGate || {}).mccp || 90}%: mặc định đạt` : 'Không đạt MCCP / CLM: phần định tính = 0'}</span>
         <label class="bar sub" style="gap:6px"><input type="checkbox" class="inc-i" data-f="qfail" ${I.qfail ? 'checked' : ''} ${dis}> Không đạt MCCP / CLM</label></div>
-      <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Chỉ tiêu</th><th>Tỷ trọng</th><th class="l">Kết quả</th><th>Hệ số</th><th>Thưởng (VND)</th></tr></thead>
-      <tbody>${M.qual.map(qlRow).join('')}<tr class="tot"><td class="l stick">Tổng</td><td></td><td></td><td></td><td>${mm(M.ql)}</td></tr></tbody></table></div></div>
-    ${rbHtml(incRB(rep, M, I), M, ed)}
-    ${sfeHistHtml(rep, M)}
-    <div class="card"><h3>Thưởng thêm</h3><label class="bar" style="gap:8px"><input type="checkbox" class="inc-i" data-f="prev" ${M.prevOk ? 'checked' : ''} ${dis}> Quý trước đạt ≥ 100% định lượng${M.prevAuto === null ? '' : ` <span class="sub">(theo target quý trước: ${M.prevAuto ? 'đạt' : 'chưa đạt'})</span>`}</label>
+      <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Chỉ tiêu</th><th class="l">Kết quả</th><th>Hệ số</th><th>Thưởng (VND)</th><th>Tỷ trọng</th></tr></thead>
+      <tbody>${M.qual.map(qlRow).join('')}<tr class="tot"><td class="l stick">Tổng</td><td></td><td></td><td>${mm(M.ql)}</td><td>${Math.round(M.qual.reduce((t, x) => t + x.w, 0) * 100)}%</td></tr></tbody></table></div></div>
+    <div class="card"><h3>Thưởng 2 quý liên tiếp</h3><label class="bar" style="gap:8px"><input type="checkbox" class="inc-i" data-f="prev" ${M.prevOk ? 'checked' : ''} ${dis}> Quý trước đạt ≥ 100% định lượng${M.prevAuto === null ? '' : ` <span class="sub">(theo target quý trước: ${M.prevAuto ? 'đạt' : 'chưa đạt'})</span>`}</label>
       <div class="sub" style="margin-top:4px">${M.prevOk ? (M.tA !== null && M.tA >= 1 ? `Quý này cũng ≥ 100% → +${mm(M.pool * num(C.quantW) * num(C.bonus2Q))} VND (trả quý sau).` : `Quý này cần tổng portfolio ≥ 100% để nhận +${mm(M.pool * num(C.quantW) * num(C.bonus2Q))} VND.`) : 'Đạt định lượng 2 quý liên tiếp: thưởng thêm, tối đa 3 lần / năm.'}</div></div>
-    ${isReviewer() ? `<div class="card"><h3>Cả team · FC base</h3><div id="inc-team"></div></div>` : ''}`;
+    ${rbHtml(RB, M, ed)}
+    ${sfeHistHtml(rep, M)}`;
+  if (isReviewer()) V.insertAdjacentHTML('afterbegin', `<div class="card"><h3>Thưởng cả team · FC base</h3><div class="sub">Bấm tên MR để xem chi tiết bên dưới.</div><div id="inc-team" style="margin-top:8px"></div></div>`);
   if (isReviewer()) incTeamTable();
   $('#inc-rep') && ($('#inc-rep').onchange = e => { VIEW.incRep = e.target.value; INC_FOR = null; viewINC(); });
   $$('[data-sc]').forEach(b => b.onclick = () => { VIEW.incScen = b.dataset.sc; viewINC(); });
+  $('#rb-edit') && ($('#rb-edit').onclick = () => { VIEW.rbEdit = !VIEW.rbEdit; viewINC(); });
   $('#inc-cfg') && ($('#inc-cfg').onclick = incCfgDialog); $('#inc-sp') && ($('#inc-sp').onclick = incSpDialog); $('#inc-rb') && ($('#inc-rb').onclick = rbTgtDialog);
   const redraw = () => { const ae = document.activeElement, key = ae && ae.dataset ? ae.dataset.f : null; viewINC(); if (key){ const el = $(`#view [data-f="${CSS.escape(key)}"]`); if (el) el.focus(); } };
   V.oninput = e => { const t = e.target; if (!ed || !t.dataset.f || t.type === 'checkbox' || t.tagName === 'SELECT') return; const f = t.dataset.f;
@@ -3021,12 +3055,12 @@ function viewINC(){
 // RFFM / admin: thưởng ước tính của từng MR (FC base, số MR đã nhập)
 function incTeamTable(){
   const el = $('#inc-team'); if (!el) return; const reps = poaReps(), C = incCfg();
-  const rows = reps.map(rep => { const M = incModel(rep, 'base', incData(rep), (INC_TP[incTeamOf(rep)] || {}).d); return M && !M.err ? M : null; }).filter(Boolean);
-  el.innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th>Team</th><th>Tổng portfolio</th><th>Định lượng</th><th>Định tính</th><th>Thưởng thêm</th><th>Tổng (VND)</th><th>% hạn mức</th></tr></thead><tbody>
-    ${rows.map(M => `<tr data-lbl="${esc(M.rep)}"><td class="l stick"><a href="#" data-incr="${esc(M.rep)}">${esc(M.rep)}</a>${M.gateOk ? '' : '<div class="sub" style="color:var(--bad-ink)">dưới cổng</div>'}</td><td>${esc(M.team)}</td><td>${M.tA === null ? '–' : achHtml(M.tA)}</td><td>${vnd(Math.round(M.qa))}</td><td>${vnd(Math.round(M.ql))}</td><td>${M.bonus ? vnd(Math.round(M.bonus)) : '–'}</td><td><b>${vnd(Math.round(M.total))}</b></td><td>${M.pool ? pct1(M.total / M.pool) : '–'}</td></tr>`).join('')}
-    <tr class="tot"><td class="l stick">Tổng team</td><td></td><td></td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.qa, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.ql, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.bonus, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.total, 0)))}</td><td></td></tr></tbody></table></div>
+  const rows = reps.map(rep => { const I = incData(rep), M = incModel(rep, 'base', I, (INC_TP[incTeamOf(rep)] || {}).d); if (!M || M.err) return null; const R = incRB(rep, M, I); M.rbAmt = R.na ? null : R.amt; return M; }).filter(Boolean), rbOn = rows.some(M => M.rbAmt !== null);
+  el.innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th>Team</th><th>Tổng portfolio</th><th>Định lượng</th><th>Định tính</th><th>Thưởng thêm</th><th>Tổng quý (VND)</th><th>% hạn mức</th>${rbOn ? '<th>Roll-back (ước)</th>' : ''}</tr></thead><tbody>
+    ${rows.map(M => `<tr data-lbl="${esc(M.rep)}"><td class="l stick"><a href="#" data-incr="${esc(M.rep)}">${esc(M.rep)}</a>${M.gateOk ? '' : '<div class="sub" style="color:var(--bad-ink)">dưới cổng</div>'}</td><td>${esc(M.team)}</td><td>${M.tA === null ? '–' : achHtml(M.tA)}</td><td>${vnd(Math.round(M.qa))}</td><td>${vnd(Math.round(M.ql))}</td><td>${M.bonus ? vnd(Math.round(M.bonus)) : '–'}</td><td><b>${vnd(Math.round(M.total))}</b></td><td>${M.pool ? pct1(M.total / M.pool) : '–'}</td>${rbOn ? `<td>${M.rbAmt ? vnd(Math.round(M.rbAmt)) : '–'}</td>` : ''}</td></tr>`).join('')}
+    <tr class="tot"><td class="l stick">Tổng team</td><td></td><td></td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.qa, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.ql, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.bonus, 0)))}</td><td>${vnd(Math.round(rows.reduce((t, M) => t + M.total, 0)))}</td><td></td>${rbOn ? `<td>${vnd(Math.round(rows.reduce((t, M) => t + num(M.rbAmt), 0)))}</td>` : ''}</tr></tbody></table></div>
 `;
-  el.onclick = e => { const a = e.target.closest('[data-incr]'); if (!a) return; e.preventDefault(); VIEW.incRep = a.dataset.incr; INC_FOR = null; viewINC(); window.scrollTo(0, 0); };
+  el.onclick = e => { const a = e.target.closest('[data-incr]'); if (!a) return; e.preventDefault(); VIEW.incRep = a.dataset.incr; INC_FOR = null; viewINC(); const d = $('#inc-detail'); if (d) d.scrollIntoView({block: 'start'}); };
 }
 // JSON dễ đọc: mảng chỉ chứa số / chữ nằm trên 1 dòng ([90, 50]), mỗi cấp thụt 2 khoảng
 const jsonTidy = o => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, x) => m.includes('\n') ? '[' + x.split(/,\s*\n\s*/).join(', ') + ']' : m);
@@ -3038,7 +3072,7 @@ function incCfgDialog(){
   bg.firstElementChild.classList.add('wide');
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove(); if (a !== 's') return;
     let d; try { d = JSON.parse($('#ic-j', bg).value); if (!d.pool || !Array.isArray(d.curve) || !d.teams) throw new Error('Thiếu pool / curve / teams'); } catch(err){ $('#ic-m', bg).innerHTML = `<div class="msg err">${esc(err.message)}</div>`; return; }
-    try { await STORE.saveIncCfg(d); D.inc_cfg = d; toast('Đã lưu scheme'); bg.remove(); viewINC(); } catch(err){ $('#ic-m', bg).innerHTML = `<div class="msg err">Lỗi: ${esc(err.message)}</div>`; } });
+    try { await STORE.saveIncCfg(d); D.inc_cfg = d; toast('Đã lưu scheme'); bg.remove(); afterOnceSave(); } catch(err){ $('#ic-m', bg).innerHTML = `<div class="msg err">Lỗi: ${esc(err.message)}</div>`; } });
 }
 // Chỉ tiêu Self-pay theo MR × brand (4.25.1). Bản cũ lưu 1 dòng SELF-PAY = tổng.
 const spTgtOf = rep => { const o = {}; (D.spTgt || []).filter(x => x.rep_name === rep && num(x.value)).forEach(x => { const k = x.sku && x.sku !== 'SELF-PAY' ? x.sku : 'TỔNG'; o[k] = (o[k] || 0) + num(x.value); }); return o; };
@@ -3080,7 +3114,7 @@ function incSpDialog(){
     } catch(err){ m.textContent = 'Không đọc được file: ' + err.message; } };
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === '0' || e.target === bg) return bg.remove(); if (a !== 's') return;
     const rows = $$('[data-sp]', bg).map(i => ({rep_name: i.dataset.sp, sku: i.dataset.b, value: pnum(i.value), team: 'CVRM'})).filter(x => x.value), pk = FILE_PK || PK;
-    try { await STORE.saveSpTgt(pk, rows); if (pk === PK) D.spTgt = rows; toast(`Đã lưu chỉ tiêu Self-pay ${new Set(rows.map(x => x.rep_name)).size} MR · ${qDot(+pk.slice(0, 4), +pk.slice(5))}`); bg.remove(); viewINC(); }
+    try { await STORE.saveSpTgt(pk, rows); if (pk === PK) D.spTgt = rows; toast(`Đã lưu chỉ tiêu Self-pay ${new Set(rows.map(x => x.rep_name)).size} MR · ${qDot(+pk.slice(0, 4), +pk.slice(5))}`); bg.remove(); afterOnceSave(); }
     catch(err){ $('#sp-m', bg).textContent = 'Lỗi: ' + err.message; } });
 }
 
@@ -3638,11 +3672,11 @@ function fyTableHtml(){
   const row = (o, cls) => `<tr class="${cls}"><td class="l stick">${esc(o.b)}</td><td>${trc(o.ly)}</td><td>${trc(o.fyLy)}</td><td>${trc(o.qtd)}</td>${d.ytdLb ? `<td>${trc(o.ytd)}</td>` : ''}<td>${trc(o.tgt)}</td><td>${d.rep ? '<span class="muted">–</span>' : fy(o)}</td>${o.m.map(v => `<td class="fym">${trc(v)}</td>`).join('')}<td class="fyp">${pc(o.ach)}</td><td class="fyp">${o.gLy === null ? '<span class="muted">–</span>' : grHtml(o.gLy)}</td><td class="fyp">${pc(o.achFY)}</td><td class="fyp">${o.gFY === null ? '<span class="muted">–</span>' : grHtml(o.gFY)}</td></tr>`;
   const hd = first => `<th class="l stick">${first}</th><th>Act. ${d.ly}</th><th>Act. FY${String(d.Y - 1).slice(-2)}</th><th data-tip="Act. ${d.cur} đến ngày dữ liệu ${esc(d.asof)}">QTD ${d.cur}<div class="hs">đến ${esc(d.asof)}</div></th>${d.ytdLb ? `<th data-tip="Act. từ đầu năm đến hết ${d.ytdLb}">YTD ${d.ytdLb}</th>` : ''}<th>Target ${d.cur}</th><th>Target FY${d.yy}</th>${d.mHd.map(h => `<th class="fym">${h.replace('Act. + FC ', '').replace('Actual ', '').replace('FC ', '')}<div class="hs">${/^Actual/.test(h) ? 'Act.' : /^Act\. \+/.test(h) ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th class="fyp">%Ach ${d.cur}</th><th class="fyp">Gr vs ${d.ly}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) / Target FY${d.Y}">%Ach FY${d.yy}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) vs Act. FY${d.Y - 1}">Gr vs FY${String(d.Y - 1).slice(-2)}</th>`;   // header dùng lại cho phần New launch (bản 4.15.3)
   const noFY = !d.rep && d.list.some(o => o.tgtFY === null && !o.launch);
-  return `<div class="card fyc"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">${esc(d.title)}${VIEW.team === 'ALL' ? ' · cả 2 team' : TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}${d.rep ? ' · ' + esc(d.rep) : ''}</h3><span class="grow"></span>${isAdmin() && !d.rep ? '<button class="btn sm" id="fy-edit">Nhập Target FY</button>' : ''}<button class="btn sm" id="fy-exp">⬇ Excel</button></div>
+  return `<div class="card fyc"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">${esc(d.title)}${VIEW.team === 'ALL' ? ' · cả 2 team' : TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}${d.rep ? ' · ' + esc(d.rep) : ''}</h3><span class="grow"></span><button class="btn sm" id="fy-exp">⬇ Excel</button></div>
     <div class="tw"><table class="t fyt"><thead><tr>${hd('Brand')}</tr></thead>
     <tbody>${d.groups.map(g => g.rows.map(o => row(o, '')).join('') + (g.sub ? row(g.sub, 'fysub') : '')).join('')}${row(d.tot, 'tot')}
       ${d.nl.length ? `<tr class="fynlh">${hd('New launch')}</tr>${d.nl.map(o => row(o, 'fynl')).join('')}` : ''}</tbody></table></div>
-    <div class="sub" style="margin-top:6px">Đơn vị: tr VND.${noFY ? ` <span class="warn">Chưa có Target FY${d.Y} ${isAdmin() ? '(bấm Nhập Target FY)' : '(admin nhập)'}.</span>` : ''}</div></div>`;
+    <div class="sub" style="margin-top:6px">Đơn vị: tr VND.${noFY ? ` <span class="warn">Chưa có Target FY${d.Y} ${isAdmin() ? '(Admin → Kỳ &amp; nạp dữ liệu → Dữ liệu nhập 1 lần)' : '(admin nhập)'}.</span>` : ''}</div></div>`;
 }
 function fyEdit(){
   const d = fyData(), Y = d.Y, list = d.list.filter(o => !o.launch || o.tgtFY !== null);
@@ -3653,7 +3687,7 @@ function fyEdit(){
   bg.addEventListener('click', async e => { const a = e.target.dataset.a; if (a === undefined) return; if (a === '0') return bg.remove();
     const out = $$('[data-fyb]', bg).map(i => ({brand: i.dataset.fyb, team: i.dataset.team, value: Math.round(num(String(i.value).replace(/[^\d]/g, '')))}));
     try { e.target.disabled = true; await STORE.saveFyTargets(Y, out); const k = Y + 'FY'; D.tgtFY = (D.tgtFY || []).filter(t => !out.some(x => x.brand === t.sku && x.team === t.team)).concat(out.filter(x => x.value > 0).map(x => ({period: k, rep_name: '', cust_code: '*', sku: x.brand, value: x.value, team: x.team})));
-      bg.remove(); toast(`Đã lưu Target FY${Y}`); viewDashTeam(); } catch(err){ e.target.disabled = false; $('#fy-m', bg).textContent = 'Lỗi: ' + err.message; } });
+      bg.remove(); toast(`Đã lưu Target FY${Y}`); afterOnceSave(); } catch(err){ e.target.disabled = false; $('#fy-m', bg).textContent = 'Lỗi: ' + err.message; } });
 }
 async function exportFY(btn){
   const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Đang tạo…';
@@ -4056,9 +4090,10 @@ function wkSchedule(){
 }
 
 /* ---------- Dashboard RFFM / Admin: Overview · By MR · By account · Risk & issue ---------- */
-const DTABS = [['ov', 'Overview'], ['mr', '<span class="lg">By MR</span><span class="sm">MR</span>'], ['bv', '<span class="lg">By account</span><span class="sm">Account</span>'], ['seg', '<span class="lg">Top account</span><span class="sm">Top</span>'], ['tq', '<span class="lg">Tender</span><span class="sm">Tender</span>'], ['risk', '<span class="lg">Risk & issue</span><span class="sm">Risk</span>']];
+// 4.25.3: theo dõi trước (Overview, FC tuần, By MR, Risk), phân tích sau (account, top account, Tender, New launch)
+const DTABS = [['ov', 'Overview'], ['mr', '<span class="lg">By MR</span><span class="sm">MR</span>'], ['risk', '<span class="lg">Risk & issue</span><span class="sm">Risk</span>'], ['bv', '<span class="lg">By account</span><span class="sm">Account</span>'], ['seg', '<span class="lg">Top account</span><span class="sm">Top</span>'], ['tq', '<span class="lg">Tender</span><span class="sm">Tender</span>']];
 const dTabs = () => { const t = nlSkus().length ? DTABS.concat([['nl', '<span class="lg">New launch</span><span class="sm">Launch</span>']]) : [...DTABS];
-  if (canWk()) t.splice(2, 0, ['wk', '<span class="lg">FC tuần</span><span class="sm">FC tuần</span>']); return t; };   // bản 4.19: nộp FC tuần, cạnh By MR
+  if (canWk()) t.splice(1, 0, ['wk', '<span class="lg">FC tuần</span><span class="sm">FC tuần</span>']); return t; };   // FC tuần ngay sau Overview
 function viewDashTeam(){
   const v = $('#view'), reps = repList(), brands = [...new Set(ROWS.map(r => r.brand))].sort(), chs = [...new Set(ROWS.map(r => r.channel || '(chưa gán)'))].sort(chSort);
   if (VIEW.dRep && !reps.includes(VIEW.dRep)) VIEW.dRep = '';   // đổi team: MR đang chọn không thuộc team mới
@@ -4110,9 +4145,6 @@ function dashOV(c){
   const lnk = o => `<a href="#" data-bv="${esc(o.code)}">${esc(bvName(o.name))}</a>`;
   const story = br.tgt ? (a.fcv >= a.tgt ? `FC đạt ${pct1(a.ach)} target. <b>${br.nU} account</b> còn gap tổng <b class="gap neg">${big(br.under)}</b>, bù bởi ${br.nO} account vượt target (+${big(br.over)})${br.noT ? ` và ${br.nN} account không có target (+${big(br.noT)})` : ''}.` : `FC còn gap <b class="gap neg">${big(a.tgt - a.fcv)}</b> vs target: ${br.nU} account gap ${big(br.under)}, ${br.nO} account vượt ${big(br.over)}${br.noT ? `, ${br.nN} account không có target +${big(br.noT)}` : ''}.`) : 'Chưa có target cho phạm vi đang lọc.';
   c.el.innerHTML = `${kpiBlocks(a, {tgtNote: VIEW.dRep ? esc(VIEW.dRep) : (open ? `<span data-tip="Target trong file có REP nhưng chưa có dòng FC (vd MR trống/Vacant). Xem Admin → Account thiếu.">+ ${big(open)} chưa giao MR</span>` : 'Cả team'), third})}
-    ${fyTableHtml()}
-    ${tradeCardHtml(c.sel, true)}
-    ${dimTableHtml('channel', c.sel)}${dimTableHtml('atype', c.sel)}
     <div class="att">
       <div class="kpi k-risk"><div class="l">Account rủi ro cao</div><div class="v">${hi.length} <span class="u">account</span></div><div class="d">gap vs target ${big(hi.reduce((t, o) => t + o.short, 0))} · thêm ${hm.length - hi.length} account mức trung bình</div>
         <ol>${hi.slice(0, 3).map(o => `<li>${lnk(o)}<span class="${o.short >= RISK.mat ? 'gap neg' : 'muted'}">${esc(whyText(o))}</span></li>`).join('') || '<li class="muted">Không có</li>'}</ol><a class="more" href="#" data-go="risk" data-lv="hi" data-sig="">Xem danh sách →</a></div>
@@ -4134,6 +4166,9 @@ function dashOV(c){
         <div class="sub">Gap lớn nhất: ${downs.map(o => `${lnk(o)} <span class="gap neg">−${big(o.short)}</span>`).join(' · ') || '–'}</div></div>
       <div class="card"><h3>FC vs target by MR</h3><div class="legend"><span><i style="background:var(--s1)"></i>FC</span><span><i class="tick"></i>Target</span></div><div id="ch-rep">${mrBarsHtml(byRep)}</div></div>
     </div>
+    ${fyTableHtml()}
+    ${tradeCardHtml(c.sel, true)}
+    ${dimTableHtml('channel', c.sel)}${dimTableHtml('atype', c.sel)}
     <div class="grid2">
       <div class="card"><h3>Sales by quarter ${VIEW.dRep ? '· ' + esc(VIEW.dRep) : '· team'}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div><div id="ch-q">${qChartHtml(a)}</div><div class="sub" style="margin-top:8px">Đơn vị: tỷ VND.</div></div>
       <div class="card"><h3>By month ${P[4].label}</h3><div class="legend"><span><i style="background:var(--s1)"></i>Act. / đơn đã lên</span><span><i style="background:var(--s2)"></i>FC remain</span></div><div id="ch-m">${mChartHtml(a)}</div></div>
@@ -5192,6 +5227,7 @@ function viewAdmin(){
         <div class="bar"><label><input type="checkbox" id="u-fcz"> File là bản chốt: dòng nào file để trống / toàn 0 thì xóa FC đang có trong app</label></div>
         <div class="log" id="l-fcx">Mặc định dòng FC trống / toàn 0 không ghi đè số trong app. Dòng toàn 0 nhưng có Note được ghi là FC = 0 kèm Note. App hỏi xác nhận trước khi ghi.</div></div>
     </div>`;
+    { const k = $('#adm .adm > .card'); if (k){ k.insertAdjacentHTML('afterend', onceCardHtml()); onceCardBind(); } }   // 4.25.3: dữ liệu nhập 1 lần
     $('#s-save').onclick = async () => {
       const ns = {year: num($('#s-y').value), quarter: num($('#s-q').value), deadline: $('#s-d').value || null, locked: $('#s-l').checked, team_filter: $('#s-t').value.trim(), exclude_keywords: $('#s-x').value.trim(), fc_rule_pct: Math.max(5, num($('#s-rp').value)) / 100, fc_rule_min: num($('#s-rm').value) * 1e6};
       if (ns.quarter < 1 || ns.quarter > 4 || ns.year < 2020) return toast('Năm/quý không hợp lệ');
