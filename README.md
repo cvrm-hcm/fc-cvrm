@@ -2,6 +2,15 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.26 — giao diện pastel, icon, thanh tab dưới đáy điện thoại, báo có bản mới
+- Theme pastel xanh trời: header và nền nhạt, nút chính xanh navy, chữ và số giữ đậm.
+- Bộ icon nét mảnh (SVG, cùng màu chữ) thay emoji / ký tự ở nút và nhãn; hiển thị giống nhau trên iPhone, Android, Windows. Chuỗi copy sang Zalo vẫn giữ ký tự.
+- Nhãn trạng thái (đã submit, chưa nộp, đã nộp FC tuần…) thống nhất 1 kiểu: chấm màu + chữ.
+- Bo góc 3 mức (ô nhập 6px, nút / thẻ 10px, nhãn trạng thái bo tròn), cỡ chữ gom về 6 mức, chữ nhỏ nhất 12px trên điện thoại.
+- Điện thoại: thẻ FC Input / Dashboard / FC POA / Thưởng / Admin chuyển xuống thanh tab dưới đáy (icon + chữ), tự ẩn khi đang gõ số; nút, ô nhập, ô chọn cao tối thiểu 40px; chip quota, link nhỏ nới vùng chạm.
+- Báo **"App có bản mới · Tải lại"** khi đã deploy bản mới mà máy còn giữ bản cũ (cache GitHub Pages ~10 phút). App đọc `ver.json`, chỉ báo khi số bản trong đó mới hơn bản đang chạy.
+- **Khi deploy bản mới: sửa `APP_VER` trong index.html và `ver.json` cùng số.** Quên sửa `ver.json` thì app không báo, không lỗi.
+
 ## Bản 4.25.8 — FC POA: New launch tách slide riêng
 - Slide 1–2 chỉ tính In-market (khớp FC / %Achie trên app, giống FC Input, Dashboard, Thưởng); trước đây dòng Firialta có FC bị cộng vào Grand total.
 - Thẻ FC POA thêm **Slide 3 · New launch**: account × SKU, type BV, FC box từng tháng, FC box / mil VND quý, %Contri, tháng first order (theo FC), Act. đến nay; subtitle tự viết + ô thêm ý. File PowerPoint có thêm slide "FORECAST Qx’yy · NEW LAUNCH" (dùng khung slide 1 của mẫu); MR không có FC New launch thì không có slide này.

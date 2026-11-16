@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1f3864">
+<meta name="theme-color" content="#e5eefa">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -30,13 +30,16 @@ window.FC_CONFIG = {
 <style>
 :root{
   color-scheme: light;
-  --bg:#f4f5f7; --surface:#fcfcfb; --card:#ffffff; --line:#e3e4e8; --line2:#eef0f3;
+  --bg:#f3f6fa; --surface:#fcfdfe; --card:#ffffff; --line:#e0e5ed; --line2:#edf0f5;
   --ink:#1a2130; --ink2:#4f5562; --ink3:#868b96;
-  --navy:#1f3864; --navy2:#2b4a80;
+  --navy:#284a84; --navy2:#335a99;
   --s1:#2a78d6; --s2:#eb6834;
   --good:#0ca30c; --serious:#ec835a; --critical:#d03b3b; --warning:#fab219;
   --input:#fff8e1; --input-b:#f0d68a;
-  --r:10px;
+  --r:10px; --r1:6px; --r2:10px;
+  --fs1:11px; --fs2:12.5px; --fs3:14px; --fs4:16px; --fs5:20px; --fs6:28px;
+  /* 4.26 theme pastel: header + nền nhạt, chữ và số vẫn đậm */
+  --hdr:#e5eefa; --hdr2:#c9d8ee; --hdr-ink:#1b3157; --hdr-mut:#4a5f86;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* iPhone xoay ngang: Safari không tự phóng to chữ */
@@ -46,14 +49,14 @@ button{cursor:pointer}
 a{color:var(--s1)}
 .hidden{display:none!important}
 .top{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px 14px;padding:10px 20px;flex-wrap:wrap}
-.top .brand{font-weight:700;font-size:16px;letter-spacing:.2px}
-.top .period{background:rgba(255,255,255,.14);border-radius:999px;padding:3px 10px;font-size:12.5px;white-space:nowrap}
+.top .brand{font-weight:700;font-size:var(--fs4);letter-spacing:.2px}
+.top .period{background:rgba(255,255,255,.14);border-radius:999px;padding:3px 10px;font-size:var(--fs2);white-space:nowrap}
 .top .period.lock{background:#d03b3b}
-.top .tsel{background:#fff;color:var(--navy);border:0;border-radius:999px;padding:3px 8px;font-size:12.5px;font-weight:600;cursor:pointer}
+.top .tsel{background:#fff;color:var(--navy);border:0;border-radius:999px;padding:3px 8px;font-size:var(--fs2);font-weight:600;cursor:pointer}
 .tabs{display:flex;gap:4px;margin-left:8px}
-.tab{background:transparent;border:0;color:#cfd8ea;padding:7px 12px;border-radius:8px;font-weight:500}
+.tab{background:transparent;border:0;color:#cfd8ea;padding:7px 12px;border-radius:var(--r2);font-weight:500}
 .tab.on{background:#fff;color:var(--navy)}
-.top .who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px}
+.top .who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:var(--fs2)}
 .top .who b{font-weight:600}
 .top .who .btns{display:flex;gap:6px}
 .top .btn.rf{display:inline-flex;align-items:center;gap:5px}
@@ -61,13 +64,13 @@ a{color:var(--s1)}
 .top .btn.rf .ic{display:inline-block;line-height:1}
 .top .btn.rf.spin .ic{animation:rfspin .8s linear infinite}
 @keyframes rfspin{to{transform:rotate(360deg)}}
-.pill{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.18)}
-.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-weight:500;white-space:nowrap}
+.pill{font-size:var(--fs1);padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.18)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:var(--r2);padding:7px 12px;font-weight:500;white-space:nowrap}
 .btn:hover{border-color:#c9ccd3}
 .btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
 .btn.pri:hover{background:var(--navy2)}
 .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
-.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn.sm{padding:4px 9px;font-size:var(--fs2)}
 .btn.danger{color:var(--critical);border-color:#f0c5c5}
 .btn.ok{color:#0a6e0a;border-color:#bfe3bf}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -77,12 +80,12 @@ main{max-width:1480px;margin:0 auto;padding:18px max(20px, env(safe-area-inset-r
 :root{--sbh:calc(env(safe-area-inset-top) + min(8px, env(safe-area-inset-top)))}
 #sbar{position:fixed;left:0;right:0;top:0;height:var(--sbh);background:var(--navy);z-index:100}
 .top{padding-top:max(10px, calc(env(safe-area-inset-top) + min(10px, env(safe-area-inset-top))));padding-left:max(20px, env(safe-area-inset-left));padding-right:max(20px, env(safe-area-inset-right))}
-.demo-banner{background:#fff4e5;border:1px solid #f5d3a8;color:#7a4b0f;border-radius:var(--r);padding:8px 12px;font-size:13px;margin-bottom:14px}
-h2{font-size:18px;margin:4px 0 12px}
-h3{font-size:15px;margin:0 0 10px}
-.sub{color:var(--ink2);font-size:12.5px}
+.demo-banner{background:#fff4e5;border:1px solid #f5d3a8;color:#7a4b0f;border-radius:var(--r);padding:8px 12px;font-size:var(--fs2);margin-bottom:14px}
+h2{font-size:var(--fs5);margin:4px 0 12px}
+h3{font-size:var(--fs4);margin:0 0 10px}
+.sub{color:var(--ink2);font-size:var(--fs2)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
-.note{border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px;background:#f1f3f6;border:1px solid var(--line)}
+.note{border-radius:var(--r2);padding:9px 12px;margin-bottom:10px;font-size:var(--fs2);background:#f1f3f6;border:1px solid var(--line)}
 .note.bad{background:#fdecec;border-color:#f3c4c4;color:#7d1f1f}
 .note.good{background:#e8f6e8;border-color:#bfe3bf;color:#1d5e1d}
 .note.warn{background:#fff4e5;border-color:#f5d3a8;color:#7a4b0f}
@@ -90,7 +93,7 @@ h3{font-size:15px;margin:0 0 10px}
 :root{--ach-bg:#fbf8f0;--ach-bd:#eadfc6;--ach-ink:#8a6516;--gr-bg:#f0f5fd;--gr-bd:#d3e0f4;--gr-ink:#2b5aa8;
   --ok-bg:#e6f4ea;--ok-ink:#0d652d;--ok:#1e8e3e;--mid-bg:#fdecc2;--mid-ink:#6f4700;--mid:#e5a00d;--bad-bg:#fce8e6;--bad-ink:#a50e0e;--bad:#d93025;--up:#137333;--down:#c5221f}
 .kgroup{margin-bottom:12px}
-.kcap{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin:0 0 6px 2px}
+.kcap{display:flex;align-items:center;gap:6px;font-size:var(--fs2);font-weight:600;margin:0 0 6px 2px}
 .kcap.a{color:#6e5113}.kcap.g{color:#24508f}
 .kgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .kgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -98,17 +101,17 @@ h3{font-size:15px;margin:0 0 10px}
 .kpi .l svg{flex:none}
 .kpi.k-ach{background:var(--ach-bg);border-color:var(--ach-bd)}.kpi.k-ach .l svg{color:var(--ach-ink)}
 .kpi.k-gr{background:var(--gr-bg);border-color:var(--gr-bd)}.kpi.k-gr .l svg{color:var(--gr-ink)}
-.kpi.k-gr .v .gr{font-size:24px}
+.kpi.k-gr .v .gr{font-size:var(--fs6)}
 .meter{display:flex;align-items:center;gap:10px;margin:9px 0 5px}
 .pbar{position:relative;flex:1;height:8px;background:rgba(0,0,0,.08);border-radius:4px}
-.mv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.mv{font-size:var(--fs4);font-weight:700;font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
 .mv.good{color:var(--ok-ink)}.mv.mid{color:var(--mid-ink)}.mv.bad{color:var(--bad-ink)}
 .pbar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
 .pbar i.good{background:var(--ok)}.pbar i.mid{background:var(--mid)}.pbar i.bad{background:var(--bad)}
 .pbar s{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);border-radius:1px}
 .segbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#eceef2;margin:8px 0 7px}
 .segbar i{display:block;height:100%}
-.ach{display:inline-flex;align-items:center;gap:6px;padding:1px 8px 1px 6px;border-radius:999px;font-weight:600;font-size:12px;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ach{display:inline-flex;align-items:center;gap:6px;padding:1px 8px 1px 6px;border-radius:999px;font-weight:600;font-size:var(--fs2);line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ach .ab{width:26px;height:5px;border-radius:3px;background:rgba(0,0,0,.1);overflow:hidden;flex:none}
 .ach .ab i{display:block;height:100%;border-radius:3px}
 .ach.good{background:var(--ok-bg);color:var(--ok-ink)}.ach.good .ab i{background:var(--ok)}
@@ -117,34 +120,34 @@ h3{font-size:15px;margin:0 0 10px}
 .gr{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
 .gr.up{color:var(--up)}.gr.down{color:var(--down)}.gr.flat{color:var(--ink3)}
 .gap{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}.gap.neg{color:var(--down)}.gap.pos{color:var(--up)}
-.accp{display:inline-block;padding:1px 9px;border-radius:999px;border:1.5px solid;font-weight:600;font-size:12px;background:#fff;font-variant-numeric:tabular-nums}
+.accp{display:inline-block;padding:1px 9px;border-radius:999px;border:1.5px solid;font-weight:600;font-size:var(--fs2);background:#fff;font-variant-numeric:tabular-nums}
 .accp.good{color:var(--ok-ink);border-color:#81c995}.accp.mid{color:var(--mid-ink);border-color:#f2c55c}.accp.bad{color:var(--bad-ink);border-color:#f28b82}
 .bias{font-weight:500;white-space:nowrap;color:var(--ink2);font-variant-numeric:tabular-nums}.bias.hi{color:#b06000;font-weight:600}
 .t th.h-ach{background:#f6efdd!important;color:#6e5113}.t th.h-gr{background:#e6eefa!important;color:#24508f}
-.readme{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:12px;color:var(--ink2);margin:-2px 0 14px 2px}
+.readme{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:var(--fs2);color:var(--ink2);margin:-2px 0 14px 2px}
 .readme b{font-weight:600;color:var(--ink)}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
-.kpi .l{font-size:12px;color:var(--ink2)}
-.kpi .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
-.kpi .d{font-size:12px;color:var(--ink2);margin-top:1px;line-height:1.55}
+.kpi .l{font-size:var(--fs2);color:var(--ink2)}
+.kpi .v{font-size:var(--fs5);font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:var(--fs2);color:var(--ink2);margin-top:1px;line-height:1.55}
 .st{font-weight:600;white-space:nowrap}
 .st.good{color:#0a7d0a}.st.bad{color:var(--critical)}.st.mid{color:#a35a1b}
 .months{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
 .mon{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:9px 12px}
-.mon .h{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--ink2)}
-.mon .v{font-weight:700;font-size:16px;margin-top:2px;font-variant-numeric:tabular-nums}
+.mon .h{display:flex;justify-content:space-between;gap:6px;font-size:var(--fs2);color:var(--ink2)}
+.mon .v{font-weight:700;font-size:var(--fs4);margin-top:2px;font-variant-numeric:tabular-nums}
 .mon .bar2{height:6px;background:#eef0f3;border-radius:3px;margin-top:6px;overflow:hidden}
 .mon .bar2 i{display:block;height:100%;background:var(--s1);border-radius:3px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .bar.more{margin:10px 0 0;justify-content:center}
-.bar label{font-size:12.5px;color:var(--ink2)}
-.bar select,.bar input[type=search],.bar input[type=text],.bar input[type=number],.bar input[type=date]{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;min-width:110px}
+.bar label{font-size:var(--fs2);color:var(--ink2)}
+.bar select,.bar input[type=search],.bar input[type=text],.bar input[type=number],.bar input[type=date]{border:1px solid var(--line);background:#fff;border-radius:var(--r1);padding:6px 9px;min-width:110px}
 .bar .grow{flex:1}
-.fl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)}
-.save-ind{font-size:12.5px;color:var(--ink3)}
+.fl{display:flex;align-items:center;gap:6px;font-size:var(--fs2);color:var(--ink2)}
+.save-ind{font-size:var(--fs2);color:var(--ink3)}
 .save-ind.err{color:var(--critical)}
 .tw{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:#fff;max-height:72vh}
-table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:var(--fs2);font-variant-numeric:tabular-nums}
 .t th{position:sticky;top:0;background:#f7f8fa;color:var(--ink2);font-weight:600;text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:2}
 .t th.l,.t td.l{text-align:left}
 .t th.closed{background:#eceff3}
@@ -171,75 +174,75 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;fo
 .t tr.tot td.stick{background:#eef1f6}
 /* Tab FC Input: cột Account / SKU xuống dòng thay vì kéo rộng bảng; màn hình hẹp (iPhone xoay ngang) cột này hẹp hơn */
 #fc-body .t td.stick{white-space:normal;max-width:320px;min-width:180px}
-@media (max-width: 1000px){ #fc-body .t td.stick{max-width:220px;min-width:180px;font-size:12.5px} #fc-body .t td.stick .chip{font-size:10.5px} }
+@media (max-width: 1000px){ #fc-body .t td.stick{max-width:220px;min-width:180px;font-size:var(--fs2)} #fc-body .t td.stick .chip{font-size:var(--fs1)} }
 @media (max-height: 520px) and (min-width: 761px){ .top{position:relative} .tw{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)} }
 /* FC Input: Subtotal dính dưới tiêu đề bảng (desktop), thanh Subtotal dính đầu danh sách (mobile), chế độ Cả team */
 .t thead tr.stot td{position:sticky;top:var(--hh,44px);z-index:2;background:#eaf1fb;font-weight:700;border-bottom:2px solid #c6d5ec;padding:6px 8px}
 .t thead tr.stot td.stick{left:0;z-index:3;background:#eaf1fb}
 .t thead tr:not(.stot) th{cursor:pointer;user-select:none}.t.nosort thead th{cursor:default}.t thead th[data-sort]{color:var(--navy,#1f3864)}.t thead th[data-sort]::after{content:" ▼";font-size:9px}.t thead th[data-sort="asc"]::after{content:" ▲"}
-.chip.shc{background:#eef3fb;color:#24456f;border:1px solid #c9d6ea}.shby{font-size:11px;color:#24456f}
+.chip.shc{background:#eef3fb;color:#24456f;border:1px solid #c9d6ea}.shby{font-size:var(--fs1);color:#24456f}
 /* Dòng Total / Grand Total luôn hiện ở đáy khung bảng khi cuộn (bản 4.17) */
 .tw .t tbody tr.tot td{position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 #c9d0dc}.tw .t tbody tr.tot td.stick{z-index:3}
 .vu{font-size:.82em;font-weight:500;opacity:.7;margin-left:1px}
-.mstot{position:sticky;top:var(--sbh);z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;background:#eaf1fb;border:1px solid #c6d5ec;border-radius:10px;padding:7px 10px;margin-bottom:10px;font-size:12.5px;box-shadow:0 2px 6px rgba(15,30,60,.08)}
-.t td .mrs,.mcards .mrs{white-space:normal;max-width:260px;font-size:11px;line-height:1.35;margin-top:1px}
+.mstot{position:sticky;top:var(--sbh);z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;background:#eaf1fb;border:1px solid #c6d5ec;border-radius:var(--r2);padding:7px 10px;margin-bottom:10px;font-size:var(--fs2);box-shadow:0 2px 6px rgba(15,30,60,.08)}
+.t td .mrs,.mcards .mrs{white-space:normal;max-width:260px;font-size:var(--fs1);line-height:1.35;margin-top:1px}
 .mcards .mrs{max-width:none;margin:1px 0 2px}
-.rov{display:inline-block;min-width:56px;text-align:right;padding:4px 6px;border-radius:6px;background:#f7f8fa;color:var(--ink);font-variant-numeric:tabular-nums}
+.rov{display:inline-block;min-width:56px;text-align:right;padding:4px 6px;border-radius:var(--r1);background:#f7f8fa;color:var(--ink);font-variant-numeric:tabular-nums}
 .mcards .ins .rov{display:block;width:100%}.mcards .ins .cur .rov{flex:1;min-width:0}
-.t td.rsn{white-space:normal;min-width:140px;max-width:240px;font-size:12px;line-height:1.4}
+.t td.rsn{white-space:normal;min-width:140px;max-width:240px;font-size:var(--fs2);line-height:1.4}
 .t tr.hl td.stick{background:#fffbe8}
 .t td.act{color:var(--ink2)}
 .t td.in{padding:2px 3px}
-.lockv{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;min-width:64px;padding:4px 6px;border-radius:6px;background:#eef0f3;color:var(--ink2);font-variant-numeric:tabular-nums;box-sizing:border-box}
+.lockv{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;min-width:64px;padding:4px 6px;border-radius:var(--r1);background:#eef0f3;color:var(--ink2);font-variant-numeric:tabular-nums;box-sizing:border-box}
 .lockv svg{color:#9aa1ab;flex:none}
 .cur{display:inline-flex;align-items:center;gap:3px}
-.cur .pre{font-size:11px;color:var(--ink3);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cur .pre{font-size:var(--fs1);color:var(--ink3);min-width:26px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .t .cur input.box{width:56px}
-.t th .hs{font-weight:500;font-size:11px;color:var(--ink3)}
+.t th .hs{font-weight:500;font-size:var(--fs1);color:var(--ink3)}
 .t th.closed .hs{color:#7b8491}
 .bar2.two{background:#f7cdb8}
 .cols .stk{display:flex;flex-direction:column;justify-content:flex-end;background:none!important}
 .cols .stk i{display:block;width:100%}
 .cols .stk i:first-of-type{border-radius:4px 4px 0 0}
 .cols .stk .b{background:var(--s1)}.cols .stk .o{background:var(--s2)}
-.t input.box{width:64px;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:4px 6px;font-variant-numeric:tabular-nums}
-.t input.note{width:200px;text-align:left;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:4px 6px}
+.t input.box{width:64px;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:var(--r1);padding:4px 6px;font-variant-numeric:tabular-nums}
+.t input.note{width:200px;text-align:left;border:1px solid var(--input-b);background:var(--input);border-radius:var(--r1);padding:4px 6px}
 .t input:disabled,.mcards input:disabled,select:disabled{background:#f2f2f2;border-color:#ddd;color:#777}
 .t input::placeholder,.mcards input.box::placeholder{color:#b9a76a}
 .t input:focus{outline:2px solid var(--s1);outline-offset:-1px}
 .t .grp{border-left:1px solid var(--line)}
-select.rs{max-width:190px;border:1px solid var(--line);border-radius:6px;padding:3px 4px;font-size:12px;background:#fff}
+select.rs{max-width:190px;border:1px solid var(--line);border-radius:var(--r1);padding:3px 4px;font-size:var(--fs2);background:#fff}
 select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
-.prs{font-size:11.5px;color:var(--ink2);line-height:1.35;margin-top:3px;max-width:240px;white-space:normal}.prs b{color:var(--ink);font-weight:600}
-.flag{color:var(--critical);font-size:11px;font-weight:500;white-space:normal}
-.autod{color:var(--s1);font-size:11px;font-weight:500;white-space:normal;margin-top:2px;cursor:help}
-.warn{color:var(--critical);font-size:11.5px;font-weight:600}
+.prs{font-size:var(--fs1);color:var(--ink2);line-height:1.35;margin-top:3px;max-width:240px;white-space:normal}.prs b{color:var(--ink);font-weight:600}
+.flag{color:var(--critical);font-size:var(--fs1);font-weight:500;white-space:normal}
+.autod{color:var(--s1);font-size:var(--fs1);font-weight:500;white-space:normal;margin-top:2px;cursor:help}
+.warn{color:var(--critical);font-size:var(--fs1);font-weight:600}
 .muted{color:var(--ink3)}
 .mcards .acc{background:#fff;border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
 .mcards .acc-h{background:#f3f6fb;padding:8px 12px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
 .mcards .sku{padding:8px 12px;border-top:1px solid var(--line2)}
 .mcards .mgc>.acc-h{background:#e6edf8}
 .mcards .mcode{border-top:1px solid var(--line)}
-.mcards .mcode-h{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;background:#f7f9fc;font-size:13px;font-weight:500}
+.mcards .mcode-h{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;background:#f7f9fc;font-size:var(--fs2);font-weight:500}
 .mcards .mcode .sku{padding-left:20px}
-.mcards .sku .n{font-weight:500;font-size:13px}
-.mcards .sku .meta{font-size:12px;color:var(--ink2);display:flex;gap:4px 10px;flex-wrap:wrap;margin:2px 0 6px}
+.mcards .sku .n{font-weight:500;font-size:var(--fs2)}
+.mcards .sku .meta{font-size:var(--fs2);color:var(--ink2);display:flex;gap:4px 10px;flex-wrap:wrap;margin:2px 0 6px}
 .mcards .sku .ins{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mcards .sku .ins label{font-size:11px;color:var(--ink2)}
+.mcards .sku .ins label{font-size:var(--fs1);color:var(--ink2)}
 .mcards .sku .ins>div{min-width:0}
 .mcards .sku .ins label{display:block;line-height:1.25;margin-bottom:2px}.mcards .sku .ins label span{color:var(--ink3)}
-.mcards .ins .cur{display:flex;width:100%}.mcards .ins .cur .pre:empty{display:none}.mcards .ins .cur .pre{font-size:12px}.mcards .ins .cur input{flex:1;min-width:0;width:auto}
+.mcards .ins .cur{display:flex;width:100%}.mcards .ins .cur .pre:empty{display:none}.mcards .ins .cur .pre{font-size:var(--fs2)}.mcards .ins .cur input{flex:1;min-width:0;width:auto}
 .mcards .ins .lockv{display:flex;width:100%}
-.mcards input.box{width:100%;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:7px 8px;font-size:16px}
-.mcards input.note{width:100%;margin-top:6px;border:1px solid var(--input-b);background:var(--input);border-radius:6px;padding:7px 8px}
+.mcards input.box{width:100%;text-align:right;border:1px solid var(--input-b);background:var(--input);border-radius:var(--r1);padding:7px 8px;font-size:var(--fs4)}
+.mcards input.note{width:100%;margin-top:6px;border:1px solid var(--input-b);background:var(--input);border-radius:var(--r1);padding:7px 8px}
 .mcards select.rs{max-width:none;width:100%;margin-top:6px;padding:7px 8px}
 .grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
 @media (max-width:980px){.grid2{grid-template-columns:1fr}}
 .grid2>*,.adm>*,.kpis>*,.kgrid>*,.card,.months>*{min-width:0}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin:-4px 0 10px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;font-size:var(--fs2);color:var(--ink2);margin:-4px 0 10px;flex-wrap:wrap}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .legend i.tick{width:3px;height:12px;border-radius:1px;background:var(--ink);vertical-align:-2px}
-.hb{display:grid;grid-template-columns:150px 1fr 78px;align-items:center;gap:8px;padding:3px 0;font-size:12.5px}
+.hb{display:grid;grid-template-columns:150px 1fr 78px;align-items:center;gap:8px;padding:3px 0;font-size:var(--fs2)}
 .hb .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
 .hb .tr{position:relative;height:18px}
 .hb .tr .b{position:absolute;left:0;top:3px;height:12px;background:var(--s1);border-radius:0 4px 4px 0}
@@ -249,180 +252,180 @@ select.rs.need{border-color:var(--critical);background:#fff5f5;color:#7d1f1f}
 .cols{display:flex;align-items:flex-end;gap:14px;height:220px;padding:18px 4px 0;border-bottom:1px solid var(--line);position:relative}
 .cols .g{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:4px;height:100%;position:relative}
 .cols .c{width:30px;border-radius:4px 4px 0 0;position:relative;min-height:1px}
-.cols .c span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink2);white-space:nowrap;padding-bottom:2px}
+.cols .c span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:var(--fs1);color:var(--ink2);white-space:nowrap;padding-bottom:2px}
 .cols .tline{position:absolute;left:4px;right:4px;height:2px;background:var(--ink);border-radius:1px}
-.cols .tline span{position:absolute;right:0;bottom:3px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;background:rgba(255,255,255,.88);padding:0 3px;border-radius:3px}
+.cols .tline span{position:absolute;right:0;bottom:3px;font-size:var(--fs1);font-weight:600;color:var(--ink);white-space:nowrap;background:rgba(255,255,255,.88);padding:0 3px;border-radius:3px}
 .xl{display:flex;gap:14px;padding:6px 4px 0}
-.xl div{flex:1;text-align:center;font-size:12px;color:var(--ink2);line-height:1.45}.xl .gx{font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums}.xl .gx.up{color:var(--up)}.xl .gx.down{color:var(--down)}.xl .ph{color:var(--ink);font-weight:600}.cunit{margin-top:8px}
-#tip{position:fixed;pointer-events:none;background:#1a2130;color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:99;max-width:280px;display:none;white-space:pre-line}
-.login{max-width:420px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px}
-.login h1{font-size:20px;margin:0 0 4px;color:var(--navy)}
+.xl div{flex:1;text-align:center;font-size:var(--fs2);color:var(--ink2);line-height:1.45}.xl .gx{font-size:var(--fs1);color:var(--ink2);font-variant-numeric:tabular-nums}.xl .gx.up{color:var(--up)}.xl .gx.down{color:var(--down)}.xl .ph{color:var(--ink);font-weight:600}.cunit{margin-top:8px}
+#tip{position:fixed;pointer-events:none;background:#1a2130;color:#fff;font-size:var(--fs2);padding:6px 9px;border-radius:var(--r1);z-index:99;max-width:280px;display:none;white-space:pre-line}
+.login{max-width:420px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:var(--r2);padding:26px}
+.login h1{font-size:var(--fs5);margin:0 0 4px;color:var(--navy)}
 .login .f{display:flex;flex-direction:column;gap:6px;margin-top:14px}
-.login input,.login select{border:1px solid var(--line);border-radius:8px;padding:9px 10px}
-.msg{font-size:13px;margin-top:10px}
+.login input,.login select{border:1px solid var(--line);border-radius:var(--r1);padding:9px 10px}
+.msg{font-size:var(--fs2);margin-top:10px}
 .msg.err{color:var(--critical)}
 .adm{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
-.drop{border:1.5px dashed #c9ccd3;border-radius:10px;padding:12px;text-align:center;color:var(--ink2);font-size:13px;background:#fafbfc}
+.drop{border:1.5px dashed #c9ccd3;border-radius:var(--r2);padding:12px;text-align:center;color:var(--ink2);font-size:var(--fs2);background:#fafbfc}
 .drop input{margin-top:8px}
-.log{font-size:12.5px;color:var(--ink2);margin-top:8px;white-space:pre-line}
-.chip{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.log{font-size:var(--fs2);color:var(--ink2);margin-top:8px;white-space:pre-line}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;font-size:var(--fs1);font-weight:600;white-space:nowrap}
 .chip.ok{background:#e4f5e4;color:#0a6e0a}
 .chip.no{background:#fde9e9;color:#b32d2d}
 .chip.lk{background:#eceef2;color:#555}
 /* Trade (bản 4.22): ô "trade" nhỏ dưới ô box, chỉ ở SKU có chương trình */
 .chip.trc{background:#fff1e0;color:#8a4b00}
-.prch{white-space:nowrap}.prch label{margin-right:8px;font-size:12.5px;cursor:pointer}
+.prch{white-space:nowrap}.prch label{margin-right:8px;font-size:var(--fs2);cursor:pointer}
 .prmcard .inp.num{width:104px}.prmcard [data-c=name]{width:170px}.prmcard [data-c=sku]{width:190px}.prmcard [data-c=ch]{width:110px}.prmcard input.inp[data-c=disc]{width:58px}.prmcard input[type=date]{width:132px}
 .mcell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px}
-.trw{display:flex;align-items:center;justify-content:flex-end;gap:3px;font-size:11px;color:#8a4b00;white-space:nowrap}
+.trw{display:flex;align-items:center;justify-content:flex-end;gap:3px;font-size:var(--fs1);color:#8a4b00;white-space:nowrap}
 .trw.ro{color:#8a4b00;opacity:.85}
 .trw .trl{min-width:26px;text-align:right}
-.t input.box.trd{width:44px;padding:2px 5px;font-size:12px;background:#fff8ef;border-color:#f0c999}
+.t input.box.trd{width:44px;padding:2px 5px;font-size:var(--fs2);background:#fff8ef;border-color:#f0c999}
 .t .mcell .cur input.box{width:56px}
 input.box.trd.over{border-color:var(--critical);background:#fff5f5}
 .mcards .mcell{display:flex;width:100%;align-items:stretch}.mcards .trw{justify-content:space-between}.mcards .trw .trl{text-align:left}
-.mcards input.box.trd{width:64px;flex:0 0 64px;padding:5px 7px;font-size:15px;background:#fff8ef;border-color:#f0c999}
+.mcards input.box.trd{width:64px;flex:0 0 64px;padding:5px 7px;font-size:var(--fs4);background:#fff8ef;border-color:#f0c999}
 .chip.sb{background:#e3eefc;color:#1c5cab}
 .chip.pp{background:#f3e8fd;color:#6a2fa8}
 /* Địa bàn tự add + tra cứu (bản 4.21) */
 .chip.sa{background:#e6f4ea;color:#1e7a3c;border:1px dashed #8cc9a0;font-weight:600;text-transform:none;cursor:help}
 .chip.own{background:#eef2fb;color:#1f3a73;font-weight:600}.chip.own.me{background:#dbe7ff}.chip.cd{background:#f1f3f4;color:#3c4043;font-weight:600;font-variant-numeric:tabular-nums}
-.sa-dot{font-size:10px;color:#1e7a3c;font-weight:600}
+.sa-dot{font-size:var(--fs1);color:#1e7a3c;font-weight:600}
 .own{min-height:18px;line-height:1.55}.ow.warn{color:#9a5b00;font-weight:600}.ow.ok{color:#1e7a3c;font-weight:600}
 .modal.wide{max-width:640px}
 .lkr{margin-top:10px;display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto}
-.poat td,.poat th{white-space:nowrap}.poat th{font-size:12px;white-space:normal;min-width:72px;vertical-align:bottom}.poat td.poa-a{background:#eef0f3;min-width:120px;white-space:normal;vertical-align:middle}
+.poat td,.poat th{white-space:nowrap}.poat th{font-size:var(--fs2);white-space:normal;min-width:72px;vertical-align:bottom}.poat td.poa-a{background:#eef0f3;min-width:120px;white-space:normal;vertical-align:middle}
 .poat th.bc{background:#d30f4b;color:#fff}.poat td.poab{color:#0091df;font-weight:600}.poat .inp{text-align:right;height:28px}.poat .w70{width:70px}.poat .w80{width:84px}.poat .w90{width:110px}.poat .w220{width:240px;text-align:left}
-.poa-sub{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:2px 0 10px;font-size:14px}.poa-sub .inp{flex:1;min-width:220px}
-.poa-accs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}.poa-acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
-.poa-acc.on{border-color:#9db7dc;background:#f4f8fd}.poa-acc .n{font-weight:600;flex:1;min-width:0}.poa-acc .sub{flex-basis:100%;font-size:12px}.poa-acc .poa-al{flex-basis:100%;height:28px}
-.incseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.incseg-b{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}.incseg-b+.incseg-b{border-left:1px solid var(--line)}.incseg-b.on{background:#1f3864;color:#fff;font-weight:600}.incseg-b:disabled{opacity:.45;cursor:default}
+.poa-sub{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:2px 0 10px;font-size:var(--fs3)}.poa-sub .inp{flex:1;min-width:220px}
+.poa-accs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}.poa-acc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:7px 10px;border:1px solid var(--line);border-radius:var(--r2);cursor:pointer}
+.poa-acc.on{border-color:#9db7dc;background:#f4f8fd}.poa-acc .n{font-weight:600;flex:1;min-width:0}.poa-acc .sub{flex-basis:100%;font-size:var(--fs2)}.poa-acc .poa-al{flex-basis:100%;height:28px}
+.incseg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r2);overflow:hidden}.incseg-b{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:var(--fs2);cursor:pointer;color:var(--ink2)}.incseg-b+.incseg-b{border-left:1px solid var(--line)}.incseg-b.on{background:#1f3864;color:#fff;font-weight:600}.incseg-b:disabled{opacity:.45;cursor:default}
 .ok-t{color:var(--ok-ink)}#refresh.new{box-shadow:0 0 0 2px #7fd1a0}.oncel{margin-top:8px;border-top:1px solid var(--line)}.once{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.once>div{flex:1;min-width:0}.once .sub{overflow-wrap:anywhere}
 details.poa-accd>summary{cursor:pointer;list-style-position:inside}
-.inctiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}.inctile{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff}.inctile.main{background:#f3f6fb;border-color:#d6e0ef}.inctile .l{font-size:12.5px;color:var(--ink2)}.inctile .v{font-size:22px;font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px}.inctile.main .v{font-size:28px}.inctile .d{font-size:12.5px;color:var(--ink2);margin-top:2px}
-details.howto{margin-top:8px;font-size:12.5px;color:var(--ink2)}details.howto summary{cursor:pointer;color:#1f3864;font-weight:600}details.howto>div{margin-top:4px;line-height:1.5}
-.inctot{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end;margin-top:12px}.incbig{font-size:30px;font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.15}.incsplit{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink2)}.incsplit b{color:var(--ink,#1d2433)}
-.incnx{font-size:12px;color:#0b6b3a;white-space:nowrap}.inct td{white-space:nowrap}.inct .inp{height:28px;text-align:right}.inct .w70,.card .w70.inc-i{width:74px}.inct .w90{width:118px}.w120.inc-i{width:130px;text-align:right}
-.incg{display:inline-block;font-size:13px;padding:6px 10px;border-radius:8px;background:#eef0f3}.incg.ok{background:#e6f4ea;color:#0b6b3a}.incg.err{background:var(--bad-bg);color:var(--bad-ink)}
+.inctiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}.inctile{border:1px solid var(--line);border-radius:var(--r2);padding:10px 14px;background:#fff}.inctile.main{background:#f3f6fb;border-color:#d6e0ef}.inctile .l{font-size:var(--fs2);color:var(--ink2)}.inctile .v{font-size:var(--fs5);font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px}.inctile.main .v{font-size:var(--fs6)}.inctile .d{font-size:var(--fs2);color:var(--ink2);margin-top:2px}
+details.howto{margin-top:8px;font-size:var(--fs2);color:var(--ink2)}details.howto summary{cursor:pointer;color:#1f3864;font-weight:600}details.howto>div{margin-top:4px;line-height:1.5}
+.inctot{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end;margin-top:12px}.incbig{font-size:var(--fs6);font-weight:700;color:#1f3864;font-variant-numeric:tabular-nums;line-height:1.15}.incsplit{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:var(--fs2);color:var(--ink2)}.incsplit b{color:var(--ink,#1d2433)}
+.incnx{font-size:var(--fs2);color:#0b6b3a;white-space:nowrap}.inct td{white-space:nowrap}.inct .inp{height:28px;text-align:right}.inct .w70,.card .w70.inc-i{width:74px}.inct .w90{width:118px}.w120.inc-i{width:130px;text-align:right}
+.incg{display:inline-block;font-size:var(--fs2);padding:6px 10px;border-radius:var(--r2);background:#eef0f3}.incg.ok{background:#e6f4ea;color:#0b6b3a}.incg.err{background:var(--bad-bg);color:var(--bad-ink)}
 .adl{max-height:62vh;overflow:auto}.adr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;padding:9px 2px;border-top:1px solid var(--line2,#eef0f3)}
-.adr-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.adr-m{font-size:12px;line-height:1.45}.adr-x{grid-column:2;grid-row:1/span 2;align-self:center}
-.lko{margin-top:6px}.lkot{max-height:280px}.lkot .t td,.lkot .t th{font-size:12px;padding:4px 8px}.lkot tr.mbg td{border-top:2px solid var(--line)}
-.lk{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
-.lk-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.lk-a{font-size:12.5px;color:#3c4043}.lk-o{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
+.adr-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.adr-m{font-size:var(--fs2);line-height:1.45}.adr-x{grid-column:2;grid-row:1/span 2;align-self:center}
+.lko{margin-top:6px}.lkot{max-height:280px}.lkot .t td,.lkot .t th{font-size:var(--fs2);padding:4px 8px}.lkot tr.mbg td{border-top:2px solid var(--line)}
+.lk{border:1px solid var(--line);border-radius:var(--r2);padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.lk-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.lk-a{font-size:var(--fs2);color:#3c4043}.lk-o{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:var(--fs2)}
 .lk-none{background:#fafbfc}.lk-add{display:inline-flex;gap:6px;flex-wrap:wrap}.lk-n,.lk-tip{margin-top:2px}
 .chip.nlc{background:#e3f4f1;color:#0b6e63}
-.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1a2130;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;max-width:92vw}
+.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1a2130;color:#fff;padding:9px 16px;border-radius:var(--r2);font-size:var(--fs2);z-index:100;max-width:92vw}
 .modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.35);display:flex;align-items:center;justify-content:center;z-index:90}
-.modal{background:#fff;border-radius:12px;padding:20px;max-width:460px;width:92%;max-height:90vh;overflow:auto}
+.modal{background:#fff;border-radius:var(--r2);padding:20px;max-width:460px;width:92%;max-height:90vh;overflow:auto}
 .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .modal .f{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.modal input,.modal select,.modal textarea,textarea.inp{border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.modal input,.modal select,.modal textarea,textarea.inp{border:1px solid var(--line);border-radius:var(--r1);padding:8px 10px;width:100%}
 @media (max-width:760px){
   html,body{overflow-x:hidden;overflow-x:clip}   /* clip: không tạo khung cuộn riêng, để thanh Subtotal dính được */
   main{padding:12px max(10px, env(safe-area-inset-right)) calc(70px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))}
   .top{position:relative;padding:max(8px, calc(env(safe-area-inset-top) + min(10px, env(safe-area-inset-top)))) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));gap:6px 8px}
-  .top .brand{font-size:15px;flex:1}
-  .top .period{font-size:11.5px}
-  .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:12.5px}
-  .top .btn.sm{padding:3px 8px;font-size:12px}
+  .top .brand{font-size:var(--fs4);flex:1}
+  .top .period{font-size:var(--fs1)}
+  .top .who{order:3;width:100%;margin-left:0;justify-content:space-between;font-size:var(--fs2)}
+  .top .btn.sm{padding:3px 8px;font-size:var(--fs2)}
   .top .btn.rf .lb{display:none}
   .tabs{order:4;width:100%;margin:0}
   .tab{flex:1;padding:7px 6px}
-  h2{font-size:16px}
-  .demo-banner{font-size:12px}
+  h2{font-size:var(--fs4)}
+  .demo-banner{font-size:var(--fs2)}
   .kpis,.kgrid,.kgrid.c3{grid-template-columns:1fr 1fr;gap:8px}
-  .kpi.k-gr .v .gr{font-size:20px}
+  .kpi.k-gr .v .gr{font-size:var(--fs5)}
   .kgrid.c3>.kpi:nth-child(3){grid-column:1/-1}
-  .mv{font-size:14px;min-width:38px}
-  .readme{font-size:11.5px}
+  .mv{font-size:var(--fs3);min-width:38px}
+  .readme{font-size:var(--fs1)}
   .kpi{padding:8px 11px}
-  .kpi .v{font-size:18px}
+  .kpi .v{font-size:var(--fs5)}
   .months{gap:6px}
   .mon{padding:7px 8px}
-  .mon .v{font-size:14px}
-  .mon .sub{font-size:11px}
+  .mon .v{font-size:var(--fs3)}
+  .mon .sub{font-size:var(--fs1)}
   .filters h2,.filters .grow{width:100%;flex:1 1 100%}
   .filters .fl{flex:1 1 45%}
   .filters .fl.wide{flex:1 1 100%}
   .filters .fl select{flex:1;min-width:0}
   .filters select{flex:1 1 45%}
   .bar select,.bar input[type=search],.bar input[type=text]{min-width:0}
-  input,select,textarea{font-size:16px!important}
+  input,select,textarea{font-size:var(--fs4)!important}
   .card{padding:12px}
   .hb{grid-template-columns:1fr auto;grid-template-areas:"nm pc" "tr tr";row-gap:2px;padding:5px 0}
   .hb .nm{grid-area:nm}.hb .pc{grid-area:pc}.hb .tr{grid-area:tr}
   .cols{gap:8px;height:190px}
   .cols .c{width:20px}
-  .cols .c span{font-size:10px}
-  .xl{gap:8px}.xl div{font-size:11px}
-  .legend{gap:10px;font-size:11.5px}
-  .t{font-size:12px}
+  .cols .c span{font-size:var(--fs1)}
+  .xl{gap:8px}.xl div{font-size:var(--fs1)}
+  .legend{gap:10px;font-size:var(--fs1)}
+  .t{font-size:var(--fs2)}
   .t td,.t th{padding:5px 6px}
   .adm{grid-template-columns:1fr}
 }
 /* Dashboard RFFM / Admin */
-.dnav{display:flex;gap:3px;background:#e8ebf0;padding:3px;border-radius:10px;margin:-2px 0 14px;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
-.dnav button{border:0;background:transparent;padding:6px 14px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink2);white-space:nowrap}
+.dnav{display:flex;gap:3px;background:#e8ebf0;padding:3px;border-radius:var(--r2);margin:-2px 0 14px;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.dnav button{border:0;background:transparent;padding:6px 14px;border-radius:var(--r2);font-weight:600;font-size:var(--fs2);color:var(--ink2);white-space:nowrap}
 .dnav button:hover{color:var(--ink)}
 .dnav button.on{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(16,24,40,.14)}
 .dnav .sm{display:none}
-.dnav .n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:17px;text-align:center}
-.kpi .v .u{font-size:13px;font-weight:500;color:var(--ink2)}
+.dnav .n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:var(--fs1);line-height:17px;text-align:center}
+.kpi .v .u{font-size:var(--fs2);font-weight:500;color:var(--ink2)}
 /* Nộp FC tuần + CFO (bản 4.19) */
-.tab .n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:17px;text-align:center;font-weight:700}
+.tab .n{display:inline-block;margin-left:6px;min-width:18px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:var(--fs1);line-height:17px;text-align:center;font-weight:700}
 .wkban{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}.wkban a{font-weight:600}
-.wkd{margin:2px 0 12px}.wkd .wkn{display:inline-block;min-width:16px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:10.5px;line-height:15px;text-align:center;margin-left:2px}
+.wkd{margin:2px 0 12px}.wkd .wkn{display:inline-block;min-width:16px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:var(--fs1);line-height:15px;text-align:center;margin-left:2px}
 .wkk{margin-bottom:12px}.kpi.k-ok{border-left:3px solid var(--ok)}.kpi.k-bad{border-left:3px solid var(--bad)}.kpi.k-bad .v{color:var(--bad-ink)}
 .wkt td{white-space:nowrap}.wq{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink3)}.wq.ok{color:var(--ok-ink)}.wq.no{color:var(--bad-ink)}
-.pnotes{margin-top:4px;display:flex;flex-direction:column;gap:2px;max-width:340px}.pn{font-size:11.5px;line-height:1.35;color:var(--ink2);white-space:normal}.pn b{color:var(--ink);font-weight:600}.pnby{font-size:11px;margin-top:2px}
+.pnotes{margin-top:4px;display:flex;flex-direction:column;gap:2px;max-width:340px}.pn{font-size:var(--fs1);line-height:1.35;color:var(--ink2);white-space:normal}.pn b{color:var(--ink);font-weight:600}.pnby{font-size:var(--fs1);margin-top:2px}
 .mbl td{white-space:nowrap;font-variant-numeric:tabular-nums}.mbl tr.mbp td,.mbl tr.tot td{border-top:2px solid var(--line)}.mbl td.mbn{font-weight:600;min-width:150px}.mbl td.mbb{color:var(--ink2)}
-.mbl tr.mbp td{font-weight:600;background:#f6f8fb}.mbl tr.mbc td.mbb{padding-left:22px;background:var(--card)}.mbl .mb1{display:block;font-weight:400;font-size:12px;color:var(--ink2);margin-top:2px}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl tr.mbt-tot.mbc td{font-weight:500}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
-.mbt td.mbf{text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:54px}.mbt .mbat{font-size:11px;font-weight:400}
+.mbl tr.mbp td{font-weight:600;background:#f6f8fb}.mbl tr.mbc td.mbb{padding-left:22px;background:var(--card)}.mbl .mb1{display:block;font-weight:400;font-size:var(--fs2);color:var(--ink2);margin-top:2px}.mbl tr.mbt-tot td{background:#eef3fa;font-weight:600}.mbl tr.mbt-tot.mbc td{font-weight:500}.mbl .mbwk{display:block;margin-top:3px;font-weight:400}.mbl .mbwk>*{display:inline-flex;width:auto;max-width:100%;padding:1px 7px;min-height:0}.mbl th{white-space:nowrap}
+.mbt td.mbf{text-align:right;font-variant-numeric:tabular-nums;font-size:var(--fs2);min-width:54px}.mbt .mbat{font-size:var(--fs1);font-weight:400}
 .att{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .att .kpi{display:flex;flex-direction:column}
-.att .kpi .v{font-size:20px}
+.att .kpi .v{font-size:var(--fs5)}
 .att .k-risk{border-left:3px solid var(--bad)}
-.att ol{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px}
+.att ol{margin:8px 0 0;padding:0;list-style:none;font-size:var(--fs2)}
 .att li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:4px 0;border-top:1px solid var(--line2)}
 .att li>a,.att li>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .att li>span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
 .att.mra{grid-template-columns:repeat(3,minmax(0,1fr))}
 .sgc{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:14px}
 .sgk{text-align:left;font:inherit;color:inherit;cursor:pointer}.sgk:hover{border-color:#b9c6da}.sgk.on{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1);background:#f5f9ff}
-.sgk .v{font-size:20px}.sgk .u{font-size:12px;font-weight:500;color:var(--ink2)}
+.sgk .v{font-size:var(--fs5)}.sgk .u{font-size:var(--fs2);font-weight:500;color:var(--ink2)}
 .t.sgt td:first-child{color:var(--ink3);width:28px}
-.att .more{margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:600;text-decoration:none}
-.story{font-size:13px;color:var(--ink);margin:-4px 0 10px;line-height:1.5}
-.wf{display:grid;grid-template-columns:minmax(118px,200px) 1fr max-content;grid-template-areas:"lb tk vl";align-items:center;gap:8px;padding:3px 0;font-size:12.5px}.wf .lb{grid-area:lb}.wf .tk{grid-area:tk}.wf .vl{grid-area:vl}
+.att .more{margin-top:auto;padding-top:8px;font-size:var(--fs2);font-weight:600;text-decoration:none}
+.story{font-size:var(--fs2);color:var(--ink);margin:-4px 0 10px;line-height:1.5}
+.wf{display:grid;grid-template-columns:minmax(118px,200px) 1fr max-content;grid-template-areas:"lb tk vl";align-items:center;gap:8px;padding:3px 0;font-size:var(--fs2)}.wf .lb{grid-area:lb}.wf .tk{grid-area:tk}.wf .vl{grid-area:vl}
 .wf .lb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wf .tk{position:relative;height:22px;background:linear-gradient(90deg,#f3f4f7,#f3f4f7) no-repeat;background-size:100% 1px;background-position:0 50%}
 .wf .tk i{position:absolute;top:3px;bottom:3px;border-radius:3px;min-width:2px}
 .wf i.tg{background:#8a96a8}.wf i.up{background:var(--ok)}.wf i.dn{background:var(--bad)}.wf i.nt{background:#9db8e0}.wf i.fc{background:var(--s1)}
 .wf .vl{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .wf.sum{border-top:1px solid var(--line);margin-top:3px;padding-top:6px;font-weight:600}
-.lv{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;line-height:1.5}
+.lv{display:inline-block;padding:1px 8px;border-radius:999px;font-size:var(--fs1);font-weight:700;white-space:nowrap;line-height:1.5}
 .lv.hi{background:var(--bad-bg);color:var(--bad-ink)}.lv.md{background:var(--mid-bg);color:var(--mid-ink)}.lv.lo{background:#e8ecf2;color:#46566e}.lv.ok{background:var(--ok-bg);color:var(--ok-ink)}
-.sig{display:inline-block;padding:0 7px;border-radius:6px;font-size:11.5px;border:1px solid #d6dae1;color:var(--ink2);white-space:nowrap;margin:1px 4px 2px 0;background:#fff;line-height:1.6}
+.sig{display:inline-block;padding:0 7px;border-radius:var(--r1);font-size:var(--fs1);border:1px solid #d6dae1;color:var(--ink2);white-space:nowrap;margin:1px 4px 2px 0;background:#fff;line-height:1.6}
 .sig.hi{border-color:#f2b8b5;color:var(--bad-ink);background:#fff7f6}.sig.md{border-color:#f1d18a;color:var(--mid-ink);background:#fffaf0}
-.tp{display:inline-block;padding:0 7px;border-radius:6px;font-size:11.5px;background:#efeafb;color:#5b3fa0;white-space:nowrap;margin:1px 4px 2px 0;line-height:1.6}
-.nt{white-space:normal;text-align:left;font-size:12.5px;line-height:1.45;color:var(--ink)}
+.tp{display:inline-block;padding:0 7px;border-radius:var(--r1);font-size:var(--fs1);background:#efeafb;color:#5b3fa0;white-space:nowrap;margin:1px 4px 2px 0;line-height:1.6}
+.nt{white-space:normal;text-align:left;font-size:var(--fs2);line-height:1.45;color:var(--ink)}
 .nt div{margin:2px 0}.nt b{font-weight:600}
 .t td.nt{min-width:220px;max-width:380px}
 .nt.full{max-height:260px;overflow:auto}
-.hm td.c{min-width:66px;text-align:center;font-weight:600;font-size:12px}
+.hm td.c{min-width:66px;text-align:center;font-weight:600;font-size:var(--fs2)}
 .hm td.c.good{background:var(--ok-bg);color:var(--ok-ink)}.hm td.c.mid{background:var(--mid-bg);color:var(--mid-ink)}.hm td.c.bad{background:var(--bad-bg);color:var(--bad-ink)}.hm td.c.na{color:var(--ink3);font-weight:400}
 .hm tr.tot td.c{border-top:2px solid #fff}
-.hmb th{text-align:center}.hmb .bl{border-left:2px solid var(--line)}.hmb td.c.gq{font-weight:500;min-width:62px}.hmb td.c.gq .gr{font-size:12px}
+.hmb th{text-align:center}.hmb .bl{border-left:2px solid var(--line)}.hmb td.c.gq{font-weight:500;min-width:62px}.hmb td.c.gq .gr{font-size:var(--fs2)}
 .hmb thead tr:first-child th{border-bottom:0;height:30px}.hmb thead tr:nth-child(2) th{top:30px}.hmb thead th[rowspan]{z-index:4}
 .mx{display:block;max-width:100%}
-.mx text{font-size:11px;fill:var(--ink2)}
+.mx text{font-size:var(--fs1);fill:var(--ink2)}
 .mx .grid{stroke:#eef0f3}.mx .ref{stroke:#8a909a;stroke-dasharray:4 3}
-.mx .q{font-size:11px;font-weight:600;fill:#b0413e;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.mx .q{font-size:var(--fs1);font-weight:600;fill:#b0413e;paint-order:stroke;stroke:#fff;stroke-width:3px}
 .mx rect.pri{fill:#fdecec;fill-opacity:.6}
-.mx .lb{font-size:10.5px;fill:var(--ink);font-weight:500;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}
+.mx .lb{font-size:var(--fs1);fill:var(--ink);font-weight:500;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}
 .mx circle{stroke:#fff;stroke-width:1;cursor:pointer;fill-opacity:.88}
 .mx circle:hover{stroke:var(--ink);stroke-width:1.5;fill-opacity:1}
-.cc{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(40px,1fr) 40px 76px 76px;align-items:center;gap:8px;padding:4px 2px;font-size:12.5px;border-top:1px solid var(--line2);cursor:pointer}
+.cc{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(40px,1fr) 40px 76px 76px;align-items:center;gap:8px;padding:4px 2px;font-size:var(--fs2);border-top:1px solid var(--line2);cursor:pointer}
 .cc:hover{background:#f6f8fb}
 .cc .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc .sh{height:8px;background:#eef0f3;border-radius:4px;overflow:hidden}.cc .sh i{display:block;height:100%;background:var(--s1);border-radius:4px}
@@ -437,7 +440,7 @@ a.nolk{text-decoration:none}
 .lv3 .kpi.on{outline:2px solid var(--navy);outline-offset:-1px}
 .lv3 .kpi.hi{border-left:3px solid var(--bad)}.lv3 .kpi.md{border-left:3px solid var(--mid)}.lv3 .kpi.lo{border-left:3px solid #9aa6b8}
 .flt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
-.fchip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12px;color:var(--ink2)}
+.fchip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:var(--fs2);color:var(--ink2)}
 .fchip:hover{border-color:#b9c0cc}
 .fchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .sgv{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap}   /* "Xem theo" + nút Type BV / Kênh luôn chung 1 hàng (bản 4.15) */
@@ -445,10 +448,10 @@ a.nolk{text-decoration:none}
 @media (max-width:760px){
   .t td.stick,.t th.stick{white-space:normal;overflow-wrap:anywhere;min-width:128px;max-width:42vw}
   .t td.stick > .sub,.t td.stick > .stm{display:block}
-  .t td.stick > .stm{margin-top:3px}.t td.stick > .stm .chip{white-space:normal;font-size:10.5px;border-radius:8px}
+  .t td.stick > .stm{margin-top:3px}.t td.stick > .stm .chip{white-space:normal;font-size:var(--fs1);border-radius:var(--r2)}
 }
 .rkh,.rki{display:grid;grid-template-columns:minmax(200px,1.15fr) minmax(250px,1fr) minmax(260px,1.5fr);gap:6px 18px}
-.rkh{font-size:12px;font-weight:600;color:var(--ink3);padding:0 12px 6px}
+.rkh{font-size:var(--fs2);font-weight:600;color:var(--ink3);padding:0 12px 6px}
 .rkl{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
 .rki{padding:10px 12px;border-top:1px solid var(--line2);cursor:pointer;align-items:start}
 .rki:first-child{border-top:0}
@@ -458,20 +461,20 @@ a.nolk{text-decoration:none}
 .n4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-variant-numeric:tabular-nums;text-align:right}
 .rki .n4 span{white-space:nowrap}
 .rki .n4 i{display:none}
-.rki .n4 small{color:var(--ink3);font-size:11px}
+.rki .n4 small{color:var(--ink3);font-size:var(--fs1)}
 .rkh .n4 span{text-align:right}
 .rules summary{cursor:pointer;font-weight:600}
-.rules ul{margin:10px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink2);line-height:1.6}
+.rules ul{margin:10px 0 0;padding-left:18px;font-size:var(--fs2);color:var(--ink2);line-height:1.6}
 .modal.wide{max-width:1000px;width:96%}
-.modal h4{font-size:13px;margin:14px 0 8px;color:var(--ink)}
+.modal h4{font-size:var(--fs2);margin:14px 0 8px;color:var(--ink)}
 .bvd-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .bvd-h .acts{gap:8px;align-items:center}
 .bvd-k{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0 8px}
-.bvd-k .kpi .v{font-size:17px}
+.bvd-k .kpi .v{font-size:var(--fs5)}
 .bvd-s{margin:4px 0 2px}
 @media (max-width:1240px){.att{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:980px){.att,.att.mra,.lv3{grid-template-columns:1fr}.rkh{display:none}.rki{grid-template-columns:1fr}.rki .n4{text-align:left}.rki .n4 i{display:block;font-style:normal;font-size:11px;color:var(--ink3)}}
-@media (max-width:760px){.dnav{width:100%}.dnav button{flex:1;padding:6px 8px}.dnav .lg{display:none}.dnav .sm{display:inline}.bvd-k{grid-template-columns:1fr 1fr}.wf{grid-template-columns:minmax(0,1fr) max-content;grid-template-areas:"lb vl" "tk tk";row-gap:2px;font-size:12.5px;padding:4px 0}.wf .lb{white-space:normal}.cc{grid-template-columns:minmax(0,1.4fr) 40px 70px 70px}.cc .sh{display:none}.modal.wide{width:100%;padding:14px}}
+@media (max-width:980px){.att,.att.mra,.lv3{grid-template-columns:1fr}.rkh{display:none}.rki{grid-template-columns:1fr}.rki .n4{text-align:left}.rki .n4 i{display:block;font-style:normal;font-size:var(--fs1);color:var(--ink3)}}
+@media (max-width:760px){.dnav{width:100%}.dnav button{flex:1;padding:6px 8px}.dnav .lg{display:none}.dnav .sm{display:inline}.bvd-k{grid-template-columns:1fr 1fr}.wf{grid-template-columns:minmax(0,1fr) max-content;grid-template-areas:"lb vl" "tk tk";row-gap:2px;font-size:var(--fs2);padding:4px 0}.wf .lb{white-space:normal}.cc{grid-template-columns:minmax(0,1.4fr) 40px 70px 70px}.cc .sh{display:none}.modal.wide{width:100%;padding:14px}}
 /* Quý hiện tại: FC sát target thì gộp 2 nhãn, xếp 2 dòng */
 .cols.tall{padding-top:32px}
 .cols .c span.two{text-align:center;line-height:1.25;font-weight:600;color:var(--ink)}
@@ -487,16 +490,16 @@ a.nolk{text-decoration:none}
 .kc{padding:9px 14px 10px;border-left:1px solid var(--line2);min-width:0}
 .kc:first-child{border-left:0}
 .kc.kfc{background:var(--ach-bg)}
-.kl{font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kv{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px;white-space:nowrap;line-height:1.35}
-.kv .gr{font-size:17px}
-.ks{font-size:12px;font-weight:500;color:var(--ink2);margin-left:-4px}
-.kd{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.kl{font-size:var(--fs2);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv{display:flex;align-items:center;gap:12px;font-size:var(--fs5);font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px;white-space:nowrap;line-height:1.35}
+.kv .gr{font-size:var(--fs5)}
+.ks{font-size:var(--fs2);font-weight:500;color:var(--ink2);margin-left:-4px}
+.kd{font-size:var(--fs2);color:var(--ink2);margin-top:2px;line-height:1.4}
 .km{display:flex;align-items:center;gap:8px;flex:1;min-width:64px}
 .km .pbar{height:6px}
-.km .mv{font-size:14px;min-width:0}
+.km .mv{font-size:var(--fs3);min-width:0}
 .kto>div{margin-top:3px;line-height:1.35}
-.kt{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink2)}
+.kt{font-size:var(--fs2);font-weight:600;text-decoration:none;color:var(--ink2)}
 .kt.bad{color:var(--critical)}
 .kt:hover{text-decoration:underline}
 .kmore{align-self:center;margin:0 12px}
@@ -513,29 +516,29 @@ a.nolk{text-decoration:none}
 /* Admin · Kỳ FC & quy tắc */
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin-bottom:14px}
 .fld{min-width:0}.fld.full{grid-column:1/-1}
-.fld>label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
-.fld>label.ck{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);margin:0}
+.fld>label{display:block;font-size:var(--fs2);color:var(--ink2);margin-bottom:4px}
+.fld>label.ck{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs2);color:var(--ink);margin:0}
 .adm{align-items:start}
 .adm .prcard,.adm .prmcard,.adm .wide{grid-column:1/-1}
 /* Tender quota (bản 4.14) */
-.tqc{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:10px;border:1px solid #c9d6ea;background:#f2f6fc;color:#24456f;font:inherit;font-size:11px;font-weight:600;line-height:1.5;cursor:pointer;white-space:nowrap;vertical-align:1px}
+.tqc{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:var(--r2);border:1px solid #c9d6ea;background:#f2f6fc;color:#24456f;font:inherit;font-size:var(--fs1);font-weight:600;line-height:1.5;cursor:pointer;white-space:nowrap;vertical-align:1px}
 .tqc:hover{border-color:var(--s1)}.tqc.out,.tqc.noq{background:#fdecec;border-color:#f0b9b9;color:#a32020}.tqc.fast{background:#fff4e0;border-color:#f1cf8f;color:#8a5300}.tqc.slow{background:#f1f2f4;border-color:#d6d8dd;color:#4f5562}.tqc.exp{background:#fdf6dd;border-color:#ecd98f;color:#6d5800}
 .tqc.up{border-style:dashed;background:#fff;color:#24456f}.tqu{color:#24456f;font-weight:600;white-space:nowrap}.tqc .tqu{font-weight:600;border-left:1px dashed #9fb3d1;padding-left:5px}
-.tqs{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11.5px;font-weight:600;background:#eef6ee;color:#226b2a;white-space:nowrap}.tqs.out,.tqs.noq,.tqs.bad{background:#fdecec;color:#a32020}.tqs.fast{background:#fff4e0;color:#8a5300}.tqs.exp{background:#fdf6dd;color:#6d5800}.tqs.slow{background:#f1f2f4;color:#4f5562}.tqs.up{background:#fff;border:1px dashed #9fb3d1;color:#24456f}
-.tqkg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}.tqk{text-align:left;font:inherit;color:inherit;cursor:pointer}.tqk .v{font-size:19px}.tqk .u{font-size:12px;font-weight:500;color:var(--ink2)}.tqk.on{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1);background:#f5f9ff}.tqk.bad .v{color:#a32020}.tqk.mid .v{color:#8a5300}
+.tqs{display:inline-block;padding:1px 7px;border-radius:var(--r2);font-size:var(--fs1);font-weight:600;background:#eef6ee;color:#226b2a;white-space:nowrap}.tqs.out,.tqs.noq,.tqs.bad{background:#fdecec;color:#a32020}.tqs.fast{background:#fff4e0;color:#8a5300}.tqs.exp{background:#fdf6dd;color:#6d5800}.tqs.slow{background:#f1f2f4;color:#4f5562}.tqs.up{background:#fff;border:1px dashed #9fb3d1;color:#24456f}
+.tqkg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}.tqk{text-align:left;font:inherit;color:inherit;cursor:pointer}.tqk .v{font-size:var(--fs5)}.tqk .u{font-size:var(--fs2);font-weight:500;color:var(--ink2)}.tqk.on{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1);background:#f5f9ff}.tqk.bad .v{color:#a32020}.tqk.mid .v{color:#8a5300}
 .t.tqt td.tqhot{color:#a32020;font-weight:600}.t.tqt td.tqlow{color:var(--ink3)}.t.tqt td.stick .sub{font-weight:400}
-.t.tqt .tqa{font-weight:650;color:var(--ink);font-size:13.5px;line-height:1.3}.t.tqt .tqsk{font-size:12px;color:var(--ink2);margin-top:2px}   /* tên BV đậm, SKU nhỏ bên dưới (bản 4.15.2) */
+.t.tqt .tqa{font-weight:650;color:var(--ink);font-size:var(--fs3);line-height:1.3}.t.tqt .tqsk{font-size:var(--fs2);color:var(--ink2);margin-top:2px}   /* tên BV đậm, SKU nhỏ bên dưới (bản 4.15.2) */
 .tqf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding:10px;border:1px dashed #9fb3d1;border-radius:var(--r);background:#fafcff}
-.prh{font-size:10px;text-align:right;margin-top:2px;white-space:nowrap}
-.fctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2);min-width:0}
-.fctl input[type=number],.fctl input[type=text],.fctl input[type=date],.fctl select{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;color:var(--ink)}
+.prh{font-size:var(--fs1);text-align:right;margin-top:2px;white-space:nowrap}
+.fctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:var(--fs2);color:var(--ink2);min-width:0}
+.fctl input[type=number],.fctl input[type=text],.fctl input[type=date],.fctl select{border:1px solid var(--line);background:#fff;border-radius:var(--r1);padding:6px 9px;color:var(--ink)}
 .fctl .ck{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
-input[type=file]{font-size:12.5px;color:var(--ink2)}
-input[type=file]::file-selector-button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;margin-right:10px;font:inherit;font-weight:600;color:var(--navy);cursor:pointer}
+input[type=file]{font-size:var(--fs2);color:var(--ink2)}
+input[type=file]::file-selector-button{border:1px solid var(--line);background:#fff;border-radius:var(--r1);padding:6px 12px;margin-right:10px;font:inherit;font-weight:600;color:var(--navy);cursor:pointer}
 input[type=file]::file-selector-button:hover{border-color:#b9c0cc}
 input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-allowed}
 .drop{background:#f8f9fb;border-color:#d4d8df}
-.card h3{font-size:14.5px}
+.card h3{font-size:var(--fs3)}
 @media (max-width:760px){
   .top{gap:6px 8px;padding-bottom:6px}
   .top .brand{flex:0 0 auto;order:0}.top .brand .lg{display:none}.top .brand .sm{display:inline}
@@ -553,12 +556,12 @@ input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-all
   .kc:nth-child(1){border-top:1px solid var(--line2)}
   .kc:nth-child(3),.kc:nth-child(5){border-left:1px solid var(--line2)}
   .kc:nth-child(4){border-left:0}
-  .kv{font-size:17px;gap:10px}
+  .kv{font-size:var(--fs5);gap:10px}
   .kmore{grid-column:1/-1;justify-self:stretch;margin:0;border:0;border-top:1px solid var(--line2);border-radius:0;padding:8px;color:var(--navy);font-weight:600;background:#fafbfc}
   .dt{display:none}.mt{display:inline}
-  .fchead h2{width:auto!important;flex:0 1 auto!important;font-size:15px}
+  .fchead h2{width:auto!important;flex:0 1 auto!important;font-size:var(--fs4)}
   .fchead .grow{display:none}
-  .fchead .chip{font-size:11px}
+  .fchead .chip{font-size:var(--fs1)}
   .fbar{gap:6px}
   .fbar #f-q{flex:1 1 52%!important;order:0}
   .fbar #f-flt{flex:1 1 40%;order:1}
@@ -573,12 +576,12 @@ input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-all
   .mact{display:flex;align-items:center;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));box-shadow:0 -2px 10px rgba(15,30,60,.08)}
   .mact .grow{flex:1}
   .mact .btn{flex:1}.mact .save-ind+.grow+.btn{flex:none}
-  .fbar .save-ind{flex:1 1 100%;order:5;font-size:12px}
+  .fbar .save-ind{flex:1 1 100%;order:5;font-size:var(--fs2)}
   .mact .btn{padding:9px 14px}
-  .mact .save-ind{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mact .save-ind{font-size:var(--fs2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .toast{bottom:calc(74px + env(safe-area-inset-bottom))}
   .mcards .sku{padding:9px 12px 11px}
-  .mcards .sku .meta{font-size:11.5px;gap:2px 10px;margin:1px 0 7px}
+  .mcards .sku .meta{font-size:var(--fs1);gap:2px 10px;margin:1px 0 7px}
   .mcards .sku .ins label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
   .mcards input.box{padding:9px 8px}
   .mcards .acc-h{padding:9px 12px}
@@ -597,7 +600,7 @@ input[type=file]:disabled::file-selector-button{color:var(--ink3);cursor:not-all
 .abar .dnav{margin:0}
 .abar{margin-bottom:14px}
 /* ô nhập trong bảng Admin (phân bổ, thành viên, giá): cùng kiểu với app; :where giữ độ ưu tiên thấp để không đè ô FC / lý do */
-.t :where(select, input[type=text], input[type=number], input[type=email], input[type=date], input:not([type]):not(.box):not(.note)){border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:#fff;color:var(--ink);font-size:12.5px}
+.t :where(select, input[type=text], input[type=number], input[type=email], input[type=date], input:not([type]):not(.box):not(.note)){border:1px solid var(--line);border-radius:var(--r1);padding:4px 7px;background:#fff;color:var(--ink);font-size:var(--fs2)}
 .t :where(select, input[type=text], input[type=number], input[type=email], input:not([type]):not(.box):not(.note)):focus{outline:2px solid var(--s1);outline-offset:-1px;border-color:transparent}
 /* nút xoá từng dòng: nhẹ, đỏ khi rê chuột */
 .t .btn.sm.danger{border-color:transparent;background:transparent;color:var(--ink3);padding:4px 8px}
@@ -621,41 +624,41 @@ button:focus-visible,select:focus-visible,a:focus-visible,input[type=checkbox]:f
   .kcap.a + .kgrid.c3 > .kpi:nth-child(2){order:-1;grid-column:1/-1}
   .kcap.a + .kgrid.c3 > .kpi:nth-child(3){grid-column:auto}
   .kcap.a + .kgrid.c3 .meter{gap:6px}
-  .kpi .d{font-size:11.5px}
+  .kpi .d{font-size:var(--fs1)}
   .login{margin:6vh auto;padding:20px}
 }
 
 /* ===== New launch (4.9): kênh Gov / Priv / Clinic — 3 màu riêng, không trùng màu hiệu suất (xanh / vàng / đỏ) và màu Act. / FC remain ===== */
 :root{--gov:#2f4f8f;--gov-bg:#e6ecf7;--priv:#0e8a7d;--priv-ink:#0b6a61;--priv-bg:#e0f2ef;--clinic:#8a5cc4;--clinic-ink:#6a43a0;--clinic-bg:#efe8f8;--segnone:#a7adb8}
-.segc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;background:#eef0f3;color:#5b6170}
+.segc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:var(--fs1);font-weight:600;white-space:nowrap;background:#eef0f3;color:#5b6170}
 .segc.gov{background:var(--gov-bg);color:var(--gov)}.segc.priv{background:var(--priv-bg);color:var(--priv-ink)}.segc.clinic{background:var(--clinic-bg);color:var(--clinic-ink)}
-select.segsel{border:1px solid transparent;border-radius:999px;padding:2px 6px 2px 9px;font-size:12px!important;font-weight:600;background:#eef0f3;color:#5b6170;cursor:pointer;max-width:150px}
+select.segsel{border:1px solid transparent;border-radius:999px;padding:2px 6px 2px 9px;font-size:var(--fs2)!important;font-weight:600;background:#eef0f3;color:#5b6170;cursor:pointer;max-width:150px}
 select.segsel.gov{background:var(--gov-bg);color:var(--gov)}select.segsel.priv{background:var(--priv-bg);color:var(--priv-ink)}select.segsel.clinic{background:var(--clinic-bg);color:var(--clinic-ink)}
 select.segsel.none{background:#fff4e5;color:#8a5300;border-color:#f1c27d}
 .segbar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:#eef0f3;margin:7px 0 5px}
 .segbar i,.sbt i{display:block;height:100%}
 .segbar i.gov,.sbt i.gov,.segl i.gov{background:var(--gov)}.segbar i.priv,.sbt i.priv,.segl i.priv{background:var(--priv)}
 .segbar i.clinic,.sbt i.clinic,.segl i.clinic{background:var(--clinic)}.segbar i.none,.sbt i.none,.segl i.none{background:var(--segnone)}
-.nlmgm{border:1px solid #c3d1ea;border-radius:10px;padding:6px;margin:8px 0;background:#f5f8fd}.nlmg-h{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:13.5px;padding:4px 4px 6px}.nlmg-h .sub{font-weight:500}
+.nlmgm{border:1px solid #c3d1ea;border-radius:var(--r2);padding:6px;margin:8px 0;background:#f5f8fd}.nlmg-h{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:var(--fs3);padding:4px 4px 6px}.nlmg-h .sub{font-weight:500}
 .nlmgm .acc.nlsub{margin:6px 0 0}
-.t tr.nlsegh td{background:#fff;padding:12px 8px 5px;font-weight:700;font-size:13px;border-bottom:1px solid var(--line);border-left:4px solid var(--segnone)}
+.t tr.nlsegh td{background:#fff;padding:12px 8px 5px;font-weight:700;font-size:var(--fs2);border-bottom:1px solid var(--line);border-left:4px solid var(--segnone)}
 .t tr.nlsegh.gov td{border-left-color:var(--gov);color:var(--gov)}.t tr.nlsegh.priv td{border-left-color:var(--priv);color:var(--priv-ink)}.t tr.nlsegh.clinic td{border-left-color:var(--clinic);color:var(--clinic-ink)}
 .t tr.nlsegh .sub{font-weight:500}
-.nlsegm{font-weight:700;font-size:13.5px;margin:14px 2px 6px;padding-left:8px;border-left:4px solid var(--segnone)}.nlsegm:first-child{margin-top:4px}
+.nlsegm{font-weight:700;font-size:var(--fs3);margin:14px 2px 6px;padding-left:8px;border-left:4px solid var(--segnone)}.nlsegm:first-child{margin-top:4px}
 .nlsegm.gov{border-left-color:var(--gov);color:var(--gov)}.nlsegm.priv{border-left-color:var(--priv);color:var(--priv-ink)}.nlsegm.clinic{border-left-color:var(--clinic);color:var(--clinic-ink)}.nlsegm .sub{font-weight:500}
 .segl{display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap}
 .segl i{display:inline-block;width:8px;height:8px;border-radius:2px}
 .kstrip.nls{grid-template-columns:minmax(170px,1.1fr) minmax(160px,1fr) minmax(140px,.8fr) minmax(220px,1.4fr) minmax(150px,.9fr)}
-.nls .kq{display:flex;justify-content:space-between;gap:10px;font-size:13px;line-height:1.55;font-variant-numeric:tabular-nums;max-width:220px}
+.nls .kq{display:flex;justify-content:space-between;gap:10px;font-size:var(--fs2);line-height:1.55;font-variant-numeric:tabular-nums;max-width:220px}
 .nls .kq span{color:var(--ink2)}
 .dnav.fcmode{margin:0 0 0 4px}
 .dnav.fcmode button{padding:5px 12px}
-.shtg{display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:5px 8px 5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;line-height:1.3}
-.shtg .n{min-width:20px;padding:0 6px;border-radius:999px;background:var(--line2);color:var(--ink);font-size:12px;text-align:center}
+.shtg{display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:5px 8px 5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink2);font:inherit;font-size:var(--fs2);font-weight:600;cursor:pointer;white-space:nowrap;line-height:1.3}
+.shtg .n{min-width:20px;padding:0 6px;border-radius:999px;background:var(--line2);color:var(--ink);font-size:var(--fs2);text-align:center}
 .shtg:hover{border-color:#c9ced8;color:var(--ink)}
 .shtg.on{background:var(--navy);border-color:var(--navy);color:#fff}.shtg.on .n{background:rgba(255,255,255,.2);color:#fff}
 .nlempty{padding:22px 22px 20px}
-.nle-t{font-weight:700;font-size:15px;color:var(--ink);margin-bottom:4px}
+.nle-t{font-weight:700;font-size:var(--fs4);color:var(--ink);margin-bottom:4px}
 .nlempty .btn{margin-top:12px}
 .nlempty .sub{max-width:640px}
 .nlt tr.acc td{background:#f6f8fb}
@@ -665,19 +668,19 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
 .nlf{gap:6px}
 .nlhint{min-height:18px;line-height:1.45}
 .segpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.segpick button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer;font:inherit;text-align:left;color:var(--ink)}
-.segpick button span{font-size:11.5px;color:var(--ink2)}
+.segpick button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--line);border-radius:var(--r2);background:#fff;padding:8px 10px;cursor:pointer;font:inherit;text-align:left;color:var(--ink)}
+.segpick button span{font-size:var(--fs1);color:var(--ink2)}
 .segpick button:hover{border-color:#b9c0cc}
 .segpick button[aria-checked=true]{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:#f3f6fb}
 .segpick button[data-sp=gov] b{color:var(--gov)}.segpick button[data-sp=priv] b{color:var(--priv-ink)}.segpick button[data-sp=clinic] b{color:var(--clinic-ink)}
 .skupick{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
-.skupick .ck{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px;color:var(--ink);background:#fff}
+.skupick .ck{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--r2);padding:8px 10px;cursor:pointer;font-size:var(--fs2);color:var(--ink);background:#fff}
 .skupick .ck:hover{border-color:#b9c0cc}
 .skupick .ck:has(input:checked){border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:#f3f6fb}
 .modal .skupick input[type=checkbox]{width:16px;height:16px;padding:0;margin:0;flex:none;accent-color:var(--navy)}
-.skupick .ck b{display:block;font-weight:600}.skupick .ck .sub{display:block;font-size:11px;margin-top:1px}
-.t.mini{width:100%;margin-top:12px;font-size:12.5px;font-variant-numeric:tabular-nums;border-top:1px solid var(--line2)}
-.t.mini th{position:static;background:none;padding:6px 6px 4px;font-size:11.5px}
+.skupick .ck b{display:block;font-weight:600}.skupick .ck .sub{display:block;font-size:var(--fs1);margin-top:1px}
+.t.mini{width:100%;margin-top:12px;font-size:var(--fs2);font-variant-numeric:tabular-nums;border-top:1px solid var(--line2)}
+.t.mini th{position:static;background:none;padding:6px 6px 4px;font-size:var(--fs1)}
 .t.mini td{padding:4px 6px}
 .t.mini tr:last-child td{border-bottom:0}
 .mcards .nlh{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:start}
@@ -692,7 +695,7 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
 .sbv{grid-area:v;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.sbv .sub{margin-left:6px}
 .sbm{grid-area:m}
 .nlpills{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-.chipbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink2)}
+.chipbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-size:var(--fs2);font-weight:600;cursor:pointer;color:var(--ink2)}
 .chipbtn.on{background:var(--navy);border-color:var(--navy);color:#fff}
 @media (max-width:1240px){ .kstrip.nls{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:760px){
@@ -710,6 +713,46 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
   .nlbt td.stick{white-space:normal;min-width:128px;max-width:150px}
   .nlbt .nlcode{display:block}
   .nlbt .hm{display:none}
+}
+
+/* ===== 4.26: icon, nhãn trạng thái, theme pastel, thanh tab đáy, vùng bấm ===== */
+.i{width:1.1em;height:1.1em;vertical-align:-.2em;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.chip.ok::before,.chip.no::before,.chip.sb::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:.1em}
+.top{background:var(--hdr);color:var(--hdr-ink);border-bottom:1px solid var(--hdr2)}
+#sbar{background:var(--hdr)}
+.top .period{background:rgba(255,255,255,.7);border:1px solid var(--hdr2);color:var(--hdr-ink)}
+.top .period.lock{background:var(--critical);border-color:var(--critical);color:#fff}
+.top .tsel{border:1px solid var(--hdr2)}
+.pill{background:#fff;color:var(--navy);border:1px solid var(--hdr2);font-weight:600}
+.btn.ghost{background:transparent;color:inherit;border-color:var(--line)}
+.top .btn.ghost{background:rgba(255,255,255,.7);color:var(--hdr-ink);border-color:var(--hdr2)}
+.top .btn.ghost:hover{background:#fff}
+.tab{color:var(--hdr-mut)}
+.tab:hover{background:rgba(255,255,255,.55)}
+.tab.on{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(27,49,87,.12)}
+.tab .i{display:none}
+.verban{position:fixed;top:calc(var(--sbh) + 10px);left:50%;transform:translateX(-50%);z-index:95;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--hdr2);box-shadow:0 6px 20px rgba(27,49,87,.16);border-radius:var(--r2);padding:7px 8px 7px 14px;font-weight:600;color:var(--hdr-ink);white-space:nowrap}
+.verban .vx{border:0;background:transparent;padding:4px 6px;color:var(--ink3)}
+@media (max-width:760px){
+  :root{--fs1:12px}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:2px;margin:0;width:auto;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 10px rgba(27,49,87,.06);padding:4px max(6px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left))}
+  .tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:50px;padding:5px 2px;font-size:var(--fs1);font-weight:600;color:var(--ink3);border-radius:var(--r2);background:transparent;box-shadow:none;line-height:1.1}
+  .tab .i{display:block;width:21px;height:21px}
+  .tab.on{background:var(--hdr);color:var(--navy);box-shadow:none}
+  .tab .tl{white-space:nowrap}
+  .tab .n{position:absolute;top:3px;left:calc(50% + 6px);margin:0;min-width:16px;padding:0 4px;font-size:10px;line-height:15px}
+  main{padding-bottom:calc(132px + env(safe-area-inset-bottom))}
+  .mact{bottom:calc(58px + env(safe-area-inset-bottom));padding-bottom:8px;background:#fff}
+  .toast{bottom:calc(136px + env(safe-area-inset-bottom))}
+  body.kb .tabs{display:none}
+  body.kb .mact{bottom:0;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  .verban{left:10px;right:10px;transform:none;white-space:normal}
+  .verban span{flex:1}
+  /* vùng bấm ≥ 40px: nút, ô nhập, chọn; chip / link nhỏ nới vùng chạm, hình không đổi */
+  .btn,.dnav button,.shtg,.incseg-b{min-height:40px}
+  main select:not(.t *),main input:is([type=text],[type=number],[type=search],[type=email],[type=date],[type=password],:not([type])):not(.t *){min-height:40px}
+  .tqc,.kt,a[data-go],a[data-k]{position:relative}
+  .tqc::after,.kt::after,a[data-go]::after,a[data-k]::after{content:"";position:absolute;inset:-10px -4px}
 }
 </style>
 </head>
@@ -798,6 +841,29 @@ function biasHtml(b){ if (b === null || b === undefined || !isFinite(b)) return 
 // Gap so với target (triệu VND)
 function gapHtml(g){ if (g === null || g === undefined) return '<span class="muted">–</span>'; if (Math.abs(g) < 5e4) return '<span class="muted">0</span>'; return `<span class="gap ${g < 0 ? 'neg' : 'pos'}" data-tip="${g < 0 ? 'Gap vs target' : 'Vượt target'}: ${vnd(Math.abs(g))} VND">${g < 0 ? '−' : '+'}${tr(Math.abs(g))}</span>`; }
 function gapText(g){ if (g === null || g === undefined) return 'chưa có target'; if (Math.abs(g) < 5e4) return 'đạt target'; return g < 0 ? `<span class="gap neg">gap ${big(-g)} vs target</span>` : `<span class="gap pos">vượt target ${big(g)}</span>`; }
+// 4.26: bộ icon nét mảnh (SVG 16px, cùng màu chữ) thay emoji / ký tự ở nút và nhãn; chuỗi copy sang Zalo, tooltip, option vẫn giữ ký tự
+const ICN = {
+  search: '<circle cx="7" cy="7" r="4.5"/><path d="M10.4 10.4L14 14"/>',
+  user: '<circle cx="8" cy="5.5" r="2.8"/><path d="M2.8 14c.6-2.8 2.6-4.3 5.2-4.3s4.6 1.5 5.2 4.3"/>',
+  back: '<path d="M6 3.5L2.5 7 6 10.5"/><path d="M2.5 7h7.3a3.5 3.5 0 0 1 0 7H8"/>',
+  refresh: '<path d="M13.5 8.5A5.5 5.5 0 1 1 12 4.2"/><path d="M12.6 1.8v3h-3"/>',
+  download: '<path d="M8 2.5v8M4.5 7.2L8 10.7l3.5-3.5M2.5 13.5h11"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+  list: '<rect x="3.5" y="2.5" width="9" height="11.5" rx="1.5"/><path d="M6 1.8h4v1.8H6zM6 7.5h4M6 10.5h4"/>',
+  copy: '<rect x="5" y="5" width="8.5" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H4a1.5 1.5 0 0 0-1.5 1.5V10A1.5 1.5 0 0 0 4 11.5h1"/>',
+  pin: '<path d="M8 14.5S3.5 10.3 3.5 6.8a4.5 4.5 0 0 1 9 0c0 3.5-4.5 7.7-4.5 7.7z"/><circle cx="8" cy="6.8" r="1.6"/>',
+  bell: '<path d="M4 11V7.5a4 4 0 0 1 8 0V11l1.2 1.3H2.8z"/><path d="M6.6 14.3h2.8"/>',
+  check: '<path d="M3 8.5l3.2 3L13 4.5"/>',
+  x: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  alert: '<path d="M8 2.3l6.2 11.2H1.8z"/><path d="M8 6.6v3.2M8 11.7v.1"/>',
+  clock: '<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/>',
+  edit: '<path d="M10.6 2.7l2.7 2.7-7.8 7.8H2.8v-2.7z"/><path d="M9 4.3l2.7 2.7"/>',
+  chart: '<path d="M2.5 13.5h11M4.5 11V8M8 11V4.5M11.5 11V6.5"/>',
+  slides: '<rect x="2" y="2.8" width="12" height="8.7" rx="1.3"/><path d="M8 11.5v2.7M5.5 14.2h5"/>',
+  award: '<circle cx="8" cy="6" r="3.8"/><path d="M5.8 9.1L5 14.5 8 13l3 1.5-.8-5.4"/>',
+  tune: '<path d="M2.5 4.5h2M8 4.5h5.5M2.5 11.5h6M12 11.5h1.5"/><circle cx="6.2" cy="4.5" r="1.7"/><circle cx="10.3" cy="11.5" r="1.7"/>',
+};
+const ico = (n, c = '') => `<svg class="i${c ? ' ' + c : ''}" viewBox="0 0 16 16" aria-hidden="true">${ICN[n] || ''}</svg>`;
 const IC = {
   ach: '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>',
   gr: '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M1.5 11.5l4-4 3 3 5.5-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4.5h3.5V8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
@@ -1486,7 +1552,7 @@ function paintRow(r, editable = true){
     $$(`[data-ach="${r.id}"]`).forEach(c => { if (c.tagName === 'TD') c.dataset.tip = MTIP(r); });
     const tr = $(`tr[data-rid="${r.id}"]`); if (tr){ tr.classList.toggle('mlead', r.mlead); tr.classList.toggle('msub', !r.mlead); } }
   [0, 1, 2].forEach(i => $$(`input[data-id="${r.id}"][data-f="t${i + 1}"]`).forEach(x => { x.classList.toggle('over', !!(r.trOver || [])[i]); if (r.trOver && r.trOver[i]) x.dataset.tip = 'Box trade lớn hơn box FC của tháng: app chỉ tính tối đa bằng box FC. Sửa lại ô box hoặc ô trade.'; }));
-  $$(`[data-flag="${r.id}"]`).forEach(x => x.textContent = r.flag ? '⚠ ' + r.flag : '');
+  $$(`[data-flag="${r.id}"]`).forEach(x => x.innerHTML = r.flag ? ico('alert') + ' ' + esc(r.flag) : '');
   $$(`[data-ach="${r.id}"]`).forEach(x => x.innerHTML = achHtml(rowAch(r)));
   const gly = $(`[data-gly="${r.id}"]`); if (gly) gly.innerHTML = grHtml(rowGr(r, 0));
   const gq = $(`[data-gq="${r.id}"]`); if (gq) gq.innerHTML = grHtml(rowGr(r, 3));
@@ -1708,9 +1774,32 @@ async function refreshData(auto = false, quiet = false){
   } catch(e){ toast('Không tải được dữ liệu: ' + e.message, 4500); }
   finally { REFRESHING = false; const b = $('#refresh'); if (b){ b.disabled = false; b.classList.remove('spin'); } }
 }
+// 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
+// chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
+const APP_VER = '4.26';
+const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
+let NEW_VER = null, VER_AT = 0;
+async function verCheck(force){
+  if (!/^https?:$/.test(location.protocol) || NEW_VER || (!force && Date.now() - VER_AT < 5 * 60e3)) return; VER_AT = Date.now();
+  try { const r = await fetch('ver.json?t=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return; const j = await r.json();
+    if (j && j.v && verGt(j.v, APP_VER)){ NEW_VER = String(j.v); verBanner(); fetch(location.pathname, {cache: 'reload'}).catch(() => {}); } } catch(e){}
+}
+function verBanner(){
+  if (!NEW_VER || $('#verban')) return; const d = document.createElement('div'); d.id = 'verban'; d.className = 'verban'; d.setAttribute('role', 'status');
+  d.innerHTML = `${ico('refresh')}<span>App có bản mới</span><button class="btn sm pri" id="ver-go">Tải lại</button><button class="btn sm vx" id="ver-x" aria-label="Để sau">${ico('x')}</button>`;
+  document.body.appendChild(d);
+  $('#ver-go').onclick = async () => { try { await flushSaves(); } catch(e){} location.replace(location.pathname + '?v=' + encodeURIComponent(NEW_VER) + location.hash); };
+  $('#ver-x').onclick = () => d.remove();
+}
+setInterval(() => verCheck(), 10 * 60e3); setTimeout(() => verCheck(true), 4000);
+// 4.26: đang gõ số trên điện thoại thì ẩn thanh tab dưới đáy (bàn phím đẩy thanh lên, che ô nhập)
+const isTyping = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(checkbox|radio|file|button|submit|range|color)$/.test(el.type)));
+document.addEventListener('focusin', e => { if (isTyping(e.target)) document.body.classList.add('kb'); });
+document.addEventListener('focusout', () => setTimeout(() => { if (!isTyping(document.activeElement)) document.body.classList.remove('kb'); }, 120));
 // Quay lại tab app sau ≥ 1 phút: tự làm mới (trừ khi đang ở Admin, đang mở hộp thoại hoặc có ô lưu lỗi)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden'){ HIDDEN_AT = Date.now(); flushSaves().catch(() => {}); return; }   // 4.25.4: rời app (điện thoại chuyển app) → lưu ngay ô đang chờ
+  verCheck();
   const away = HIDDEN_AT ? Date.now() - HIDDEN_AT : 0; HIDDEN_AT = 0;
   if (away < AUTO_REFRESH_MS || !ME || !D || VIEW.tab === 'admin' || $('.modal-bg') || SAVE_ERR) return;
   refreshData(true);
@@ -1771,15 +1860,16 @@ function passwordDialog(force){
       try { await STORE.setPassword(p1); bg.remove(); toast('Đã đổi mật khẩu'); res(true); } catch(err){ m.textContent = 'Lỗi: ' + err.message; } });
   });
 }
+const TAB_IC = {fc: 'edit', dash: 'chart', poa: 'slides', inc: 'award', admin: 'tune'};   // 4.26: icon thanh tab dưới đáy (điện thoại)
 function render(){
-  const s = D.settings; const tabs = [['fc', ME.role === 'MR' ? 'FC của tôi' : (ME.role === 'RFFM' ? 'Xem / duyệt FC' : 'FC Input')], ['dash', 'Dashboard']]; if (poaOn()) tabs.push(['poa', 'FC POA']); if (incOn()) tabs.push(['inc', 'Thưởng']); if (isAdmin()) tabs.push(['admin', 'Admin']);   // 4.25.2: FC Input → Dashboard → FC POA → Thưởng → Admin
+  const s = D.settings; const tabs = [['fc', ME.role === 'MR' ? 'FC của tôi' : (ME.role === 'RFFM' ? '<span class="dt">Xem / duyệt FC</span><span class="mt">Duyệt FC</span>' : 'FC Input')], ['dash', 'Dashboard']]; if (poaOn()) tabs.push(['poa', 'FC POA']); if (incOn()) tabs.push(['inc', 'Thưởng']); if (isAdmin()) tabs.push(['admin', 'Admin']);   // 4.25.2: FC Input → Dashboard → FC POA → Thưởng → Admin
   if (!tabs.find(t => t[0] === VIEW.tab)) VIEW.tab = 'fc';
   const dl = wkOn() ? wkDlText() : s.deadline ? ` · deadline ${ddmm(s.deadline)}` : '';   // bản 4.20: header theo hạn nộp FC tuần
   const wkN = wkBadgeN(), tabLbl = (k, l) => k === 'dash' && wkN ? `${l}<span class="n" data-tip="CFO: MR trễ / chưa nộp FC tuần vừa rồi">${wkN}</span>` : l;
   $('#app').innerHTML = `<header class="top"><div class="brand"><span class="lg">${esc(CFG.APP_NAME)}</span><span class="sm">${esc(CFG.APP_NAME.split(' ').slice(0, 2).join(' '))}</span></div><span class="br"></span>
     <div class="chips"><span class="period ${s.locked ? 'lock' : ''}"${wkOn() ? ` data-tip="${esc(wkDlTip())}"` : ''}><span class="dt">FC </span>${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHOÁ' : ''}</span>${teamSelHtml()}${asofChipHtml()}</div>
-    <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${tabLbl(k, l)}</button>`).join('')}</nav>
-    <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? '↩ <span class="lb">Giao diện </span>Admin' : '👤 <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">🔎<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">↻</span><span class="lb">Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
+    <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${ico(TAB_IC[k])}<span class="tl">${tabLbl(k, l)}</span></button>`).join('')}</nav>
+    <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? ico('back') + ' <span class="lb">Giao diện </span>Admin' : ico('user') + ' <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">${ico('search')}<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">${ico('refresh')}</span><span class="lb"> Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin / CFO) bằng Đăng xuất.</div>` : ''}${dbOldNote()}<div id="wkban">${wkBannerHtml()}</div><div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
   $('#wkban').onclick = onWkBanner; wkSchedule(); $('#asmr') && ($('#asmr').onclick = toggleAsMR);
@@ -1821,14 +1911,14 @@ function fcKpiHtml(rep){
   const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay';
   const meter = (x, cls, mk, mkTip) => { const has = x !== null && x !== undefined && isFinite(x), c = cls || achClass(x);
     return `<span class="km"><span class="pbar">${has ? `<i class="${c}" style="width:${Math.max(0, Math.min(100, x * 100))}%"></i>` : ''}${mk !== undefined ? `<s style="left:calc(${Math.min(100, mk * 100)}% - 1px)" data-tip="${esc(mkTip || '')}"></s>` : ''}</span><b class="mv ${has ? c : ''}">${has ? pct1(x) : '–'}</b></span>`; };
-  const todo = [nNeed ? `<a href="#" class="kt bad" data-k="need" data-tip="FC lệch nhiều so với TB 2Q: chọn lý do trước khi submit (Khác thì ghi Note)">⚠ ${nNeed} dòng cần lý do</a>` : '',
+  const todo = [nNeed ? `<a href="#" class="kt bad" data-k="need" data-tip="FC lệch nhiều so với TB 2Q: chọn lý do trước khi submit (Khác thì ghi Note)">${ico('alert')} ${nNeed} dòng cần lý do</a>` : '',
     nEmpty ? `<a href="#" class="kt bad" data-k="empty" data-tip="Có sales 2 quý gần nhất / target nhưng chưa nhập FC: nhập số (không có đơn thì nhập 0) trước khi submit">${nEmpty} dòng chưa nhập FC</a>` : ''].filter(Boolean);
   return `<div class="kstrip">
     <div class="kc"><div class="kl">Target ${P[4].label}</div><div class="kv">${big(a.tgt)}</div><div class="kd">${tgtNote}</div></div>
     <div class="kc kfc" data-tip="${esc(`FC ${P[4].label} = Act. tháng đã chốt + đơn đã lên đến ${ASOF_DM} + FC từ ${NEXT_DM} đến hết quý`)}"><div class="kl">FC ${P[4].label}</div><div class="kv">${big(a.fcv)}${meter(a.filled ? a.ach : null)}</div><div class="kd">${a.filled ? gapText(a.gap) + ' · ' : ''}đã nhập ${a.filled}/${a.n} dòng</div></div>
     <div class="kc"><div class="kl">Act. QTD · đến ${asof}</div><div class="kv">${big(a.act[4])}${meter(a.achQ, paceClass(a.achQ), PACE, paceTip())}</div><div class="kd"><span data-tip="${esc(paceTip())}">phasing ${pct(PACE)}</span> · ${paceText(a.achQ)}</div></div>
     <div class="kc"><div class="kl">Growth FC</div><div class="kv">${grHtml(a.gLy)}<span class="ks">vs LYSP</span></div><div class="kd">${grHtml(a.gQ)} vs ${P[3].label}</div></div>
-    <div class="kc kto"><div class="kl">Việc cần xử lý</div>${todo.length ? todo.map(x => `<div>${x}</div>`).join('') : '<div class="kv"><span class="gr up">✓ Không có</span></div>'}</div>
+    <div class="kc kto"><div class="kl">Việc cần xử lý</div>${todo.length ? todo.map(x => `<div>${x}</div>`).join('') : '<div class="kv"><span class="gr up">' + ico('check') + ' Không có</span></div>'}</div>
     ${more}</div>`;
 }
 let kpiTimer;
@@ -1911,16 +2001,16 @@ const teamMRs = o => o.rows.map(r => `${ME.role === 'MR' ? esc(r.rep_name) : `<a
 // Địa bàn chung (bản 4.17): ai lưu FC sau cùng
 const teamLast = o => { const f = o.rows.map(r => r.f).filter(f => f.updated_at).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]; return f ? ` <span data-tl-last>· cập nhật: ${esc(f.updated_by ? memName(f.updated_by) : '')} ${fmtTime(f.updated_at)}</span>` : ''; };
 const teamRs = o => { const nd = o.rows.filter(r => r.needReason).length, l = o.rows.filter(r => r.f.reason).map(r => `${teamMulti(o) ? esc(r.rep_name) + ': ' : ''}${esc(r.f.reason)}`);
-  return (nd ? `<span class="warn">⚠ ${nd} MR cần lý do</span>${l.length ? '<br>' : ''}` : '') + l.join('<br>'); };
+  return (nd ? `<span class="warn">${ico('alert')} ${nd} MR cần lý do</span>${l.length ? '<br>' : ''}` : '') + l.join('<br>'); };
 const teamNt = o => o.rows.filter(r => norm(r.f.note)).map(r => `${teamMulti(o) ? `<b>${esc(r.rep_name)}</b>: ` : ''}${esc(norm(r.f.note))}`).join('<br>');
 const teamFlag = o => { const fl = o.rows.filter(r => r.flag); if (!fl.length) return '';
-  return `<div class="flag" data-tip="${esc(fl.map(r => `${r.rep_name}: ${r.flag}`).join('\n'))}">⚠ ${fl.length === 1 ? esc((teamMulti(o) ? fl[0].rep_name + ': ' : '') + fl[0].flag) : `${fl.length} MR có cảnh báo`}</div>`; };
+  return `<div class="flag" data-tip="${esc(fl.map(r => `${r.rep_name}: ${r.flag}`).join('\n'))}">${ico('alert')} ${fl.length === 1 ? esc((teamMulti(o) ? fl[0].rep_name + ': ' : '') + fl[0].flag) : `${fl.length} MR có cảnh báo`}</div>`; };
 // Dòng app tự dời FC khi nạp sales mới (DB bản 5): dấu ↻, rê chuột / chạm để xem chi tiết
 const autoLast = s => (String(s || '').split('\n').filter(Boolean).pop() || '').replace(/^[^:]*:\s*/, '');
-const autoTip = s => `${s}\nFC quý giữ nguyên. Sửa số tháng của dòng này thì dấu ↻ mất.`;
-const autoMk = r => r.f.auto_note ? `<div class="autod" data-auto="${r.id}" data-tip="${esc(autoTip(r.f.auto_note))}">↻ ${esc(autoLast(r.f.auto_note))}</div>` : '';
+const autoTip = s => `${s}\nFC quý giữ nguyên. Sửa số tháng của dòng này thì dấu tự dời mất.`;
+const autoMk = r => r.f.auto_note ? `<div class="autod" data-auto="${r.id}" data-tip="${esc(autoTip(r.f.auto_note))}">${ico('refresh')} ${esc(autoLast(r.f.auto_note))}</div>` : '';
 const teamAuto = o => { const a = o.rows.filter(r => r.f.auto_note); if (!a.length) return '';
-  return `<div class="autod" data-tip="${esc(autoTip(a.map(r => `${teamMulti(o) ? r.rep_name + ': ' : ''}${String(r.f.auto_note).split('\n').filter(Boolean).pop()}`).join('\n')))}">↻ ${a.length === 1 && !teamMulti(o) ? esc(autoLast(a[0].f.auto_note)) : `${a.length} MR tự dời theo sales`}</div>`; };
+  return `<div class="autod" data-tip="${esc(autoTip(a.map(r => `${teamMulti(o) ? r.rep_name + ': ' : ''}${String(r.f.auto_note).split('\n').filter(Boolean).pop()}`).join('\n')))}">${ico('refresh')} ${a.length === 1 && !teamMulti(o) ? esc(autoLast(a[0].f.auto_note)) : `${a.length} MR tự dời theo sales`}</div>`; };
 // Admin nhập số tổng ở Cả team → chia box cho từng MR theo tỷ trọng ratio (làm tròn theo phần dư lớn nhất, tổng các MR = đúng số đã nhập)
 function splitByRatio(T, rows){
   const w = rows.map(r => Math.max(0, num(r.ratio))), s = w.reduce((a, b) => a + b, 0), sh = s > 0 ? w.map(x => x / s) : rows.map(() => 1 / rows.length);
@@ -1987,7 +2077,7 @@ function viewFC(){
     if (D.settings.locked && !isAdmin()) notes += `<div class="note">FC ${P[4].label} đã khoá nhập.</div>`;
     notes += wkMineNote(rep);   // bản 4.19: nhắc hạn nộp FC tuần
     if (editable && (isOwner || isAdmin()) && mine.length) acts.push(`<button class="btn pri" id="submit">${st === 'draft' ? 'Submit FC' : 'Submit lại'}</button>`);
-    if (isReviewer() && st === 'submitted') acts.push(`<button class="btn ok" data-rv="approved" data-rep="${esc(rep)}">✓ Duyệt</button><button class="btn danger" data-rv="returned" data-rep="${esc(rep)}">Trả lại</button>`);
+    if (isReviewer() && st === 'submitted') acts.push(`<button class="btn ok" data-rv="approved" data-rep="${esc(rep)}">${ico('check')} Duyệt</button><button class="btn danger" data-rv="returned" data-rep="${esc(rep)}">Trả lại</button>`);
     if (isReviewer() && st === 'approved') acts.push(`<button class="btn" data-rv="returned" data-rep="${esc(rep)}">Mở lại</button>`);
   }
   // New launch (bản 4.9): SKU chưa có target nhập ở phần riêng; nút In-market / New launch cạnh tiêu đề
@@ -2000,7 +2090,7 @@ function viewFC(){
     const nlNotes = shNLon ? `<div class="note">Địa bàn chung: account × SKU New launch bạn cùng phụ trách với MR khác. Nhập số box cả account, app tự chia cho từng MR theo ratio. Ai lưu sau thì số đó được dùng, đồng nghiệp không cần submit lại.</div>` : rep === TEAM ? '' : notes;
     return nlView({v, rep, team: rep === TEAM, isOwner: rep !== TEAM && ME.rep_name === rep, acts: shNLon ? [] : acts, notes: nlNotes, withRows, modeSw, ts: fcTs, shared: shNLon, shN: shNL});
   }
-  if (nAuto) notes += `<div class="note">App đã tự dời FC theo sales mới ở <b>${nAuto} dòng</b> (dấu ↻), FC quý giữ nguyên: sales vượt FC tháng thì trừ tháng sau, thấp hơn thì cộng vào tháng còn lại. ${editable || teamEdit ? 'Sửa lại nếu tình hình đặt hàng thay đổi. ' : ''}<a href="#" id="go-auto">Xem các dòng này</a></div>`;
+  if (nAuto) notes += `<div class="note">App đã tự dời FC theo sales mới ở <b>${nAuto} dòng</b> (dấu ${ico('refresh')}), FC quý giữ nguyên: sales vượt FC tháng thì trừ tháng sau, thấp hơn thì cộng vào tháng còn lại. ${editable || teamEdit ? 'Sửa lại nếu tình hình đặt hàng thay đổi. ' : ''}<a href="#" id="go-auto">Xem các dòng này</a></div>`;
   const cntSt = k => withRows.filter(x => repStatus(x) === k).length;
   const teamChip = `<span class="chip sb" data-tip="${esc(`Đã submit: ${cntSt('submitted')} · Đã duyệt: ${cntSt('approved')} · Trả lại: ${cntSt('returned')} · Chưa submit: ${cntSt('draft')}`)}">${cntSt('submitted') + cntSt('approved')}/${withRows.length} MR đã submit · ${cntSt('approved')} đã duyệt</span>`;
   const mn = MS.map(m => mlabel(D.settings.year, m)), mob = MOBILE();
@@ -2016,7 +2106,7 @@ function viewFC(){
       ${team ? `<select id="f-terr"><option value="">Địa bàn: cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === VIEW.fcTerr ? 'selected' : ''}>Địa bàn ${esc(r)}</option>`).join('')}</select>` : ''}
       <select id="f-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.fcBrand ? 'selected' : ''}>${b}</option>`).join('')}</select>
       <select id="f-flt" data-tip="${esc(`Mặc định ẩn dòng không có sales 4 quý gần nhất + QTD, không có target (merge code: target tính ở dòng có sales), FC = 0 hoặc chỉ có Note. Chọn Tất cả dòng để hiện.`)}">${[['active', 'Dòng có sales / target / FC'], ['all', `Tất cả dòng${nQuiet ? ` (+${nQuiet} dòng trống)` : ''}`], ['need', `Cần chọn lý do (${nNeed})`], ['empty', `Chưa nhập, có lịch sử (${nEmpty})`], ['flag', `FC lệch TB 2Q (${nFlag})`], ...(nAuto || F === 'auto' ? [['auto', `Tự dời theo sales (${nAuto})`]] : []), ...(nSelf || F === 'self' ? [['self', `Địa bàn tự add (${nSelf})`]] : [])].map(([k, l]) => `<option value="${k}" ${k === F ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">＋ Đề xuất<span class="dt"> account/SKU</span></button>' : ''}${!team && addedOn() ? '<button class="btn" id="added" data-tip="Xem lại account đã add new / đề xuất, gỡ dòng điền nhầm">📋<span class="dt"> Đã add</span></button>' : ''}
+      ${!team && ((isOwner && ME.role === 'MR' && !D.settings.locked) || isAdmin()) ? '<button class="btn" id="propose">' + ico('plus') + ' Đề xuất<span class="dt"> account/SKU</span></button>' : ''}${!team && addedOn() ? '<button class="btn" id="added" data-tip="Xem lại account đã add new / đề xuất, gỡ dòng điền nhầm">' + ico('list') + '<span class="dt"> Đã add</span></button>' : ''}
       ${mob ? '' : histBtn}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
     <div id="fc-body"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
     <details class="howto"><summary>Cách nhập</summary><div>${team ? `Cột tháng theo box (tổng các MR). Mỗi dòng = account × SKU cộng mọi MR; số cạnh tên MR là ratio. ${teamEdit ? 'Nhập số tổng, app chia cho từng MR theo tỷ trọng ratio (làm tròn box, tổng giữ đúng số nhập) và tự lưu. ' : ''}${shared ? '' : 'Bấm tên MR để mở FC của MR đó.'}`
@@ -2113,9 +2203,9 @@ function viewFC(){
     const skuCard = r => `<div class="sku${r.mu ? (r.mlead ? ' mlead' : ' msub') : ''}"><div class="n">${skuLbl(r)}</div>
         <div class="meta"><span>${P[3].label}: ${trU(r.act[3])}</span><span>QTD: ${trU(r.act[4])}</span>${r.mu && !r.mlead ? '' : `<span${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>Target: ${trU(rowTgt(r))}</span>`}<span>TB 2Q: ${r.base ? r.base + ' box' : '–'}/th</span><span>FC: <b data-fcv="${r.id}">${trU(r.fcv)}</b> <span data-ach="${r.id}">${achHtml(rowAch(r))}</span></span></div>
         <div class="ins">${[0, 1, 2].map(i => `<div><label>${mn[i]} <span>${mLbl(ck(r), i)}</span></label>${inp(r, i)}</div>`).join('')}</div>
-        <div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}${rowPeerNotes(r)}</div>`;
+        <div class="flag" data-flag="${r.id}">${r.flag ? ico('alert') + ' ' + esc(r.flag) : ''}</div>${autoMk(r)}<div data-rs="${r.id}">${reasonCell(r, editable, true)}</div>${noteInp(r)}${rowPeerNotes(r)}</div>`;
     const codeLbl = (c, x) => `<span data-tip="Mã KH ${esc(c.rs[0].cust_code)}">${esc(c.rs[0].cust_name)}</span> ${chChip(c.rs[0].channel, x.multi)}`;
-    const skuRow = (r, deep) => `<tr data-rid="${r.id}"${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? '⚠ ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${trU(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
+    const skuRow = (r, deep) => `<tr data-rid="${r.id}"${r.mu ? ` class="${r.mlead ? 'mlead' : 'msub'}"` : ''}><td class="l stick">&nbsp;&nbsp;${deep ? '&nbsp;&nbsp;' : ''}${skuLbl(r)}<div class="flag" data-flag="${r.id}">${r.flag ? ico('alert') + ' ' + esc(r.flag) : ''}</div>${autoMk(r)}</td>${q4(r.act, 'act')}<td class="act">${trU(r.act[4])}</td>${tgtTd(r)}<td class="grp muted">${r.base || '–'}</td>
             ${[0, 1, 2].map(i => `<td class="in">${inp(r, i)}</td>`).join('')}<td data-fcv="${r.id}">${trU(r.fcv)}</td><td data-ach="${r.id}"${r.mu ? ` data-tip="${esc(MTIP(r))}"` : ''}>${achHtml(rowAch(r))}</td><td data-gly="${r.id}">${grHtml(rowGr(r, 0))}</td><td data-gq="${r.id}">${grHtml(rowGr(r, 3))}</td>
             <td class="l" data-rs="${r.id}">${reasonCell(r, editable, false)}</td><td class="in l">${noteInp(r)}${rowPeerNotes(r)}</td></tr>`;
     if (MOBILE()) body.innerHTML = sbar + `<div class="mcards">${groups.map(x => x.multi
@@ -2337,10 +2427,10 @@ function accFields(bg, p, o = {}){
   const show = (v, res) => { const hit = res.find(x => x.cust_code === v.code || (v.phone && phoneNorm(x.cust_code) === v.code));
     if (hit && !v.name){ $n.value = hit.cust_name || ''; autoName = $n.value; }
     if (hit && $a && !$a.value && hit.address) $a.value = hit.address;
-    if (hit && hit.reps.length) own.innerHTML = `<span class="ow warn">⚠ ${esc(hit.cust_name || v.code)} đã có người phụ trách:</span> ${ownTxt(hit)}${hit.reps.some(r => r.rep === o.rep) ? '' : '<br>Vẫn thêm được nếu bạn cùng phụ trách (địa bàn chung).'}`;
-    else if (hit) own.innerHTML = `<span class="ow ok">✓ Có trong danh mục, chưa ai phụ trách.</span>${hit.address ? ` <span class="muted">${esc(hit.address)}</span>` : ''}`;
+    if (hit && hit.reps.length) own.innerHTML = `<span class="ow warn">${ico('alert')} ${esc(hit.cust_name || v.code)} đã có người phụ trách:</span> ${ownTxt(hit)}${hit.reps.some(r => r.rep === o.rep) ? '' : '<br>Vẫn thêm được nếu bạn cùng phụ trách (địa bàn chung).'}`;
+    else if (hit) own.innerHTML = `<span class="ow ok">${ico('check')} Có trong danh mục, chưa ai phụ trách.</span>${hit.address ? ` <span class="muted">${esc(hit.address)}</span>` : ''}`;
     else { const sim = v.name.length >= 3 ? res.filter(x => x.reps.length).slice(0, 3) : [];
-      own.innerHTML = `<span class="ow ok">✓ ${v.phone ? 'SĐT' : 'Code'} mới, chưa ai phụ trách.</span>${sim.length ? `<br><span class="ow warn">Tên gần giống:</span> ${sim.map(x => `${esc(x.cust_name)} <span class="muted">(${esc(codeVis(x.cust_code))})</span> ${ownTxt(x)}`).join(' · ')}` : ''}`; }
+      own.innerHTML = `<span class="ow ok">${ico('check')} ${v.phone ? 'SĐT' : 'Code'} mới, chưa ai phụ trách.</span>${sim.length ? `<br><span class="ow warn">Tên gần giống:</span> ${sim.map(x => `${esc(x.cust_name)} <span class="muted">(${esc(codeVis(x.cust_code))})</span> ${ownTxt(x)}`).join(' · ')}` : ''}`; }
     if (o.onHit) o.onHit(hit, v); };
   const check = () => { clearTimeout(tm); tm = setTimeout(async () => { const v = read(), q = v.code || v.name; if ((v.code || '').length < 3 && v.name.length < 3){ own.innerHTML = ''; return; }
     if (v.known && !norm($n.value)){ $n.value = known.get(v.code); autoName = $n.value; }
@@ -2357,15 +2447,15 @@ function accFields(bg, p, o = {}){
 }
 // Kết quả tra cứu: {cust_code, cust_name, address, segment, in_raw, merge_code, merge_name, reps: [{rep, team, n, brands, self, prop, direct, by, at}]}
 function lookupDialog(q0 = ''){
-  const bg = modal(`<h3>🔎 Tra cứu địa bàn</h3><div class="sub">Nhập mã KH, SĐT phòng khám / BS hoặc tên PK / BV (gõ không dấu cũng được) để xem đã có ai phụ trách chưa.</div>
+  const bg = modal(`<h3>Tra cứu địa bàn</h3><div class="sub">Nhập mã KH, SĐT phòng khám / BS hoặc tên PK / BV (gõ không dấu cũng được) để xem đã có ai phụ trách chưa.</div>
     <div class="f"><input id="lk-q" type="search" autocomplete="off" placeholder="vd: 0903 456 789 · Tâm Đức · 30190512" value="${esc(q0)}" aria-label="Mã KH, SĐT hoặc tên PK / BV"></div>
-    <div id="lk-r" class="lkr" aria-live="polite"></div><div class="acts">${addedOn() ? '<button class="btn" data-a="ad" style="margin-right:auto">📋 Account đã add new</button>' : ''}<button class="btn" data-a="0">Đóng</button></div>`);
+    <div id="lk-r" class="lkr" aria-live="polite"></div><div class="acts">${addedOn() ? '<button class="btn" data-a="ad" style="margin-right:auto">' + ico('list') + ' Account đã add new</button>' : ''}<button class="btn" data-a="0">Đóng</button></div>`);
   bg.firstElementChild.classList.add('wide');
   const R = $('#lk-r', bg), Q = $('#lk-q', bg); let seq = 0, tm = null, RES = [];
   const owners = x => x.reps.map(r => `<span class="chip own" data-tip="${esc(`${r.brands || ''}${r.n ? ` · ${r.n} SKU` : ''}${r.prop ? ' · đang đề xuất' : ''}${r.self ? ` · tự add${r.by ? ' bởi ' + r.by : ''}${r.at ? ' ' + ddmm(r.at) : ''}` : ''}`)}">${esc(r.rep)}${r.team && TEAMS.length > 1 ? ` <span class="muted">${esc(r.team)}</span>` : ''}${r.self ? ' <span class="sa-dot">tự add</span>' : ''}${r.direct ? '' : ' <span class="muted">· account gộp</span>'}</span>`).join(' ');
-  const addBtns = (pre, i) => { const o = addNewOpts(); if (!o.length) return ''; return `<span class="lk-add">${o.map(([k, l]) => `<button class="btn sm${k === 'nl' ? ' pri' : ''}" data-lka="${k}" data-i="${i}">＋ ${l}</button>`).join(' ')}</span>`; };
+  const addBtns = (pre, i) => { const o = addNewOpts(); if (!o.length) return ''; return `<span class="lk-add">${o.map(([k, l]) => `<button class="btn sm${k === 'nl' ? ' pri' : ''}" data-lka="${k}" data-i="${i}">${ico('plus')} ${l}</button>`).join(' ')}</span>`; };
   const card = (x, i) => `<div class="lk"><div class="lk-h"><b>${esc(x.cust_name || '(chưa có tên)')}</b> <span class="chip cd" data-tip="${esc(codeKind(x.cust_code))}">${esc(codeVis(x.cust_code))}</span>${x.segment ? ' ' + segChip(x.segment) : ''}${x.in_raw ? '' : ' <span class="muted">· chưa có trong raw sales</span>'}</div>
-      <div class="lk-a">${x.address ? '📍 ' + esc(x.address) : '<span class="muted">Chưa có địa chỉ</span>'}${x.merge_code && x.merge_code !== x.cust_code ? ` <span class="muted">· thuộc account ${esc(x.merge_name || x.merge_code)}</span>` : ''}</div>
+      <div class="lk-a">${x.address ? ico('pin') + ' ' + esc(x.address) : '<span class="muted">Chưa có địa chỉ</span>'}${x.merge_code && x.merge_code !== x.cust_code ? ` <span class="muted">· thuộc account ${esc(x.merge_name || x.merge_code)}</span>` : ''}</div>
       <div class="lk-o">${x.reps.length ? `<span class="muted">Phụ trách:</span> ${owners(x)}` : `<span class="ow ok">Chưa có ai phụ trách</span>${addNewOpts().length ? ' · bạn có muốn add new không?' : ''} ${addBtns(x, i)}${ordersOn() && x.in_raw ? ` <button class="btn sm" data-lko="${i}" aria-expanded="false">🧾 Đơn gần nhất</button>` : ''}`}</div>${x.reps.length ? '' : `<div class="lko" id="lko-${i}" hidden></div>`}</div>`;
   const run = () => { clearTimeout(tm); tm = setTimeout(async () => { const q = norm(Q.value), my = ++seq;
     if (q.length < 2){ R.innerHTML = '<div class="sub lk-tip">Gõ ít nhất 2 ký tự.</div>'; return; }
@@ -2438,7 +2528,7 @@ function addedDialog(rep0){
     L.innerHTML = `<div class="sub" style="margin-bottom:6px">${gs.length} account</div>` + gs.map(o => { const del = o.rows.filter(addedCanDel), skus = o.rows.map(m => NLSKU.has(m.sku) ? nlSku(m.sku) : m.sku);
       return `<div class="adr"><div class="adr-h"><b>${esc(o.name)}</b> <span class="chip cd" data-tip="${esc(codeKind(o.code))}">${esc(codeVis(o.code))}</span>${o.seg ? ' ' + segChip(o.seg) : ''}${ME.role === 'MR' ? '' : ` <span class="chip own">${esc(o.rep)}</span>`}
           ${o.prop ? `<span class="chip pp">${o.prop} SKU đang đề xuất</span>` : ''}${o.nl ? `<span class="chip nlc">New launch</span>` : ''}</div>
-        <div class="adr-m sub">${esc(skus.join(', '))}${o.at ? ` · add ${ddmm(o.at)}` : ''}${o.by && ME.role !== 'MR' ? ` · ${esc(memName(o.by) || o.by)}` : ''}${o.fc ? ` · ${o.fc} dòng đã nhập FC` : ' · chưa nhập FC'}${o.addr ? `<br>📍 ${esc(o.addr)}` : ''}</div>
+        <div class="adr-m sub">${esc(skus.join(', '))}${o.at ? ` · add ${ddmm(o.at)}` : ''}${o.by && ME.role !== 'MR' ? ` · ${esc(memName(o.by) || o.by)}` : ''}${o.fc ? ` · ${o.fc} dòng đã nhập FC` : ' · chưa nhập FC'}${o.addr ? `<br>${ico('pin')} ${esc(o.addr)}` : ''}</div>
         ${del.length ? `<button class="btn sm danger adr-x" data-del="${esc(o.k)}">Gỡ${del.length < o.rows.length ? ` ${del.length}/${o.rows.length} SKU` : ''}</button>` : ''}</div>`; }).join(''); };
   draw();
   $('#ad-q', bg).oninput = e => { q = e.target.value; draw(); };
@@ -2594,7 +2684,7 @@ function viewPOA(){
   const accList = M.accs.map(a => `<label class="poa-acc ${M.full.has(a.mc) ? 'on' : ''}"><input type="checkbox" data-full="${esc(a.mc)}" ${M.full.has(a.mc) ? 'checked' : ''} ${dis}><span class="n">${esc(bvName(a.name))}</span>
       <span class="sub">${M.tot ? Math.round(a.w / M.tot * 100) : 0}% · Target ${milT(a.tgt)} · FC ${milT(a.fcv)}</span>${M.full.has(a.mc) ? `<input class="inp poa-al" data-al="${esc(a.mc)}" value="${esc(I.alias[a.mc] || '')}" placeholder="${esc(bvName(a.name))}" ${dis} aria-label="Tên trên slide">` : ''}</label>`).join('');
   V.innerHTML = `<div class="card"><div class="bar"><h3 style="margin:0">FC POA ${M.Qd}</h3>${ME.role === 'MR' ? '' : `<select id="poa-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
-      <span class="grow"></span><span id="poa-sv" class="save-ind"></span><button class="btn pri" id="poa-ppt">⬇ Tải PowerPoint</button></div>
+      <span class="grow"></span><span id="poa-sv" class="save-ind"></span><button class="btn pri" id="poa-ppt">${ico('download')} Tải PowerPoint</button></div>
       <details class="howto"><summary>Cách dùng${ed ? '' : ' · chỉ xem'}</summary><div>Base case = FC trên app (theo ratio). Ô nhập: quota còn lại (khi khác số app), sell-out, tồn kho, best case (box, theo ratio, app quy ra tiền), note. Số tự lưu.</div></details></div>
     <details class="card poa-accd" id="poa-accd" ${VIEW.poaAccOpen ? 'open' : ''}><summary><b>Account phân tích full</b> <span class="sub">· ${M.full.size} account${M.accs.length > M.full.size ? ` · ${M.accs.length - M.full.size} account gộp Others` : ''} · bấm để đổi</span></summary>
       <div class="bar" style="margin:8px 0 6px"><span class="sub">Bỏ chọn thì account gộp vào dòng Others. Đổi tên ngắn hiện trên slide ở ô dưới tên.</span><span class="grow"></span>${ed ? '<button class="btn sm" id="poa-def">Mặc định</button>' : ''}</div><div class="poa-accs">${accList || '<span class="sub">Chưa có account.</span>'}</div></details>
@@ -3290,7 +3380,7 @@ function nlView(c){
   const editableAny = shared ? all.some(canEditRow) : team ? isAdmin() : canEdit(rep);
   const shSw = shToggle(shared, c.shN);
   const saveInd = `<span class="save-ind" id="saveind">${shared && editableAny ? 'Nhập box cả account · tự chia theo ratio' : editableAny ? (mob ? 'Nhập box · tự lưu' : 'Nhập box · tự lưu · Enter / ↓ xuống dòng dưới') : 'Chỉ xem'}</span>`;
-  const addBtn = id => canAcc && skus.length ? `<button class="btn${id === 'nl-add2' ? ' pri' : ''}" id="${id}">＋ Thêm BV / phòng khám</button>` : '';
+  const addBtn = id => canAcc && skus.length ? `<button class="btn${id === 'nl-add2' ? ' pri' : ''}" id="${id}">${ico('plus')} Thêm BV / phòng khám</button>` : '';
   v.innerHTML = `
     <div class="bar filters fchead">${canSeeAll() ? `<label class="fl wide">MR <select id="f-rep"><option value="${TEAM}" ${team ? 'selected' : ''}>Cả team</option>${withRows.map(r => `<option value="${esc(r)}" ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
       <h2 style="margin:0">${shared ? 'Địa bàn chung' : team ? (VIEW.team === 'ALL' ? 'Cả 2 team' : TEAMS.length > 1 ? 'Cả team ' + esc(teamName(VIEW.team)) : 'Cả team') : isOwner ? 'FC của tôi' : esc(rep)} · ${P[4].label}</h2>${c.modeSw}${shSw}<span class="grow"></span>${shared ? '' : team ? teamChip : statusChip(rep) + ' ' + wkMineChip(rep)} ${mob ? '' : acts.join(' ')}</div>
@@ -3299,7 +3389,7 @@ function nlView(c){
     <div class="bar filters fbar nlbar"><input type="search" id="nl-q" placeholder="Tìm BV, mã KH${tm ? ', MR' : ''}" value="${esc(VIEW.nlQ || '')}" style="flex:1 1 180px">
       <select id="nl-seg" aria-label="Type BV"><option value="all">Tất cả type BV</option>${SEGS.map(([k, l, d]) => `<option value="${k}" ${S === k ? 'selected' : ''}>${l} · ${d}</option>`).join('')}${all.some(r => !r.segment) || S === '' ? `<option value="" ${S === '' ? 'selected' : ''}>Chưa chọn type</option>` : ''}${all.some(r => r.self_add) || S === 'self' ? `<option value="self" ${S === 'self' ? 'selected' : ''}>Địa bàn tự add (${new Set(all.filter(r => r.self_add).map(r => r.cust_code)).size})</option>` : ''}</select>
       ${brands.length > 1 ? `<select id="nl-b" aria-label="Brand"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.nlBrand ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>` : ''}
-      ${addBtn('nl-add')}${addedOn() ? '<button class="btn" id="nl-added" data-tip="Xem lại BV / phòng khám đã add, gỡ dòng điền nhầm">📋<span class="dt"> Đã add</span></button>' : ''}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
+      ${addBtn('nl-add')}${addedOn() ? '<button class="btn" id="nl-added" data-tip="Xem lại BV / phòng khám đã add, gỡ dòng điền nhầm">' + ico('list') + '<span class="dt"> Đã add</span></button>' : ''}<span class="grow"></span>${mob && acts.length === 1 ? '' : saveInd}</div>
     <div id="fc-body" class="nlbody"></div>${mob && acts.length ? `<div class="mact">${acts.length === 1 ? saveInd + '<span class="grow"></span>' : ''}${acts.join(' ')}</div>` : ''}
     <div class="sub" style="margin-top:8px">Ô tháng nhập theo box.${skus.some(p => !p.price) ? ` ${skus.filter(p => !p.price).map(p => nlSku(p.sku)).join(', ')} chưa có giá: FC chỉ tính box.` : ''}</div>`;
   const body = $('#fc-body');
@@ -3310,7 +3400,7 @@ function nlView(c){
     return box(r.f['m' + (i + 1)], `${mn[i]}: FC cả tháng (box)`); };
   const noteInp = r => `<input class="note" data-id="${r.id}" data-f="note" value="${esc(r.f.note ?? '')}" placeholder="Note (listing, HĐT, first order…)" ${canRow(r) ? '' : 'disabled'} aria-label="Note">`;
   const segCell = x => canAcc ? `<select class="segsel ${x.seg || 'none'}" data-seg="${esc(x.code)}" aria-label="Type BV của ${esc(x.name)}">${x.seg ? '' : '<option value="" selected>Chọn type</option>'}${SEGS.map(([k, l, d]) => `<option value="${k}" ${k === x.seg ? 'selected' : ''}>${l} · ${d}</option>`).join('')}</select>` : segChip(x.seg);
-  const rmBtn = x => canAcc ? `<button class="btn sm danger" data-nlrm="${esc(x.code)}" data-tip="Xoá ${esc(x.name)} khỏi New launch" aria-label="Xoá ${esc(x.name)}">✕</button>` : '';
+  const rmBtn = x => canAcc ? `<button class="btn sm danger" data-nlrm="${esc(x.code)}" data-tip="Xoá ${esc(x.name)} khỏi New launch" aria-label="Xoá ${esc(x.name)}">${ico('x')}</button>` : '';
   const mrN = x => { const n = new Set(x.rs.map(r => r.rep_name)).size; return tm && n > 1 ? ` · ${n} MR` : ''; };
   const skuLbl = r => `${esc(nlSku(r.sku))}${r.price ? '' : ' <span class="sub" data-tip="Admin chưa nhập giá/box: FC mới có box, chưa ra tiền">· chưa có giá</span>'}${!tm && r.shared ? shMk(r) : ''}`;
   const mHead = i => MST[i] === 'closed' ? `${mn[i]} ${NL_LOCK}<br><span class="hs">Act.</span>` : MST[i] === 'current' ? `${mn[i]}<br><span class="hs">${nextLbl()}</span>` : `${mn[i]}<br><span class="hs">cả tháng</span>`;
@@ -3716,7 +3806,7 @@ function fyTableHtml(){
   const row = (o, cls) => `<tr class="${cls}"><td class="l stick">${esc(o.b)}</td><td>${trc(o.ly)}</td><td>${trc(o.fyLy)}</td><td>${trc(o.qtd)}</td>${d.ytdLb ? `<td>${trc(o.ytd)}</td>` : ''}<td>${trc(o.tgt)}</td><td>${d.rep ? '<span class="muted">–</span>' : fy(o)}</td>${o.m.map(v => `<td class="fym">${trc(v)}</td>`).join('')}<td class="fyp">${pc(o.ach)}</td><td class="fyp">${o.gLy === null ? '<span class="muted">–</span>' : grHtml(o.gLy)}</td><td class="fyp">${pc(o.achFY)}</td><td class="fyp">${o.gFY === null ? '<span class="muted">–</span>' : grHtml(o.gFY)}</td></tr>`;
   const hd = first => `<th class="l stick">${first}</th><th>Act. ${d.ly}</th><th>Act. FY${String(d.Y - 1).slice(-2)}</th><th data-tip="Act. ${d.cur} đến ngày dữ liệu ${esc(d.asof)}">QTD ${d.cur}<div class="hs">đến ${esc(d.asof)}</div></th>${d.ytdLb ? `<th data-tip="Act. từ đầu năm đến hết ${d.ytdLb}">YTD ${d.ytdLb}</th>` : ''}<th>Target ${d.cur}</th><th>Target FY${d.yy}</th>${d.mHd.map(h => `<th class="fym">${h.replace('Act. + FC ', '').replace('Actual ', '').replace('FC ', '')}<div class="hs">${/^Actual/.test(h) ? 'Act.' : /^Act\. \+/.test(h) ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th class="fyp">%Ach ${d.cur}</th><th class="fyp">Gr vs ${d.ly}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) / Target FY${d.Y}">%Ach FY${d.yy}</th><th class="fyp" data-tip="(YTD + FC ${d.cur}) vs Act. FY${d.Y - 1}">Gr vs FY${String(d.Y - 1).slice(-2)}</th>`;   // header dùng lại cho phần New launch (bản 4.15.3)
   const noFY = !d.rep && d.list.some(o => o.tgtFY === null && !o.launch);
-  return `<div class="card fyc"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">${esc(d.title)}${VIEW.team === 'ALL' ? ' · cả 2 team' : TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}${d.rep ? ' · ' + esc(d.rep) : ''}</h3><span class="grow"></span><button class="btn sm" id="fy-exp">⬇ Excel</button></div>
+  return `<div class="card fyc"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">${esc(d.title)}${VIEW.team === 'ALL' ? ' · cả 2 team' : TEAMS.length > 1 ? ' · ' + esc(teamName(VIEW.team)) : ''}${d.rep ? ' · ' + esc(d.rep) : ''}</h3><span class="grow"></span><button class="btn sm" id="fy-exp">${ico('download')} Excel</button></div>
     <div class="tw"><table class="t fyt"><thead><tr>${hd('Brand')}</tr></thead>
     <tbody>${d.groups.map(g => g.rows.map(o => row(o, '')).join('') + (g.sub ? row(g.sub, 'fysub') : '')).join('')}${row(d.tot, 'tot')}
       ${d.nl.length ? `<tr class="fynlh">${hd('New launch')}</tr>${d.nl.map(o => row(o, 'fynl')).join('')}` : ''}</tbody></table></div>
@@ -3880,7 +3970,7 @@ const WK_ORD = {none: 0, miss: 1, late: 2, open: 3, ok: 4, lock: 5, plock: 6};
 const wkBad = s => s && ['late', 'miss', 'none'].includes(s.st);
 function wkChip(s, team){
   if (!s) return ''; const c = wkCfg(team), due = `hạn ${c.short} ${vnDm(s.due)}`;
-  if (s.st === 'ok') return `<span class="chip ok" data-tip="${esc(`Submit lúc ${vnWhen(s.t)} · ${due}`)}">✓ ${vnHm(s.t)} ${DOW_S[vnP(s.t).dow]}</span>`;
+  if (s.st === 'ok') return `<span class="chip ok" data-tip="${esc(`Submit lúc ${vnWhen(s.t)} · ${due}`)}">${vnHm(s.t)} ${DOW_S[vnP(s.t).dow]}</span>`;
   if (s.st === 'late') return `<span class="chip no" data-tip="${esc(`Submit lúc ${vnWhen(s.t)} · ${due}`)}">Trễ ${durTxt(s.min)}</span>`;
   if (s.st === 'open'){ const now = Date.now(), left = Math.max(0, Math.round((s.due - now) / 6e4)); return `<span class="chip lk" data-tip="${esc(now <= s.due - WK_OPEN ? `Nhận Submit tuần này từ ${vnWhen(s.due - WK_OPEN)} · ${due}` : `Chưa Submit · ${due} · còn ${durTxt(left)}`)}">Chưa nộp</span>`; }
   const [t, k] = WK_ST[s.st]; return `<span class="chip ${k}" data-tip="${esc(s.st === 'lock' ? `FC đã duyệt (khoá), MR không cần Submit · ${due}` : s.st === 'plock' ? `Kỳ đang khoá nhập lúc tới hạn · ${due}` : `Chưa Submit · ${due}`)}">${t}</span>`;
@@ -3939,7 +4029,7 @@ const wkBadNow = ts => ts.filter(t => TEAMS.includes(t)).reduce((n, t) => { cons
 const wkBadgeN = (all = false) => (wkAlert() || []).filter(a => all || !a.seen).reduce((t, a) => t + a.late + a.miss, 0);
 function wkBannerHtml(){
   const al = (wkAlert() || []).filter(a => !a.seen); if (!al.length) return '';
-  return al.map(a => `<div class="note ${a.late + a.miss ? 'warn' : 'good'} wkban"><b>📣 Hạn nộp FC tuần ${esc(teamName(a.team))} (${a.cfg.short} ${vnDm(a.due)}) đã qua:</b> ${a.ok}/${a.n} đúng giờ · ${a.late} trễ · ${a.miss} chưa nộp.
+  return al.map(a => `<div class="note ${a.late + a.miss ? 'warn' : 'good'} wkban"><b>${ico('bell')} Hạn nộp FC tuần ${esc(teamName(a.team))} (${a.cfg.short} ${vnDm(a.due)}) đã qua:</b> ${a.ok}/${a.n} đúng giờ · ${a.late} trễ · ${a.miss} chưa nộp.
     <a href="#" data-wkgo="${esc(a.team)}" data-wkdue="${a.due}">Xem báo cáo</a> · <a href="#" data-wkseen="${esc(a.team)}" data-wkdue="${a.due}">Đã xem</a></div>`).join('');
 }
 function onWkBanner(e){
@@ -3953,13 +4043,13 @@ function wkMineChip(rep){
   if (!wkOn() || !rep || !wkTracked(rep)) return '';
   const team = teamOfRep(rep), c = wkCfg(team), now = Date.now(), w = wkWeeks(rep, team, now); if (!w.length) return '';
   const cur = w[w.length - 1], prev = w.length > 1 ? w[w.length - 2] : null, tip = `Hạn nộp FC tuần ${teamName(team)}: ${c.label} (giờ VN). Đúng giờ = Submit trong 6 ngày trước hạn, trễ = trong 24 giờ sau hạn. CFO theo dõi.`;
-  if (prev && prev.st === 'miss') return `<span class="chip no" data-tip="${esc(`${tip} Submit ngay: tính trễ cho hạn ${vnDm(prev.due)}, sau ${vnWhen(prev.due + WK_LATE)} tính không nộp.`)}">⚠ Chưa nộp FC tuần ${vnDm(prev.due)}</span>`;
-  if (cur.st === 'ok') return `<span class="chip ok" data-tip="${esc(`${tip} Đã Submit lúc ${vnWhen(cur.t)}.`)}">✓ Đã nộp FC tuần · ${vnHm(cur.t)} ${DOW_S[vnP(cur.t).dow]}</span>`;
+  if (prev && prev.st === 'miss') return `<span class="chip no" data-tip="${esc(`${tip} Submit ngay: tính trễ cho hạn ${vnDm(prev.due)}, sau ${vnWhen(prev.due + WK_LATE)} tính không nộp.`)}">Chưa nộp FC tuần ${vnDm(prev.due)}</span>`;
+  if (cur.st === 'ok') return `<span class="chip ok" data-tip="${esc(`${tip} Đã Submit lúc ${vnWhen(cur.t)}.`)}">Đã nộp FC tuần · ${vnHm(cur.t)} ${DOW_S[vnP(cur.t).dow]}</span>`;
   if (cur.st === 'lock' || cur.st === 'plock') return `<span class="chip lk" data-tip="${esc(tip)}">FC tuần: ${cur.st === 'lock' ? 'đã duyệt, khoá' : 'kỳ khoá nhập'}</span>`;
   if (cur.st !== 'open') return '';
-  if (now <= cur.due - WK_OPEN && prev && (prev.st === 'ok' || prev.st === 'late')) return `<span class="chip ${prev.st === 'ok' ? 'ok' : 'no'}" data-tip="${esc(`${tip} Tuần tới (hạn ${c.short} ${vnDm(cur.due)}) nhận Submit từ ${vnWhen(cur.due - WK_OPEN)}.`)}">${prev.st === 'ok' ? '✓ FC tuần ' + vnDm(prev.due) + ' đúng giờ' : 'FC tuần ' + vnDm(prev.due) + ': trễ ' + durTxt(prev.min)}</span>`;
+  if (now <= cur.due - WK_OPEN && prev && (prev.st === 'ok' || prev.st === 'late')) return `<span class="chip ${prev.st === 'ok' ? 'ok' : 'no'}" data-tip="${esc(`${tip} Tuần tới (hạn ${c.short} ${vnDm(cur.due)}) nhận Submit từ ${vnWhen(cur.due - WK_OPEN)}.`)}">${prev.st === 'ok' ? 'FC tuần ' + vnDm(prev.due) + ' đúng giờ' : 'FC tuần ' + vnDm(prev.due) + ': trễ ' + durTxt(prev.min)}</span>`;
   const left = Math.max(0, Math.round((cur.due - now) / 6e4));
-  return `<span class="chip ${left < 1440 ? 'no' : 'sb'}" data-tip="${esc(tip + ' Chưa Submit tuần này.')}">⏱ Hạn FC tuần ${c.short} ${vnDm(cur.due)} · còn ${durTxt(left)}</span>`;
+  return `<span class="chip ${left < 1440 ? 'no' : 'sb'}" data-tip="${esc(tip + ' Chưa Submit tuần này.')}">Hạn FC tuần ${c.short} ${vnDm(cur.due)} · còn ${durTxt(left)}</span>`;
 }
 // Nhắc ở FC Input (MR tự xem): quá hạn chưa nộp / còn < 24 giờ tới hạn
 function wkMineNote(rep){
@@ -4111,7 +4201,7 @@ function wkMount(el, o = {}){
   const k = (lbl, v, d, cls = '') => `<div class="kpi ${cls}"><div class="l">${lbl}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
   const left = open ? Math.max(0, Math.round((due - now) / 6e4)) : 0;
   const snapReps = B.reps.map(x => x.rep), missSnap = isAdmin() ? snapReps.filter(r => !(D.snaps || []).some(s => s.period === PK && s.rep_name === r) && ALLROWS.some(x => x.rep_name === r && !x.nl)) : [];
-  el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:6px"><h3 style="margin:0">Nộp FC tuần · ${esc(teamName(team))}</h3>${tsw}<span class="grow"></span><button class="btn sm" id="wk-copy">📋 Copy báo cáo</button></div>
+  el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:6px"><h3 style="margin:0">Nộp FC tuần · ${esc(teamName(team))}</h3>${tsw}<span class="grow"></span><button class="btn sm" id="wk-copy">${ico('copy')} Copy báo cáo</button></div>
       <div class="sub" style="margin-bottom:8px" data-tip="Đúng giờ = Submit trong 6 ngày trước hạn. Trễ = Submit trong 24 giờ sau hạn. Quá 24 giờ = không nộp. Mỗi lần Submit chỉ tính cho 1 tuần. FC đã duyệt (khoá) không tính. Giờ nộp theo server.">Hạn <b>${esc(c.label)}</b> hằng tuần (giờ VN).</div>
       <div class="flt wkd">${chips}</div>
       <div class="kgrid c4 wkk">${k(open ? 'Đã nộp' : 'Đúng giờ', `${nOk}<span class="u">/${rows.length} MR</span>`, open ? `hạn ${c.short} ${vnDm(due)} · còn ${durTxt(left)}` : `hạn ${c.short} ${vnDm(due)}`, 'k-ok')}
@@ -4122,7 +4212,7 @@ function wkMount(el, o = {}){
         <tbody>${rows.map(x => `<tr><td class="l stick">${esc(x.rep)}</td><td class="l">${wkChip(x.s, team)}</td><td class="l dt">${x.s.t && ['ok', 'late'].includes(x.s.st) ? vnWhen(x.s.t) : '<span class="muted">–</span>'}</td>
           <td><span class="wq ok">${x.q.ok}</span> · <span class="wq ${x.q.late ? 'no' : ''}">${x.q.late}</span> · <span class="wq ${x.q.miss ? 'no' : ''}">${x.q.miss}</span></td><td>${x.q.min ? durTxt(x.q.min) : '<span class="muted">–</span>'}</td></tr>`).join('')}</tbody></table></div>
     </div>
-    <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">FC theo MR × brand · ${qLbl}</h3><span class="grow"></span>${missSnap.length ? `<button class="btn sm" id="wk-snap" data-tip="${esc('Ghi số FC hiện tại cho MR chưa Submit lần nào từ khi có tính năng này: ' + missSnap.join(', '))}">Lấy số hiện tại cho ${missSnap.length} MR chưa có số</button>` : ''}<button class="btn sm" id="wk-xl">⬇ Tải Excel</button></div>
+    <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">FC theo MR × brand · ${qLbl}</h3><span class="grow"></span>${missSnap.length ? `<button class="btn sm" id="wk-snap" data-tip="${esc('Ghi số FC hiện tại cho MR chưa Submit lần nào từ khi có tính năng này: ' + missSnap.join(', '))}">Lấy số hiện tại cho ${missSnap.length} MR chưa có số</button>` : ''}<button class="btn sm" id="wk-xl">${ico('download')} Tải Excel</button></div>
       <div class="sub" style="margin-bottom:6px">Số mới nhất MR đã lưu, không đợi Submit.</div>
       ${isReviewer() ? mbTableHtml(mbLive(snapReps.map(rep => ({rep, rows: ALLROWS.filter(r => r.rep_name === rep && !r.nl)}))), {}) : mbTableHtml(snapList(snapReps), {snap: true, empty: 'Chưa có số FC.'})}</div>`;   // bản 4.20: trạng thái nộp đã có ở bảng trên, bỏ cột Nộp tuần
   $$('[data-wkt]', el).forEach(b => b.onclick = () => { VIEW.wkTeam = b.dataset.wkt; VIEW.wkDue = null; wkMount(el, o); });
@@ -4162,7 +4252,7 @@ function viewDashTeam(){
       <label class="fl wide">MR <select id="d-rep"><option value="">Cả team</option>${reps.map(r => `<option ${r === VIEW.dRep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
       ${T === 'nl' || T === 'wk' ? '' : `<label class="fl">Brand <select id="d-b"><option value="">Tất cả brand</option>${brands.map(b => `<option ${b === VIEW.dBrand ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
       <label class="fl">Channel <select id="d-c"><option value="">Tất cả channel</option>${chs.map(b => `<option value="${esc(b)}" ${b === VIEW.dCh ? 'selected' : ''}>${esc(chLabel(b))}</option>`).join('')}</select></label>`}
-      <button class="btn" id="d-exp">⬇ <span class="dt">Xuất </span>Excel</button></div>
+      <button class="btn" id="d-exp">${ico('download')} <span class="dt">Xuất </span>Excel</button></div>
     <div class="dnav" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-dt="${k}" class="${T === k ? 'on' : ''}">${l}${k === 'risk' && nHi ? `<span class="n" data-tip="Account rủi ro cao">${nHi}</span>` : ''}${k === 'wk' && nWk ? `<span class="n" data-tip="MR trễ / chưa nộp ở hạn vừa qua">${nWk}</span>` : ''}</button>`).join('')}</div>
     <div id="dt"></div>`;
   $('#d-rep').onchange = e => { VIEW.dRep = e.target.value; viewDashTeam(); };
@@ -4232,13 +4322,13 @@ function dashMR(c){
   const {byRep, base} = c, cnt = k => byRep.filter(x => x.st === k).length, nSub = cnt('submitted') + cnt('approved');
   const t = agg(base);
   // By MR × brand (bản 4.19): mỗi brand FC (tr) · %Ach · Gr LYSP · Gr quý trước + cột Nộp tuần (gộp bảng heatmap cũ)
-  c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><button class="btn sm" id="d-remind">📋 Copy nhắc submit FC</button></div>
+  c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><button class="btn sm" id="d-remind">${ico('copy')} Copy nhắc submit FC</button></div>
       <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th class="l dt">Trạng thái</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach" data-tip="Màu so với phasing: % sales quý thường đạt tới ngày dữ liệu">%Ach QTD</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th><th data-tip="Dòng đã nhập FC / tổng dòng · dòng lệch nhiều chưa có lý do">Nhập FC</th><th class="l">Duyệt</th></tr></thead>
       <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a><span class="mt stm">${statusChip(x.rep)}</span></td><td class="l dt">${statusChip(x.rep)}</td><td>${big(x.tgt)}</td><td>${big(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${x.filled}/${x.n}${x.need ? ` · <span class="warn">${x.need} cần lý do</span>` : ''}</td>
         <td class="l">${x.st === 'submitted' ? `<button class="btn sm ok" data-rv="approved" data-rep="${esc(x.rep)}">Duyệt</button> <button class="btn sm danger" data-rv="returned" data-rep="${esc(x.rep)}">Trả lại</button>` : x.st === 'approved' ? `<button class="btn sm" data-rv="returned" data-rep="${esc(x.rep)}">Mở lại</button>` : ''}</td></tr>`).join('')}
       <tr class="tot"><td class="l stick">Tổng team<span class="sub mt">${nSub}/${byRep.length} đã submit</span></td><td class="l dt">${nSub}/${byRep.length} đã submit</td><td>${big(t.tgt)}</td><td>${big(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
       <div class="sub" style="margin-top:6px">Đơn vị: VND.</div></div>
-    <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">By MR × brand</h3><span class="grow"></span>${canWk() ? '<a href="#" data-go="wk" class="sub">Nộp FC tuần →</a>' : ''}<button class="btn sm" id="mb-xl">⬇ Tải Excel</button></div>
+    <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">By MR × brand</h3><span class="grow"></span>${canWk() ? '<a href="#" data-go="wk" class="sub">Nộp FC tuần →</a>' : ''}<button class="btn sm" id="mb-xl">${ico('download')} Tải Excel</button></div>
       ${mbTableHtml(mbLive(byRep, base), {wk: canWk(), wkHead: 'Nộp tuần'})}</div>`;
   $('#d-remind').onclick = () => copyText(reminderText());
   $('#mb-xl').onclick = () => mbExcel(`FC ${P[4].label} theo MR × brand · ${VIEW.team === 'ALL' ? 'HCM' : teamName(VIEW.team)}`).catch(err => toast('Lỗi xuất Excel: ' + err.message));
@@ -4298,7 +4388,7 @@ function dashRisk(c){
   const LV = VIEW.rkLv || 'hm', inLv = o => LV === 'all' ? !!o.level || o.notes.length > 0 : LV === 'hm' ? (o.level === 'hi' || o.level === 'md') : o.level === LV;
   c.el.innerHTML = `<div class="lv3">${lvs.map(([k, l]) => { const xs = flagged.filter(o => o.level === k); return `<div class="kpi lvk ${k} ${LV === k ? 'on' : ''}" data-lvset="${k}" role="button" tabindex="0"><div class="l">${lvChip(k)} ${k === 'lo' ? 'chỉ cần theo dõi' : 'rủi ro'}</div><div class="v">${xs.length} <span class="u">account</span></div><div class="d">${k === 'lo' ? 'Note MR, target &gt; TB 2Q, Gr âm vs LYSP' : `gap vs target ${big(xs.reduce((t, o) => t + o.short, 0))} · FC &gt; TB 2Q ${big(xs.filter(isOpt).reduce((t, o) => t + o.over, 0))}`}</div></div>`; }).join('')}</div>
     <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">Risk accounts</h3><span class="grow"></span><input type="search" id="rk-q" placeholder="Tìm account / MR / Note" value="${esc(VIEW.rkQ)}">
-        <select id="rk-t"><option value="">Mọi issue</option>${tps.map(t => `<option ${t.t === VIEW.rkTopic ? 'selected' : ''}>${esc(t.t)}</option>`).join('')}</select><button class="btn sm" id="rk-copy">📋 Copy tóm tắt cho họp</button></div>
+        <select id="rk-t"><option value="">Mọi issue</option>${tps.map(t => `<option ${t.t === VIEW.rkTopic ? 'selected' : ''}>${esc(t.t)}</option>`).join('')}</select><button class="btn sm" id="rk-copy">${ico('copy')} Copy tóm tắt cho họp</button></div>
       <div class="flt"><span class="sub">Mức:</span>${[['hm', 'Cao + Trung bình'], ['hi', 'Cao'], ['md', 'Trung bình'], ['lo', 'Theo dõi'], ['all', 'Tất cả']].map(([k, l]) => `<button class="fchip ${LV === k ? 'on' : ''}" data-lvset="${k}">${l}</button>`).join('')}
         <span class="sub" style="margin-left:8px">Tín hiệu:</span>${SIGS.map(([k, l]) => `<button class="fchip ${VIEW.rkSig === k ? 'on' : ''}" data-sig="${k}">${l}</button>`).join('')}</div>
       <div id="rk-l"></div></div>
@@ -4839,7 +4929,7 @@ async function importAddresses(files, log){
   log(`Lưu địa chỉ ${nf0.format(got.size)} mã KH (cột ${[...cols].join(' + ')})${nNew ? `, trong đó ${nf0.format(nNew)} mã chưa có trong danh mục` : ''}. Sales, FC, phân bổ giữ nguyên.${noCol}`);
 }
 function addrCard(){ if (MODE === 'cloud' && D.dbv < 14) return ''; const cs = D.customers || [], nA = cs.filter(c => c.address).length;
-  return `<div class="card"><h3>📍 Địa chỉ khách hàng (cho Tra cứu)</h3><div class="drop">Chọn 1 hoặc nhiều file raw sales <b>cũ hoặc mới</b> (export Power BI). App chỉ lấy mã KH + địa chỉ, <b>không đổi sales, FC, phân bổ</b>. Nhiều file: file chọn sau ghi đè địa chỉ file trước.<br><input type="file" id="u-ad" accept=".xlsx,.xls,.xlsm" multiple></div>
+  return `<div class="card"><h3>Địa chỉ khách hàng (cho Tra cứu)</h3><div class="drop">Chọn 1 hoặc nhiều file raw sales <b>cũ hoặc mới</b> (export Power BI). App chỉ lấy mã KH + địa chỉ, <b>không đổi sales, FC, phân bổ</b>. Nhiều file: file chọn sau ghi đè địa chỉ file trước.<br><input type="file" id="u-ad" accept=".xlsx,.xls,.xlsm" multiple></div>
     <div class="log" id="l-ad">${cs.length ? `Đang có địa chỉ ${nf0.format(nA)}/${nf0.format(cs.length)} mã KH.` : 'Chưa có danh mục khách hàng.'} Cột nhận được: Customer Address, Ship-to Address, Địa chỉ… hoặc Street / Ward / District / Province.</div></div>`; }
 // Admin → 3. Raw sales: nạp sales, rồi (nếu tick) tự trừ sales mới vào FC
 async function importSalesKeepFC(file, log, team = TEAMS[0]){
@@ -4998,8 +5088,8 @@ async function importFCFile(file, opts, log){
     + `${opts.sync && (create.length || upd.length) ? `<br>• Đồng bộ phân bổ account theo file: tạo ${create.length} dòng còn thiếu, cập nhật Sales ratio ${upd.length} dòng${zeroed ? ` (${zeroed} dòng của MR khác về 0%)` : ''}.` : ''}`
     + `${lostFC.length ? `<br>• ${lostFC.length} dòng có FC nhưng chưa có trong app: bỏ qua (bật đồng bộ phân bổ để tạo).` : ''}${skip.length ? `<br>• Bỏ qua ${skip.length} dòng theo lựa chọn tên REP.` : ''}<br>• ${clear.length ? `Xóa FC trong app ở ${clear.length} dòng file để trống / toàn 0 (${big(clear.reduce((x, o) => x + o._v, 0))}).` : `Không đụng tới ${zero} dòng FC trống / toàn 0.`}`
     + `${MST.includes('closed') ? `<br>• Tháng đã chốt (${MS.filter((m, i) => MST[i] === 'closed').map(m => mlabel(D.settings.year, m)).join(', ')}): giữ khoá = Act., không lấy số trong file.` : ''}`
-    + `${remOff.length ? `<br>⚠ File tính FC tháng đang chạy từ ${remOff[0].rem}, dữ liệu app hiện đến ${ASOF_DM}: phần còn lại trong file được cộng với đơn đã lên đến ${ASOF_DM}.` : ''}`
-    + `${locked.length ? `<br>⚠ ${locked.length} MR đã submit hoặc đã duyệt: số trong file sẽ thay số họ đã submit.` : ''}</span>`)) throw new Error('Đã hủy nạp FC');
+    + `${remOff.length ? `<br>${ico('alert')} File tính FC tháng đang chạy từ ${remOff[0].rem}, dữ liệu app hiện đến ${ASOF_DM}: phần còn lại trong file được cộng với đơn đã lên đến ${ASOF_DM}.` : ''}`
+    + `${locked.length ? `<br>${ico('alert')} ${locked.length} MR đã submit hoặc đã duyệt: số trong file sẽ thay số họ đã submit.` : ''}</span>`)) throw new Error('Đã hủy nạp FC');
   if (upd.length) D.mapping = await STORE.upsertMapping(upd, false);
   if (create.length){
     D.mapping = await STORE.upsertMapping(create.map(t => ({team: VIEW.team === 'ALL' ? teamOfRep(t.rep) : VIEW.team, rep_name: t.rep, cust_code: t.code, cust_name: t.name || D.mapping.find(m => m.cust_code === t.code)?.cust_name || t.code, brand: D.prices.some(p => p.sku === t.sku) ? PRICE_BRAND(t.sku) : t.brand || PRICE_BRAND(t.sku), sku: t.sku, ratio: t.ratio, channel: t.channel || D.mapping.find(m => m.cust_code === t.code)?.channel || null, status: 'active'})), false);
@@ -5237,14 +5327,14 @@ const expTeam = () => VIEW.team === 'ALL' ? TEAMS.map(teamName).join(' + ') : te
 function rawCard(t){ const sx = sid(t), multi = TEAMS.length > 1, tm = multi ? ' ' + esc(teamName(t)) : '', n = D.sales.filter(r => (r.team || TEAMS[0]) === t).length, ao = teamAsOf(t);
   return `<div class="card"><h3>3. Raw sales${tm} (export Power BI)</h3><div class="drop">File export nguyên bản${multi ? ` của team${tm}: chỉ lấy SKU của team${tm}, sales team khác giữ nguyên` : ''}. Tự dò cột theo tên, lưu theo tháng, bỏ dòng Total.<br><input type="file" id="u-s${sx}" accept=".xlsx,.xls,.xlsm"></div>
     <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-keep${sx}" checked> Tự trừ sales mới vào FC ${multi ? 'team' + tm : 'của team'}, giữ FC quý từng dòng</label></div>
-    <div class="sub" style="margin-top:2px">Sales tháng vượt FC tháng (đơn lên sớm): trừ vào tháng còn lại gần nhất. Tháng chốt thấp hơn FC (đơn trễ): cộng vào tháng còn lại gần nhất. Dòng chưa nhập FC để nguyên; không tính là sửa sau submit. MR thấy dấu ↻ ở dòng được dời.</div><div class="log" id="l-s${sx}">${n ? `Đang có ${nf0.format(n)} dòng (khách × SKU × tháng)${ao ? `, sales đến ${ddmm(ao)}` : ''}.` : 'Chưa có dữ liệu.'}</div></div>`; }
+    <div class="sub" style="margin-top:2px">Sales tháng vượt FC tháng (đơn lên sớm): trừ vào tháng còn lại gần nhất. Tháng chốt thấp hơn FC (đơn trễ): cộng vào tháng còn lại gần nhất. Dòng chưa nhập FC để nguyên; không tính là sửa sau submit. MR thấy dấu tự dời ở dòng được dời.</div><div class="log" id="l-s${sx}">${n ? `Đang có ${nf0.format(n)} dòng (khách × SKU × tháng)${ao ? `, sales đến ${ddmm(ao)}` : ''}.` : 'Chưa có dữ liệu.'}</div></div>`; }
 function missingAccounts(){ const keys = new Set(D.mapping.map(m => `${m.cust_code}|${m.sku}`)), ts = vTeams(); return D.seen.filter(s => ts.includes(s.team || TEAMS[0]) && !keys.has(`${s.cust_code}|${s.sku}`)).sort((a, b) => b.value - a.value); }
 
 function viewAdmin(){
   useClock(vTeams());
   const v = $('#view'); const s = D.settings; const miss = missingAccounts(); const MAPR = ROWS.concat(NLROWS); const warn = MAPR.filter(r => r.warn); const prop = MAPR.filter(r => r.status === 'proposed');
   const t = VIEW.admTab; const subtabs = [['import', 'Kỳ & nạp dữ liệu'], ['history', 'FC lịch sử & chốt kỳ'], ['missing', `Account thiếu (${new Set(miss.map(x => x.cust_code)).size + new Set(TGT_OPEN.map(t => t.cust_code)).size})`], ['mapping', `Phân bổ account${prop.length ? ` · ${prop.length} đề xuất` : ''}${warn.length ? ` · ${warn.length} cảnh báo` : ''}`], ['members', 'Thành viên & giá']];
-  v.innerHTML = `<div class="bar abar"><div class="dnav" role="tablist">${subtabs.map(([k, l]) => `<button role="tab" class="${t === k ? 'on' : ''}" data-at="${k}">${l}</button>`).join('')}</div><span class="grow"></span><button class="btn" id="exp">⬇ Xuất Excel</button>${MODE === 'demo' ? '<button class="btn danger" id="rst">Reset demo</button>' : ''}</div><div id="adm"></div>`;
+  v.innerHTML = `<div class="bar abar"><div class="dnav" role="tablist">${subtabs.map(([k, l]) => `<button role="tab" class="${t === k ? 'on' : ''}" data-at="${k}">${l}</button>`).join('')}</div><span class="grow"></span><button class="btn" id="exp">${ico('download')} Xuất Excel</button>${MODE === 'demo' ? '<button class="btn danger" id="rst">Reset demo</button>' : ''}</div><div id="adm"></div>`;
   $$('[data-at]').forEach(b => b.onclick = () => { VIEW.admTab = b.dataset.at; viewAdmin(); });
   $('#exp').onclick = e => exportExcel(e.currentTarget);
   $('#rst') && ($('#rst').onclick = async () => { if (await confirmBox('Xóa toàn bộ dữ liệu demo và tạo lại?')){ STORE.reset(); await reload(); } });
@@ -5264,16 +5354,16 @@ function viewAdmin(){
         <div class="fld full"><label for="s-x">MR chưa gán nếu tên chứa</label><div class="fctl"><input type="text" id="s-x" value="${esc(s.exclude_keywords || '')}" style="width:100%"></div></div>
       </div>
         <button class="btn pri" id="s-save">Lưu</button><div class="sub" style="margin-top:8px">Đổi sang quý mới: app hỏi lưu bản chốt FC kỳ cũ (để đo FC accuracy). FC & target kỳ mới bắt đầu trống.</div></div>
-      <div class="card"><h3>1. Bảng giá & SKU${its}</h3>${itNo}<div class="drop">Cột Brand · SKU · Giá/box (VND). Tên SKU trùng tên trong raw.<br><input type="file" id="u-p" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div><div class="log" id="l-p">Đang có ${D.prices.filter(p => !it || (p.team || TEAMS[0]) === it).length} SKU${its}.</div><button class="btn sm" data-tpl="price" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>1. Bảng giá & SKU${its}</h3>${itNo}<div class="drop">Cột Brand · SKU · Giá/box (VND). Tên SKU trùng tên trong raw.<br><input type="file" id="u-p" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div><div class="log" id="l-p">Đang có ${D.prices.filter(p => !it || (p.team || TEAMS[0]) === it).length} SKU${its}.</div><button class="btn sm" data-tpl="price" style="margin-top:6px">${ico('download')} File mẫu</button></div>
       <div class="card"><h3>2. Danh sách account × SKU × MR${its}</h3>${itNo}<div class="drop">Cột REP Name · Cust Code · Cust Name · Brand · SKU · Sales ratio · Tender/Self-pay. Nhận cả sheet FC Input (file v2).<br><input type="file" id="u-f" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-fc" checked> Nạp luôn số FC + Note (nếu file có) vào kỳ ${P[4].label}</label></div>
-        <div class="bar"><label><input type="checkbox" id="u-del"> Thay toàn bộ: xóa dòng không có trong file (giữ dòng đề xuất)</label></div><div class="log" id="l-f">Đang có ${ROWS.length} dòng account × SKU${its}.</div><button class="btn sm" data-tpl="account" style="margin-top:6px">⬇ File mẫu</button></div>
+        <div class="bar"><label><input type="checkbox" id="u-del"> Thay toàn bộ: xóa dòng không có trong file (giữ dòng đề xuất)</label></div><div class="log" id="l-f">Đang có ${ROWS.length} dòng account × SKU${its}.</div><button class="btn sm" data-tpl="account" style="margin-top:6px">${ico('download')} File mẫu</button></div>
       ${myTeams().map(rawCard).join('')}${addrCard()}
       <div class="card"><h3>4. Target ${P[4].label}${its}</h3>${itNo}<div class="drop"><b>File Target Allocation</b> (sheet Account: REP · Cus. Code · Product Name · Final Target · Volume Target): target tự gắn theo từng MR. Cũng nhận file chỉ có Cust Code · SKU · Target.<br><input type="file" id="u-t" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
         <div class="bar" style="margin-top:8px"><label><input type="checkbox" id="u-tc" checked> Tự tạo dòng FC cho MR có target nhưng chưa có dòng</label></div>
-        <div class="bar"><label><input type="checkbox" id="u-ts"> Cập nhật Sales ratio theo tỷ trọng target (account chia nhiều MR)</label></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((x, y) => x + num(y.value), 0))}${D.targets.some(t => t.rep_name) ? ' (theo MR)' : ''}${TGT_OPEN.length ? `, ${big(TGT_OPEN.reduce((x, t) => x + num(t.value), 0))} chưa có dòng FC/MR` : ''}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">⬇ File mẫu</button></div>
+        <div class="bar"><label><input type="checkbox" id="u-ts"> Cập nhật Sales ratio theo tỷ trọng target (account chia nhiều MR)</label></div><div class="log" id="l-t">Đang có ${D.targets.length} dòng, tổng ${big(D.targets.reduce((x, y) => x + num(y.value), 0))}${D.targets.some(t => t.rep_name) ? ' (theo MR)' : ''}${TGT_OPEN.length ? `, ${big(TGT_OPEN.reduce((x, t) => x + num(t.value), 0))} chưa có dòng FC/MR` : ''}.</div><button class="btn sm" data-tpl="target" style="margin-top:6px">${ico('download')} File mẫu</button></div>
       <div class="card"><h3>Merge code (account Bayer)</h3><div class="drop">File <b>Mapping Channel</b> của Commex (Customer Code · Merge Code2 · Merge Name 1) hoặc file merge tải từ đây (Merge Code · Merge Name · Customer Code). Mã Khoa Dược / BHYT là merge code, mã NTBV gộp vào: target, %Ach, cảnh báo tính theo merge code.<br><input type="file" id="u-mg" accept=".xlsx,.xls,.xlsm" ${MODE === 'cloud' && D.dbv < 8 ? 'disabled' : ''}></div>
-        <div class="log" id="l-mg">${(() => { const ms = D.merges || [], app = new Set(D.mapping.map(m => m.cust_code)); const nA = ms.filter(m => app.has(m.cust_code)); return MODE === 'cloud' && D.dbv < 8 ? 'Cần chạy migration_v8.sql trước.' : ms.length ? `Đang có ${nf0.format(new Set(ms.map(m => m.merge_code)).size)} merge code, ${nf0.format(ms.length)} mã (${nf0.format(nA.length)} mã trên app, ${nf0.format(new Set(nA.map(m => m.merge_code)).size)} merge code).` : 'Chưa có merge code: mỗi mã KH là 1 account.'; })()}</div><button class="btn sm" data-tpl="merge" style="margin-top:6px">⬇ File merge hiện tại</button></div>
+        <div class="log" id="l-mg">${(() => { const ms = D.merges || [], app = new Set(D.mapping.map(m => m.cust_code)); const nA = ms.filter(m => app.has(m.cust_code)); return MODE === 'cloud' && D.dbv < 8 ? 'Cần chạy migration_v8.sql trước.' : ms.length ? `Đang có ${nf0.format(new Set(ms.map(m => m.merge_code)).size)} merge code, ${nf0.format(ms.length)} mã (${nf0.format(nA.length)} mã trên app, ${nf0.format(new Set(nA.map(m => m.merge_code)).size)} merge code).` : 'Chưa có merge code: mỗi mã KH là 1 account.'; })()}</div><button class="btn sm" data-tpl="merge" style="margin-top:6px">${ico('download')} File merge hiện tại</button></div>
       <div class="card"><h3>Tender quota</h3><div class="drop">File <b>Tender Data</b> export (Customer Code · SKU Name · Winning Quota · Quota - Start Date · Quota - End Date · Remaining quota · Run_rate). Nạp = thay toàn bộ gói thầu, chỉ giữ mã KH có trên app. ◇ Quota dự kiến team nhập giữ nguyên. Ngày số liệu lấy theo tên file (vd Tender_Data_13-11-2026).<br><input type="file" id="u-tq" accept=".xlsx,.xls" ${MODE === 'cloud' && D.dbv < 10 ? 'disabled' : ''}></div>
         <div class="log" id="l-tq">${MODE === 'cloud' && D.dbv < 10 ? 'Cần chạy migration_v10.sql trước.' : (D.tenders || []).length ? `Đang có ${nf0.format(D.tenders.length)} gói thầu ở ${nf0.format(new Set(D.tenders.map(t => t.cust_code)).size)} mã KH, số liệu ngày ${dmy(TQ_ASOF)}; ${nf0.format((D.tupc || []).filter(u => u.status !== 'confirmed').length)} ◇ quota dự kiến.` : 'Chưa có dữ liệu thầu.'}</div></div>
       <div class="card"><h3>5. FC từ file Excel của ${it && TEAMS.length > 1 ? 'team ' + esc(teamName(it)) : 'team'}</h3>${itNo}<div class="drop">File FC Sale của team (sheet <b>FC Sale</b>, .xlsm) hoặc file Excel xuất từ app (sheet <b>FC Input</b>). App đọc 3 cột FC tháng (box) và Note, ghép theo MR × Cust Code × SKU rồi ghi vào kỳ ${P[4].label}.<br><input type="file" id="u-fcx" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div>
@@ -5302,7 +5392,7 @@ function viewAdmin(){
     A.innerHTML = `<div class="adm">
       <div class="card"><h3>Chốt bản FC kỳ ${P[4].label}</h3><div class="sub">Lưu bản FC hiện tại làm "bản chốt" để cuối quý so với Act. (FC accuracy, bias). Dòng có sales/target mà không nhập FC được lưu là FC = 0 (nhu cầu bị bỏ sót). Nên chốt khi hết deadline submit, trước khi đổi kỳ.</div>
         <div class="log">${cur.length ? `Đã chốt ${cur.length} dòng, tổng ${big(cur.reduce((x, y) => x + num(y.value), 0))}${cur[0].created_at ? ' lúc ' + fmtTime(cur[0].created_at) : ''}.` : 'Chưa chốt.'}</div><button class="btn pri" id="h-snap" style="margin-top:8px">${cur.length ? 'Cập nhật bản chốt' : 'Chốt bản FC'} ${P[4].label}</button></div>
-      <div class="card"><h3>Nạp FC lịch sử${its}</h3>${itNo}<div class="drop">Cột Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1-3 (box). Thay toàn bộ bản chốt của các kỳ có trong file.<br><input type="file" id="u-h" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div><div class="log" id="l-h"></div><button class="btn sm" data-tpl="archive" style="margin-top:6px">⬇ File mẫu</button></div>
+      <div class="card"><h3>Nạp FC lịch sử${its}</h3>${itNo}<div class="drop">Cột Kỳ (vd 2026Q3) · REP Name · Cust Code · SKU · Sales ratio · FC tháng 1-3 (box). Thay toàn bộ bản chốt của các kỳ có trong file.<br><input type="file" id="u-h" accept=".xlsx,.xls,.xlsm" ${it ? '' : 'disabled'}></div><div class="log" id="l-h"></div><button class="btn sm" data-tpl="archive" style="margin-top:6px">${ico('download')} File mẫu</button></div>
       <div class="card"><h3>Các kỳ đã chốt</h3>${per.length ? `<div class="tw"><table class="t"><thead><tr><th class="l">Kỳ</th><th>Dòng</th><th>FC (tr)</th><th>FC accuracy</th><th></th></tr></thead><tbody>${per.map(p => { const rs = D.archive.filter(x => x.period === p); const acc = accuracy(p, ''); return `<tr><td class="l">${pkLabel(p)}</td><td>${rs.length}</td><td>${trc(rs.reduce((x, y) => x + num(y.value), 0))}</td><td>${p < PK ? accHtml(acc.tot.acc) : '<span class="muted">quý chưa xong</span>'}</td><td><button class="btn sm danger" data-delp="${p}">Xóa</button></td></tr>`; }).join('')}</tbody></table></div>` : '<div class="sub">Chưa có.</div>'}</div></div>`;
     $('#h-snap').onclick = async () => { if (!await confirmBox(`Chốt ${ALLROWS.filter(r => r.filled || r.act[4] || r.tgt).length} dòng FC hiện tại của kỳ ${P[4].label}? Bản chốt cũ của kỳ này (nếu có) sẽ được thay.`)) return; try { const n = await snapshot(); toast(`Đã chốt ${n} dòng`); await reload(); } catch(e){ toast('Lỗi: ' + e.message); } };
     hook('#u-h', '#l-h', (f, log) => importArchive(f, log, it)); $$('[data-tpl]').forEach(b => b.onclick = () => downloadTemplate(b.dataset.tpl));
@@ -5312,10 +5402,10 @@ function viewAdmin(){
     A.innerHTML = `<div class="card"><h3>Account có sales, đã gán MR nhưng chưa có trong danh sách FC</h3><div class="sub" style="margin-bottom:10px">Từ raw sales gần nhất (team ${esc(vTeams().map(teamName).join(', '))}). Bấm Thêm để tạo dòng FC cho MR, đủ các SKU của brand đó.</div>
       ${miss.length ? `<div class="tw"><table class="t"><thead><tr><th class="l"><input type="checkbox" id="m-all" checked></th><th class="l">Account</th><th class="l">Mã</th><th class="l">SKU</th><th class="l">MR trong data</th><th>Sales (tr)</th></tr></thead><tbody>
         ${miss.map((x, i) => `<tr><td class="l"><input type="checkbox" class="m-ck" data-i="${i}" checked></td><td class="l">${esc(x.cust_name)}</td><td class="l">${esc(x.cust_code)}</td><td class="l">${esc(x.sku)}</td><td class="l">${esc(x.rep_name)}</td><td>${trc(x.value)}</td></tr>`).join('')}</tbody></table></div>
-        <div class="bar" style="margin-top:10px"><button class="btn pri" id="m-add">Thêm các dòng đã chọn</button></div>` : '<div class="chip ok">✓ Không có account nào bị thiếu</div>'}</div>
+        <div class="bar" style="margin-top:10px"><button class="btn pri" id="m-add">Thêm các dòng đã chọn</button></div>` : '<div class="chip ok">Không có account nào bị thiếu</div>'}</div>
       <div class="card"><h3>Target có trong file nhưng chưa có dòng FC</h3><div class="sub" style="margin-bottom:10px">Từ file target ${P[4].label}. Dòng có MR: bấm Tạo dòng FC. Dòng "MR trống/Vacant": nạp lại file target và chọn MR nhận.</div>
       ${TGT_OPEN.length ? `<div class="tw"><table class="t"><thead><tr><th class="l">MR trong file</th><th class="l">Mã KH</th><th class="l">SKU</th><th>Target</th><th>Box</th></tr></thead><tbody>${[...TGT_OPEN].sort((x, y) => num(y.value) - num(x.value)).map(t => `<tr><td class="l">${esc(t.rep_name)}</td><td class="l">${esc(t.cust_code)} <span class="sub">${esc(D.mapping.find(m => m.cust_code === t.cust_code)?.cust_name || '')}</span></td><td class="l">${esc(t.sku)}</td><td>${trU(num(t.value))}</td><td>${nf0.format(Math.round(num(t.qty)))}</td></tr>`).join('')}</tbody></table></div>
-        <div class="bar" style="margin-top:10px"><button class="btn pri" id="t-add">Tạo dòng FC cho các MR có trong danh sách</button></div>` : '<div class="chip ok">✓ Mọi target đã có dòng FC</div>'}</div>`;
+        <div class="bar" style="margin-top:10px"><button class="btn pri" id="t-add">Tạo dòng FC cho các MR có trong danh sách</button></div>` : '<div class="chip ok">Mọi target đã có dòng FC</div>'}</div>`;
     $('#m-all') && ($('#m-all').onchange = e => $$('.m-ck').forEach(c => c.checked = e.target.checked));
     $('#t-add') && ($('#t-add').onclick = async () => {
       const known = new Map(repList().map(k => [lc(k), k])); const rows = [];
@@ -5385,7 +5475,7 @@ const wkSetHtml = () => `<div class="card wide"><h3>Hạn nộp FC tuần & CFO<
   <div class="tw"><table class="t"><thead><tr><th class="l">Team</th><th class="l">Hạn nộp</th><th class="l">Giờ</th><th class="l" data-tip="Theo dõi các hạn từ ngày này (tối đa 13 tuần gần nhất)">Theo dõi từ</th><th class="l">CFO</th></tr></thead><tbody>${TEAMS.map(t => { const c = wkCfg(t), cf = D.members.filter(m => m.cfo && m.role === 'MR' && memTeam(m) === t).map(m => m.rep_name);
     return `<tr data-wkt-row="${esc(t)}"><td class="l"><b>${esc(teamName(t))}</b></td><td class="l"><select data-c="dow">${[1, 2, 3, 4, 5, 6, 7].map(d => `<option value="${d}" ${d === c.dow ? 'selected' : ''}>${DOW_VN[d][0].toUpperCase() + DOW_VN[d].slice(1)}</option>`).join('')}</select></td><td class="l"><input type="time" data-c="time" value="${c.time}" step="60"></td><td class="l"><input type="date" data-c="from" value="${c.from || ''}"></td><td class="l">${cf.length ? esc(cf.join(', ')) : '<span class="muted">chưa chọn</span>'}</td></tr>`; }).join('')}</tbody></table></div>
   <div class="bar" style="margin-top:8px">${wkOn() ? '' : '<span class="warn">Database chưa ở bản 13: chạy migration_v13.sql để lưu được.</span>'}<span class="grow"></span><button class="btn pri" id="wk-save" ${wkOn() ? '' : 'disabled'}>Lưu hạn nộp</button></div></div>`;
-const memRow = m => `<tr><td class="l"><input data-c="email" value="${esc(m.email)}" placeholder="email" style="width:190px"></td><td class="l"><input data-c="rep" value="${esc(m.rep_name)}" style="width:170px"></td><td class="l"><select data-c="role">${['MR', 'RFFM', 'ADMIN'].map(r => `<option ${r === m.role ? 'selected' : ''}>${r}</option>`).join('')}</select></td><td class="l"><select data-c="team">${[...TEAMS, 'ALL'].map(t => `<option value="${t}" ${t === memTeam(m) ? 'selected' : ''}>${t === 'ALL' ? 'Cả 2 team' : esc(teamName(t))}</option>`).join('')}</select></td><td style="text-align:center"><input type="checkbox" data-c="cfo" ${m.cfo ? 'checked' : ''} ${wkOn() ? '' : 'disabled title="Cần database bản 13"'} aria-label="CFO"></td><td><button class="btn sm danger" data-rm>✕</button></td></tr>`;
+const memRow = m => `<tr><td class="l"><input data-c="email" value="${esc(m.email)}" placeholder="email" style="width:190px"></td><td class="l"><input data-c="rep" value="${esc(m.rep_name)}" style="width:170px"></td><td class="l"><select data-c="role">${['MR', 'RFFM', 'ADMIN'].map(r => `<option ${r === m.role ? 'selected' : ''}>${r}</option>`).join('')}</select></td><td class="l"><select data-c="team">${[...TEAMS, 'ALL'].map(t => `<option value="${t}" ${t === memTeam(m) ? 'selected' : ''}>${t === 'ALL' ? 'Cả 2 team' : esc(teamName(t))}</option>`).join('')}</select></td><td style="text-align:center"><input type="checkbox" data-c="cfo" ${m.cfo ? 'checked' : ''} ${wkOn() ? '' : 'disabled title="Cần database bản 13"'} aria-label="CFO"></td><td><button class="btn sm danger" data-rm aria-label="Xoá dòng">${ico('x')}</button></td></tr>`;
 const prHint = x => x ? `<div class="sub prh" data-tip="Raw: ${nf0.format(x.n)} dòng khách × tháng, ${pct(x.share)} cùng giá này">raw ${nf0.format(x.p)} · ${pct(x.share)}</div>` : '';
 const prRow = (p, sg) => `<tr><td class="l"><input data-c="sku" value="${esc(p.sku)}" style="width:190px"></td><td class="l"><input data-c="brand" value="${esc(p.brand)}" style="width:80px"></td><td><input data-c="price" value="${p.price || ''}" placeholder="${p.launch ? 'chưa có' : ''}" style="width:96px;text-align:right">${prHint(sg?.base)}</td>${PCH.map(pc => `<td><input data-c="${PCH_KEY[pc]}" value="${num(p[PCH_KEY[pc]]) || ''}" placeholder="= chung" style="width:96px;text-align:right">${prHint(sg?.ch[pc])}</td>`).join('')}<td class="l"><select data-c="team">${TEAMS.map(t => `<option value="${t}" ${t === (p.team || TEAMS[0]) ? 'selected' : ''}>${esc(teamName(t))}</option>`).join('')}</select></td><td style="text-align:center"><input type="checkbox" data-c="launch" ${p.launch ? 'checked' : ''} aria-label="New launch"></td></tr>`;
 
