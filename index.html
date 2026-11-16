@@ -2,6 +2,11 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<!-- 4.30: chống clickjacking — trang thật (github.io) không cho trang khác nhúng vào iframe: bị nhúng thì ẩn toàn bộ và mở app ra cửa sổ chính -->
+<style id="fg-hide">html{display:none!important}</style>
+<script>(function(){ var framed = true; try { framed = window.self !== window.top; } catch (e) {}
+  if (!framed || !/\.github\.io$/i.test(location.hostname)) { var h = document.getElementById('fg-hide'); h.parentNode.removeChild(h); return; }
+  try { window.top.location = window.self.location.href; } catch (e) {} })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FC Sale Team HCM</title>
 <!-- Icon khi "Thêm vào MH chính" (iPhone) / cài app (Android) và icon tab trình duyệt -->
@@ -1831,7 +1836,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.29.1';
+const APP_VER = '4.30';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
