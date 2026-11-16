@@ -745,6 +745,10 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
   .mact{bottom:calc(58px + env(safe-area-inset-bottom));padding-bottom:8px;background:#fff}
   .toast{bottom:calc(136px + env(safe-area-inset-bottom))}
   body.kb .tabs{display:none}
+  .tabs{transition:transform .22s ease}
+  .mact{transition:bottom .22s ease,padding-bottom .22s ease}
+  body.tbh .tabs{transform:translateY(calc(100% + 12px))}
+  body.tbh .mact{bottom:0;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
   body.kb .mact{bottom:0;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
   .verban{left:10px;right:10px;transform:none;white-space:normal}
   .verban span{flex:1}
@@ -1776,7 +1780,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.26';
+const APP_VER = '4.26.1';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -1792,6 +1796,15 @@ function verBanner(){
   $('#ver-x').onclick = () => d.remove();
 }
 setInterval(() => verCheck(), 10 * 60e3); setTimeout(() => verCheck(true), 4000);
+// 4.26.1: điện thoại lướt xuống thì ẩn thanh tab dưới đáy cho gọn, lướt lên (hoặc về đầu / cuối trang) thì hiện lại
+let SC_Y = 0, SC_ACC = 0; const MOB_Q = matchMedia('(max-width:760px)');
+addEventListener('scroll', () => {
+  const y = Math.max(0, scrollY), d = y - SC_Y; SC_Y = y; if (!MOB_Q.matches) return;
+  const cl = document.body.classList, end = y + innerHeight >= document.documentElement.scrollHeight - 8;
+  if (y < 40 || end){ cl.remove('tbh'); SC_ACC = 0; return; }
+  if (d && (d > 0) !== (SC_ACC > 0)) SC_ACC = 0;   // đổi chiều lướt thì đếm lại
+  SC_ACC += d; if (SC_ACC > 24) cl.add('tbh'); else if (SC_ACC < -24) cl.remove('tbh');
+}, {passive: true});
 // 4.26: đang gõ số trên điện thoại thì ẩn thanh tab dưới đáy (bàn phím đẩy thanh lên, che ô nhập)
 const isTyping = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(checkbox|radio|file|button|submit|range|color)$/.test(el.type)));
 document.addEventListener('focusin', e => { if (isTyping(e.target)) document.body.classList.add('kb'); });
@@ -1871,7 +1884,7 @@ function render(){
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${ico(TAB_IC[k])}<span class="tl">${tabLbl(k, l)}</span></button>`).join('')}</nav>
     <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? ico('back') + ' <span class="lb">Giao diện </span>Admin' : ico('user') + ' <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">${ico('search')}<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">${ico('refresh')}</span><span class="lb"> Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin / CFO) bằng Đăng xuất.</div>` : ''}${dbOldNote()}<div id="wkban">${wkBannerHtml()}</div><div id="view"></div></main>`;
-  $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; render(); });
+  $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; document.body.classList.remove('tbh'); render(); });
   $('#wkban').onclick = onWkBanner; wkSchedule(); $('#asmr') && ($('#asmr').onclick = toggleAsMR);
   $('#logout').onclick = async () => { await flushSaves(); await STORE.signOut(); renderLogin(); };
   $('#chpw') && ($('#chpw').onclick = () => passwordDialog(false));

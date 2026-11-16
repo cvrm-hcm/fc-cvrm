@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.26.1 — thanh tab đáy tự ẩn khi lướt xuống
+- Điện thoại: lướt xuống thì thanh tab dưới đáy trượt ẩn cho gọn, thanh Submit hạ xuống sát đáy; lướt lên, về đầu trang hoặc tới cuối trang thì hiện lại. Lướt rất nhẹ (< 24px) không đổi.
+
 ## Bản 4.26 — giao diện pastel, icon, thanh tab dưới đáy điện thoại, báo có bản mới
 - Theme pastel xanh trời: header và nền nhạt, nút chính xanh navy, chữ và số giữ đậm.
 - Bộ icon nét mảnh (SVG, cùng màu chữ) thay emoji / ký tự ở nút và nhãn; hiển thị giống nhau trên iPhone, Android, Windows. Chuỗi copy sang Zalo vẫn giữ ký tự.
