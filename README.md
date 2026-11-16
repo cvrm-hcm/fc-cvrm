@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.30.1 — dòng tổng in đậm
+- Mọi bảng: dòng Total / Subtotal / tổng MR / tổng brand / tổng account / merge code in đậm toàn bộ chỉ số (kể cả %Ach, Gr). Dòng thường để %Ach, Gr chữ vừa để dòng tổng nổi bật.
+
 ## Bản 4.30 — kiểm tra bảo mật XSS + clickjacking
 - **XSS:** mọi chữ người dùng nhập hoặc nạp từ file (tên MR, tên account, merge name, Note, lý do, ghi chú duyệt, địa chỉ, kênh, tên chương trình trade, quota dự kiến) hiển thị qua hàm `esc()` / `textContent`, không chạy code. Đã thử nhét mã độc vào các trường này rồi đi 70 màn hình (admin, RFFM, MR; mọi tab, tab con, chi tiết BV, Tra cứu, Đã add): 0 mã chạy, 0 thuộc tính sự kiện bị chèn; 65/70 màn hình hiện mã độc dưới dạng chữ thường. Không có eval / document.write / href động.
 - **Clickjacking:** GitHub Pages không cho đặt header X-Frame-Options / CSP frame-ancestors, nên dùng chặn bằng code ở đầu trang: trên *.github.io, nếu bị trang khác nhúng vào iframe thì toàn bộ app ẩn và thử mở ra cửa sổ chính. Thử: trang lạ nhúng iframe thường và iframe sandbox → app ẩn hoàn toàn (bản 4.29.1 trở về trước vẫn hiện). Mở trực tiếp bình thường; bản demo không ở github.io không bị ảnh hưởng.

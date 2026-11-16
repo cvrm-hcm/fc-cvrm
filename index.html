@@ -800,6 +800,12 @@ html:has(.modal-bg),body:has(.modal-bg){overflow:hidden}
 .modal-bg{overscroll-behavior:contain}
 .bvd-h{position:sticky;top:-14px;z-index:3;background:#fff;margin:-14px -14px 0;padding:14px 14px 8px;border-bottom:1px solid var(--line2)}
 @media (max-width:760px){.modal-bg{align-items:flex-end}.modal{max-height:calc(100dvh - max(16px, env(safe-area-inset-top)));border-radius:var(--r2) var(--r2) 0 0;width:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
+
+/* 4.30.1: dòng thường trong bảng: %Ach / Gr chữ vừa (500) để dòng tổng nổi bật */
+.t td .gr,.t td .ach{font-weight:500}
+/* 4.30.1: dòng tổng / tổng nhóm (Total, Subtotal, tổng MR, tổng brand, tổng account, merge code…) — mọi chỉ số in đậm cho dễ theo dõi */
+:is(tr.tot,tr.stot,tr.mbp,tr.mbt-tot:not(.mbc),tr.dgrp,tr.bvt,tr.fysub,tr.acc:not(.mcode),tr.mg) > td,
+:is(tr.tot,tr.stot,tr.mbp,tr.mbt-tot:not(.mbc),tr.dgrp,tr.bvt,tr.fysub,tr.acc:not(.mcode),tr.mg) > td :not(input):not(select):not(.sub):not(.muted){font-weight:700}
 </style>
 </head>
 <body>
@@ -1836,7 +1842,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.30';
+const APP_VER = '4.30.1';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
