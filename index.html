@@ -1812,7 +1812,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.27.1';
+const APP_VER = '4.27.2';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3913,13 +3913,15 @@ function dimTableHtml(dim, sel){
   const sorter = dim === 'channel' ? chSort : dim === 'atype' ? typeSort : undefined, withT = dim !== 'channel', subB = dim !== 'brand';
   const keys = [...new Set(sel.map(keyOf))].sort(sorter).map(k => [k, sel.filter(r => keyOf(r) === k)]).map(([k, rs]) => [k, agg(rs), rs]).filter(([k, g]) => g.tgt || g.fcv || g.act.some(x => x));
   const tot = agg(sel), share = g => tot.fcv ? `<td class="sub">${pct(g.fcv / tot.fcv)}</td>` : '<td></td>';
-  const cells = (g) => `${g.act.slice(0, 4).map(x => `<td>${trc(x)}</td>`).join('')}<td>${trc(g.act[4])}</td>${withT ? `<td>${trc(g.tgt)}</td>` : ''}<td>${trc(g.fcv)}</td>${withT ? `<td>${achHtml(g.ach)}</td>` : share(g)}<td>${grHtml(g.gLy)}</td><td>${grHtml(g.gQ)}</td>`;
-  const subRows = rs => { const bs = [...new Set(rs.map(r => r.brand))].sort(); return bs.map(b => { const g = agg(rs.filter(r => r.brand === b)); return g.tgt || g.fcv || g.act.some(x => x) ? `<tr class="dsub"><td class="l stick">↳ ${esc(b)}</td>${cells(g)}</tr>` : ''; }).join(''); };
+  const yt = dim === 'brand', YL = ytdLbl(), m0 = '<span class="muted">–</span>';   // 4.27.2: By brand thêm FC FY / YTD + Gr vs cùng kỳ năm trước
+  const ycells = rs => { if (!yt) return ''; const y = ytdAgg(rs); return `<td>${y.filled ? trc(y.fy) : m0}</td><td>${grHtml(y.g)}</td>`; };
+  const cells = (g, rs) => `${g.act.slice(0, 4).map(x => `<td>${trc(x)}</td>`).join('')}<td>${trc(g.act[4])}</td>${withT ? `<td>${trc(g.tgt)}</td>` : ''}<td>${trc(g.fcv)}</td>${withT ? `<td>${achHtml(g.ach)}</td>` : share(g)}<td>${grHtml(g.gLy)}</td><td>${grHtml(g.gQ)}</td>${ycells(rs)}`;
+  const subRows = rs => { const bs = [...new Set(rs.map(r => r.brand))].sort(); return bs.map(b => { const rb = rs.filter(r => r.brand === b), g = agg(rb); return g.tgt || g.fcv || g.act.some(x => x) ? `<tr class="dsub"><td class="l stick">↳ ${esc(b)}</td>${cells(g, rb)}</tr>` : ''; }).join(''); };
   const title = dim === 'brand' ? 'By brand' : dim === 'channel' ? 'By channel' : 'By type BV';
   const note = '';
-  return `<div class="card"><h3>${title}</h3><div class="tw"><table class="t dimt"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : dim === 'channel' ? 'Kênh · brand' : 'Type BV · brand'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th>${withT ? '<th>Target</th>' : ''}<th>FC</th>${withT ? '<th class="h-ach">%Ach FC</th>' : '<th data-tip="% đóng góp vào tổng FC">%Contri</th>'}<th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC vs ${P[3].label}">Gr vs ${P[3].label}</th></tr></thead><tbody>
-    ${keys.map(([k, g, rs]) => `<tr${subB ? ' class="dgrp"' : ''}><td class="l stick">${esc(lab(k))}</td>${cells(g)}</tr>${subB ? subRows(rs) : ''}`).join('')}
-    ${keys.length > 1 ? `<tr class="tot sfix"><td class="l stick">Total</td>${cells(tot)}</tr>` : ''}</tbody></table></div>${note}</div>`;   // 4.25.5: dòng Total
+  return `<div class="card"><h3>${title}</h3><div class="tw"><table class="t dimt"><thead><tr><th class="l stick">${dim === 'brand' ? 'Brand' : dim === 'channel' ? 'Kênh · brand' : 'Type BV · brand'}</th>${P.slice(0, 4).map(p => `<th>${p.label}</th>`).join('')}<th>QTD</th>${withT ? '<th>Target</th>' : ''}<th>FC</th>${withT ? '<th class="h-ach">%Ach FC</th>' : '<th data-tip="% đóng góp vào tổng FC">%Contri</th>'}<th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC vs ${P[3].label}">Gr vs ${P[3].label}</th>${yt ? `<th data-tip="${esc(YL.tip)}">${YL.fc}</th><th class="h-gr" data-tip="${esc(YL.tip)}">${YL.gr}</th>` : ''}</tr></thead><tbody>
+    ${keys.map(([k, g, rs]) => `<tr${subB ? ' class="dgrp"' : ''}><td class="l stick">${esc(lab(k))}</td>${cells(g, rs)}</tr>${subB ? subRows(rs) : ''}`).join('')}
+    ${keys.length > 1 ? `<tr class="tot sfix"><td class="l stick">Total</td>${cells(tot, sel)}</tr>` : ''}</tbody></table></div>${note}</div>`;   // 4.25.5: dòng Total
 }
 // 4.25.7: đơn vị tự chọn (dưới 1 tỷ → tr), Gr vs quý trước dưới mỗi quý, % phasing dưới mỗi tháng
 const chUnit = mx => mx >= 1e9 ? {lab: v => v ? nf1.format(v / 1e9) : '', u: 'tỷ'} : {lab: v => v ? nf0.format(Math.round(v / 1e6)) : '', u: 'tr'};

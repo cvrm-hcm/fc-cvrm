@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.27.2 — FC FY / YTD ở Dashboard MR → By brand
+- Bảng By brand (Dashboard của MR, admin ở Giao diện MR) thêm cột FC FY26 và Gr vs FY25 (Q1–Q3: FC YTD / Gr vs YTD) cho từng brand và Total.
+
 ## Bản 4.27.1 — FC FY / YTD ở bảng MR × brand
 - Bảng MR × brand (Dashboard → By MR và FC tuần) thêm cột FC FY26 và Gr vs FY25 (Q1–Q3: FC YTD / Gr vs YTD) cho từng MR, từng brand và Tổng team. Bản Submit cũ (MR xem FC tuần) chưa có số này thì để trống.
 - Tổng team cộng cả dòng chưa nhập FC, cùng cách với Gr vs LYSP.
