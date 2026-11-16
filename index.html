@@ -758,6 +758,19 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
   .tqc,.kt,a[data-go],a[data-k]{position:relative}
   .tqc::after,.kt::after,a[data-go]::after,a[data-k]::after{content:"";position:absolute;inset:-10px -4px}
 }
+
+/* 4.26.2: Top accounts — cột %Ach và mức rủi ro đủ rộng, không đè nhau */
+.cc{grid-template-columns:minmax(0,1.5fr) minmax(40px,1fr) 40px 98px 84px}
+.cc .lv{white-space:nowrap}
+@media (max-width:760px){
+  .cc{grid-template-columns:minmax(0,1fr) 34px 64px 82px;gap:6px}
+  .cc .ach .ab{display:none}
+  /* header điện thoại: nút gọn (icon), không tràn; màn hình rất hẹp thì vuốt ngang được */
+  .top .who .btns{min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .top .who .btns::-webkit-scrollbar{display:none}
+  .top .who .btn{flex:none;min-width:40px;justify-content:center}
+  #asmr .lb,#chpw .lb,.top .btns:has(#asmr) #lookup .lb{display:none}
+}
 </style>
 </head>
 <body>
@@ -865,6 +878,7 @@ const ICN = {
   chart: '<path d="M2.5 13.5h11M4.5 11V8M8 11V4.5M11.5 11V6.5"/>',
   slides: '<rect x="2" y="2.8" width="12" height="8.7" rx="1.3"/><path d="M8 11.5v2.7M5.5 14.2h5"/>',
   award: '<circle cx="8" cy="6" r="3.8"/><path d="M5.8 9.1L5 14.5 8 13l3 1.5-.8-5.4"/>',
+  key: '<circle cx="5.5" cy="10.5" r="3"/><path d="M7.6 8.4l5.9-5.9M11.2 4.8l1.8 1.8M9.6 6.4l1.4 1.4"/>',
   tune: '<path d="M2.5 4.5h2M8 4.5h5.5M2.5 11.5h6M12 11.5h1.5"/><circle cx="6.2" cy="4.5" r="1.7"/><circle cx="10.3" cy="11.5" r="1.7"/>',
 };
 const ico = (n, c = '') => `<svg class="i${c ? ' ' + c : ''}" viewBox="0 0 16 16" aria-hidden="true">${ICN[n] || ''}</svg>`;
@@ -1780,7 +1794,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.26.1';
+const APP_VER = '4.26.2';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -1882,7 +1896,7 @@ function render(){
   $('#app').innerHTML = `<header class="top"><div class="brand"><span class="lg">${esc(CFG.APP_NAME)}</span><span class="sm">${esc(CFG.APP_NAME.split(' ').slice(0, 2).join(' '))}</span></div><span class="br"></span>
     <div class="chips"><span class="period ${s.locked ? 'lock' : ''}"${wkOn() ? ` data-tip="${esc(wkDlTip())}"` : ''}><span class="dt">FC </span>${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHOÁ' : ''}</span>${teamSelHtml()}${asofChipHtml()}</div>
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${ico(TAB_IC[k])}<span class="tl">${tabLbl(k, l)}</span></button>`).join('')}</nav>
-    <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? ico('back') + ' <span class="lb">Giao diện </span>Admin' : ico('user') + ' <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">${ico('search')}<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">${ico('refresh')}</span><span class="lb"> Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw">Đổi mật khẩu</button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
+    <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? ico('back') + ' <span class="lb">Giao diện </span>Admin' : ico('user') + ' <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">${ico('search')}<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">${ico('refresh')}</span><span class="lb"> Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw" aria-label="Đổi mật khẩu" data-tip="Đổi mật khẩu">' + ico('key') + '<span class="lb"> Đổi mật khẩu</span></button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
     <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin / CFO) bằng Đăng xuất.</div>` : ''}${dbOldNote()}<div id="wkban">${wkBannerHtml()}</div><div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; document.body.classList.remove('tbh'); render(); });
   $('#wkban').onclick = onWkBanner; wkSchedule(); $('#asmr') && ($('#asmr').onclick = toggleAsMR);

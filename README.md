@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.26.2 — sửa hiển thị điện thoại
+- Header điện thoại: nút Giao diện MR, Tra cứu, Đổi mật khẩu thu về icon, hàng nút không còn tràn qua nút Đăng xuất; màn hình rất hẹp thì vuốt ngang được.
+- Top accounts (Dashboard → By account): cột %Ach và mức rủi ro đủ rộng, không đè nhau (cả máy tính và điện thoại); điện thoại ẩn thanh nhỏ trong ô %Ach.
+
 ## Bản 4.26.1 — thanh tab đáy tự ẩn khi lướt xuống
 - Điện thoại: lướt xuống thì thanh tab dưới đáy trượt ẩn cho gọn, thanh Submit hạ xuống sát đáy; lướt lên, về đầu trang hoặc tới cuối trang thì hiện lại. Lướt rất nhẹ (< 24px) không đổi.
 
