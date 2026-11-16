@@ -1831,7 +1831,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.28.1';
+const APP_VER = '4.29';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3086,10 +3086,12 @@ function incRB(rep, M, I){
  gateH = achH !== null && achH >= num(C.gate) - 1e-9, elig = achH !== null && achH >= 1 - 1e-9;
   const gateP = achPtot !== null && achPtot >= num(C.gate) - 1e-9;
   const K = B.filter(x => x.w).map(x => { const T = num(x.tP) + x.tC, S = x.aP + x.fC, a = T ? S / T : null, payP = incCurve(C, x.achP), payH = incCurve(C, a), c = cur.get(x.b);
-    return {...x, achHb: a, payP, payH, amtP: gateP && x.tP ? pool * x.w * payP / 100 : 0, amtC: c ? c.amt : 0, amtH: gateH ? 2 * pool * x.w * payH / 100 : 0}; });
-  const paidIn = pnum(rb.paid), paidP = paidIn !== null ? paidIn : K.reduce((t, x) => t + x.amtP, 0), paidC = K.reduce((t, x) => t + x.amtC, 0), totH = K.reduce((t, x) => t + x.amtH, 0);
+    return {...x, achHb: a, payP, payH, amtP: gateP && x.tP ? pool * x.w * payP / 100 : 0, amtC: c ? c.amt : 0}; });
+  // 4.29 (user): quý tính theo brand, roll-back tính theo FULL performance (tổng các brand), không chia brand: tính lại = 2 × hạn mức × tỷ trọng định lượng × hệ số(%Ach tổng nửa năm)
+  const wQ = K.reduce((t, x) => t + x.w, 0), payHt = achH === null ? 0 : incCurve(C, achH);
+  const paidIn = pnum(rb.paid), paidP = paidIn !== null ? paidIn : K.reduce((t, x) => t + x.amtP, 0), paidC = K.reduce((t, x) => t + x.amtC, 0), totH = elig ? 2 * pool * wQ * payHt / 100 : 0;
   const amt = elig ? Math.max(0, totH - paidP - paidC) : 0, need = haveT && tH && !elig ? tH - sH + 1 : 0;
-  return {Q, Qp, pkP, haveT, B, K, achPtot, achH, tH, sH, gateH, elig, paidP, paidIn, paidC, totH, amt, need, hLbl: Q <= 2 ? 'H1' : 'H2', payMonth: Q <= 2 ? 'tháng 11' : 'tháng 5 năm sau', nextQ: Q <= 2 ? `Q3'${String(Y).slice(-2)}` : `Q1'${String(Y + 1).slice(-2)}`};
+  return {Q, Qp, pkP, haveT, B, K, wQ, payHt, achPtot, achH, tH, sH, gateH, elig, paidP, paidIn, paidC, totH, amt, need, hLbl: Q <= 2 ? 'H1' : 'H2', payMonth: Q <= 2 ? 'tháng 11' : 'tháng 5 năm sau', nextQ: Q <= 2 ? `Q3'${String(Y).slice(-2)}` : `Q1'${String(Y + 1).slice(-2)}`};
 }
 function rbHtml(R, M, ed){
   const mm = v => vnd(Math.round(v)), dis = ed ? '' : 'disabled', I = INC_I || {}, rb = I.rb || {};
@@ -3101,16 +3103,17 @@ function rbHtml(R, M, ed){
   // 4.25.3: cột kết quả trước (điện thoại thấy ngay), số đầu vào của 2 quý phía sau
   return `<div class="card" id="inc-rb-card"><h3>Roll-back ${R.hLbl} (${Ql} + ${Qc})</h3>
     <div class="incg ${R.elig ? 'ok' : 'err'}" style="margin-bottom:8px">${!R.haveT ? `Chưa có target ${Ql} nên chưa tính roll-back. MR vào sau ngày 17 tháng đầu của nửa năm thì không đủ điều kiện; có số ${Ql} thì admin nạp ở Target &amp; Actual các quý hoặc nhập tay bên dưới.` : `Tổng portfolio ${R.hLbl} ${R.achH === null ? '–' : pct1(R.achH)}. ${R.elig ? `Đủ điều kiện ≥ 100%: roll-back ước tính <b>${mm(R.amt)} VND</b>, trả ${R.payMonth} nếu ${R.nextQ} đạt ≥ 90%.` : `Cần tổng ${R.hLbl} ≥ 100%: thêm ${mm(R.need)} VND.`}`}</div>
-    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>%Ach ${R.hLbl}</th><th>Hệ số ${R.hLbl}</th><th>Định lượng ${R.hLbl} tính lại (2 quý)</th><th>Đã trả ${Ql}</th><th>${Qc} (ước)</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th></tr></thead><tbody>
+    ${R.haveT ? `<div class="inctiles" style="margin-bottom:8px"><div class="inctile"><div class="l">%Ach tổng ${R.hLbl}</div><div class="v">${R.achH === null ? '–' : achHtml(R.achH)}</div><div class="d">${mm(R.sH)} / ${mm(R.tH)}</div></div><div class="inctile"><div class="l">Hệ số ${R.hLbl}</div><div class="v">${R.elig ? R.payHt + '%' : '–'}</div><div class="d">theo %Ach tổng, không chia brand</div></div><div class="inctile"><div class="l">Định lượng ${R.hLbl} tính lại</div><div class="v">${mm(R.totH)}</div><div class="d">2 × ${mm(M.pool)} × ${Math.round(R.wQ * 100)}% × ${R.elig ? R.payHt : 0}%</div></div></div>` : ''}
+    <div class="tw"><table class="t inct nosort"><thead><tr><th class="l stick">Brand</th><th>Đã trả ${Ql}</th><th>${Qc} (ước)</th><th>Target ${Ql}</th><th>Act. ${Ql}</th><th>%Ach ${Ql}</th><th>Target ${Qc}</th><th>FC ${Qc}</th></tr></thead><tbody>
       ${R.B.map(x => { const k = R.K.find(y => y.b === x.b);
         return `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${x.w ? '' : '<div class="sub">không tính thưởng</div>'}</td>
-          <td>${k && k.achHb !== null ? achHtml(k.achHb) : '–'}</td><td>${k ? `<b>${k.payH}%</b>` : '–'}</td><td><b>${k ? mm(k.amtH) : '–'}</b></td><td>${k ? mm(k.amtP) : '–'}</td><td>${k ? mm(k.amtC) : '–'}</td>
+          <td>${k ? mm(k.amtP) : '–'}</td><td>${k ? mm(k.amtC) : '–'}</td>
           <td>${inp('rbt:' + x.b, (rb.tgt || {})[x.b], x.tP !== null && x.tgtSrc === 'admin' ? nf0.format(Math.round(x.tP)) : 'nhập', 'w90', x.tP === null ? '–' : mm(x.tP))}</td><td>${mm(x.aP)}${x.actSrc === 'sfe' ? '<div class="sub">SFE</div>' : x.actSrc === 'auto' ? '<div class="sub">app lưu</div>' : ''}</td>
           <td>${inp('rba:' + x.b, (rb.ach || {})[x.b], x.achP === null ? '%' : (Math.round(x.achP * 1000) / 10).toString(), 'w70', x.achP === null ? '–' : achHtml(x.achP))}</td><td>${mm(x.tC)}</td><td>${mm(x.fC)}</td></tr>`; }).join('')}
-      <tr class="tot"><td class="l stick">Tổng</td><td>${R.achH === null ? '–' : pct1(R.achH)}</td><td></td><td>${mm(R.totH)}</td><td>${mm(R.paidP)}</td><td>${mm(R.paidC)}</td><td>${mm(R.B.reduce((t, x) => t + num(x.tP), 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.aP, 0))}</td><td>${R.achPtot === null ? '–' : pct1(R.achPtot)}</td><td>${mm(R.B.reduce((t, x) => t + x.tC, 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.fC, 0))}</td></tr></tbody></table></div>
+      <tr class="tot"><td class="l stick">Tổng</td><td>${mm(R.paidP)}</td><td>${mm(R.paidC)}</td><td>${mm(R.B.reduce((t, x) => t + num(x.tP), 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.aP, 0))}</td><td>${R.achPtot === null ? '–' : pct1(R.achPtot)}</td><td>${mm(R.B.reduce((t, x) => t + x.tC, 0))}</td><td>${mm(R.B.reduce((t, x) => t + x.fC, 0))}</td></tr></tbody></table></div>
     <div class="bar" style="gap:8px;margin-top:8px">${editOn ? `<label class="sub">Thưởng định lượng ${Ql} đã nhận (VND)</label>${inp0('rbpaid', rb.paid, mm(R.K.reduce((t, x) => t + x.amtP, 0)), 'w120')}` : ''}
       <span class="sub">Roll-back = ${mm(R.totH)} − ${mm(R.paidP)} − ${mm(R.paidC)}${R.elig ? ` = <b>${mm(R.amt)}</b>` : ''}</span><span class="grow"></span>${ed && !man ? `<button class="btn sm ghost2" id="rb-edit">${editOn ? 'Xong' : `✎ Sửa tay số ${Ql}`}</button>` : ''}</div>
-    <details class="howto"><summary>Cách tính</summary><div>Roll-back = định lượng ${R.hLbl} tính lại − định lượng đã trả ${Ql} − ${Qc}, chỉ khi tổng ${R.hLbl} ≥ 100%. Chỉ tính phần định lượng (${qw}% hạn mức); định tính trả theo từng quý, không hồi tố.<br>
+    <details class="howto"><summary>Cách tính</summary><div>Thưởng từng quý tính theo brand. Roll-back tính theo <b>full performance</b> (tổng các brand), không chia brand: định lượng ${R.hLbl} tính lại = 2 × hạn mức × ${Math.round(R.wQ * 100)}% × hệ số theo %Ach tổng ${R.hLbl}; roll-back = phần này − định lượng đã trả ${Ql} − ${Qc}, chỉ khi tổng ${R.hLbl} ≥ 100%. Chỉ tính phần định lượng (${qw}% hạn mức); định tính trả theo từng quý, không hồi tố.<br>
       Cột "tính lại" là tổng 2 quý: tối đa 2 × ${mm(M.pool)} × ${qw}% × ${cmax}% = ${mm(2 * M.pool * num(M.C.quantW) * cmax / 100)}, không phải 1 quý.<br>
       Target và Act. ${Ql} theo số SFE admin nạp (địa bàn đã phân công ở ${Ql}, không theo địa bàn hiện tại); quý chưa nạp SFE thì Act. tạm lấy raw sales × ratio hiện tại. Ô trống thì nhập tay.</div></details></div>`;
 }
