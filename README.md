@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.28.1 — hộp thoại trên điện thoại
+- Mở chi tiết BV (và mọi hộp thoại) thì nền trang khoá, lướt chỉ lướt trong hộp; hết nội dung không lướt sang nền.
+- Điện thoại: hộp thoại dạng tấm trượt từ đáy, cao vừa màn hình; dòng tên BV + nút Đóng dính trên cùng khi lướt.
+
 ## Bản 4.28 — thẻ Account (gộp By account + Top account)
 - Dashboard admin / RFFM: bỏ thẻ Top account, By account đổi thành **Account**: 1 bảng duy nhất, mặc định account lớn (target) lên đầu.
 - Đầu thẻ: "N account chiếm 80% target", lọc Type BV (BV công / BV tư / Clinic, kèm % FC) và 4 ô bấm để lọc: Tất cả · Dưới target (gap tổng) · Chưa nhập FC · Rủi ro cao.

@@ -788,6 +788,13 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
 .bvt td.stick{min-width:220px}
 .bvmx{margin-top:12px}
 @media (max-width:760px){.bvfs{grid-template-columns:1fr 1fr}.bvt .bvi{display:none}.bvt .ach .ab{display:none}.bvt td.stick{min-width:175px;max-width:190px}.bvcard .sgv{width:100%;overflow-x:auto;scrollbar-width:none}.bvcard .bar #b-q{flex:1 1 55%;min-width:0}.bvcard .bar #b-s{flex:1 1 40%;min-width:0}.bvcard .bar .grow{display:none}}
+
+/* 4.28.1: hộp thoại (chi tiết BV…) trên điện thoại: chỉ lướt trong hộp, nền đứng yên; nút Đóng luôn thấy */
+html:has(.modal-bg),body:has(.modal-bg){overflow:hidden}
+.modal{max-height:90dvh;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.modal-bg{overscroll-behavior:contain}
+.bvd-h{position:sticky;top:-14px;z-index:3;background:#fff;margin:-14px -14px 0;padding:14px 14px 8px;border-bottom:1px solid var(--line2)}
+@media (max-width:760px){.modal-bg{align-items:flex-end}.modal{max-height:calc(100dvh - max(16px, env(safe-area-inset-top)));border-radius:var(--r2) var(--r2) 0 0;width:100%;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
 </style>
 </head>
 <body>
@@ -1824,7 +1831,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.28';
+const APP_VER = '4.28.1';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
