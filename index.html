@@ -776,6 +776,18 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
 .kgrid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .kytd>div[data-tip]{display:contents}
 @media (max-width:1240px){.kgrid.c4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 4.28: thẻ Account */
+.bvfs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.bvf{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:var(--r2);padding:9px 12px;color:var(--ink)}
+.bvf .l{font-size:var(--fs2);color:var(--ink2)}.bvf .v{font-size:var(--fs5);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}.bvf .d{font-size:var(--fs1);color:var(--ink3)}
+.bvf.warn .v{color:#9a5b00}.bvf.bad .v{color:var(--critical)}
+.bvf:hover{border-color:var(--hdr2)}.bvf.on{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:var(--hdr)}
+.bvt .bvm{margin-left:6px;white-space:nowrap}.bvt .bvm .lv{font-size:var(--fs1);padding:0 7px;margin-left:2px}
+.bvf .l{font-weight:500}.bvcard .sgv .fchip{white-space:nowrap}
+.bvt td.stick{min-width:220px}
+.bvmx{margin-top:12px}
+@media (max-width:760px){.bvfs{grid-template-columns:1fr 1fr}.bvt .bvi{display:none}.bvt .ach .ab{display:none}.bvt td.stick{min-width:175px;max-width:190px}.bvcard .sgv{width:100%;overflow-x:auto;scrollbar-width:none}.bvcard .bar #b-q{flex:1 1 55%;min-width:0}.bvcard .bar #b-s{flex:1 1 40%;min-width:0}.bvcard .bar .grow{display:none}}
 </style>
 </head>
 <body>
@@ -1382,7 +1394,7 @@ class CloudStore {
    4. TÍNH TOÁN
    ========================================================= */
 let STORE, D, ME;
-const VIEW0 = {tab: 'fc', fcRep: null, fcBrand: '', fcSearch: '', fcFlt: 'active', dRep: '', dBrand: '', dCh: '', admTab: 'import', accSort: 'gap', accQ: '', accN: 30, accSeg: '', sgMode: 'type', sgKey: null, sgSort: 'fcv', sgN: 20, tqSt: {f: 'all', q: '', sort: 'risk', n: 40}, accP: null, mapFlt: '', mapQ: '', dTab: 'ov', rkLv: 'hm', rkSig: '', rkTopic: '', rkQ: '', bvSort: 'short', bvQ: '', bvN: 30, rkN: 25, team: '', nlQ: '', nlSeg: 'all', nlBrand: '', nlDBrand: '', nlbQ: '', nlbSeg: 'all', nlbN: 30, nlFocus: ''};
+const VIEW0 = {tab: 'fc', fcRep: null, fcBrand: '', fcSearch: '', fcFlt: 'active', dRep: '', dBrand: '', dCh: '', admTab: 'import', accSort: 'gap', accQ: '', accN: 30, accSeg: '', sgMode: 'type', sgKey: null, sgSort: 'fcv', sgN: 20, tqSt: {f: 'all', q: '', sort: 'risk', n: 40}, accP: null, mapFlt: '', mapQ: '', dTab: 'ov', rkLv: 'hm', rkSig: '', rkTopic: '', rkQ: '', bvSort: 'tgt', bvQ: '', bvN: 30, bvF: 'all', bvSeg: '', rkN: 25, team: '', nlQ: '', nlSeg: 'all', nlBrand: '', nlDBrand: '', nlbQ: '', nlbSeg: 'all', nlbN: 30, nlFocus: ''};
 const VIEW = {...VIEW0};
 let P = [], PK = '', MS = [], MST = [], ROWS = [], SQ = new Map(), PRICE = new Map(), RULE = {pct: .5, min: 2e7}, TGT_OPEN = [], TIME_GONE = 0, ASOF_DM = '', NEXT_DM = '', PACE = 0, SEAS = null, ASOF = new Date();
 
@@ -1812,7 +1824,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.27.3';
+const APP_VER = '4.28';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -4283,7 +4295,7 @@ function wkSchedule(){
 
 /* ---------- Dashboard RFFM / Admin: Overview · By MR · By account · Risk & issue ---------- */
 // 4.25.3: theo dõi trước (Overview, FC tuần, By MR, Risk), phân tích sau (account, top account, Tender, New launch)
-const DTABS = [['ov', 'Overview'], ['mr', '<span class="lg">By MR</span><span class="sm">MR</span>'], ['risk', '<span class="lg">Risk & issue</span><span class="sm">Risk</span>'], ['bv', '<span class="lg">By account</span><span class="sm">Account</span>'], ['seg', '<span class="lg">Top account</span><span class="sm">Top</span>'], ['tq', '<span class="lg">Tender</span><span class="sm">Tender</span>']];
+const DTABS = [['ov', 'Overview'], ['mr', '<span class="lg">By MR</span><span class="sm">MR</span>'], ['risk', '<span class="lg">Risk & issue</span><span class="sm">Risk</span>'], ['bv', 'Account'], ['tq', '<span class="lg">Tender</span><span class="sm">Tender</span>']];
 const dTabs = () => { const t = nlSkus().length ? DTABS.concat([['nl', '<span class="lg">New launch</span><span class="sm">Launch</span>']]) : [...DTABS];
   if (canWk()) t.splice(1, 0, ['wk', '<span class="lg">FC tuần</span><span class="sm">FC tuần</span>']); return t; };   // FC tuần ngay sau Overview
 function viewDashTeam(){
@@ -4384,30 +4396,47 @@ function dashMR(c){
   $('#mb-xl').onclick = () => mbExcel(`FC ${P[4].label} theo MR × brand · ${VIEW.team === 'ALL' ? 'HCM' : teamName(VIEW.team)}`).catch(err => toast('Lỗi xuất Excel: ' + err.message));
 }
 function dashWK(c){ wkMount(c.el, {teams: vTeams()}); }
+// 4.28: Account (gộp By account + Top account) — góc nhìn RFM: account lớn trước, lọc nhanh nhóm cần xử lý, ít cột
+const BV_SORT = {tgt: ['Target lớn nhất', (x, y) => y.tgt - x.tgt || y.fcv - x.fcv], gap: ['Gap vs target lớn nhất', (x, y) => y.short - x.short || y.tgt - x.tgt],
+  ach: ['%Ach FC thấp nhất', (x, y) => (x.ach ?? 9) - (y.ach ?? 9) || y.tgt - x.tgt], ly: ['Gr vs LYSP thấp nhất', (x, y) => (x.gLy ?? 9) - (y.gLy ?? 9) || y.tgt - x.tgt],
+  fy: ['Gr vs năm trước thấp nhất', (x, y) => (x.yG ?? 9) - (y.yG ?? 9) || y.tgt - x.tgt], fcv: ['FC lớn nhất', (x, y) => y.fcv - x.fcv]};
 function dashBV(c){
-  const {accs} = c, wT = accs.filter(o => o.tgt > 0).sort((x, y) => y.tgt - x.tgt), tot = wT.reduce((t, o) => t + o.tgt, 0);
-  let cum = 0, n80 = 0; for (const o of wT){ cum += o.tgt; n80++; if (cum >= .8 * tot) break; }
-  const top = wT.slice(0, 10), top10 = top.reduce((t, o) => t + o.tgt, 0), mx = top[0]?.tgt || 1;
-  c.el.innerHTML = `<div class="grid2">
-      <div class="card"><h3>Ma trận account: target × %Ach FC</h3><div class="legend"><span><i style="background:var(--bad);border-radius:50%"></i>Rủi ro cao</span><span><i style="background:var(--mid);border-radius:50%"></i>Trung bình</span><span><i style="background:#7d8ba1;border-radius:50%"></i>Theo dõi</span><span><i style="background:var(--ok);border-radius:50%"></i>Ổn</span></div>
-        <div id="mx"></div><div class="sub" style="margin-top:6px">Ngang: target quý · Dọc: %Ach FC · vùng đỏ: top accounts dưới target.</div></div>
-      <div class="card"><h3>Top accounts</h3><div class="story"><b>${n80}/${wT.length}</b> account chiếm 80% target${top.length ? ` · top ${top.length} chiếm <b>${pct(top10 / tot)}</b>` : ''}.</div>
-        ${top.map(o => `<div class="cc" data-bv="${esc(o.code)}" data-tip="${esc(o.name)}\nTarget: ${big(o.tgt)} · FC: ${big(o.fcv)}"><span class="nm">${esc(bvName(o.name))}</span><span class="sh"><i style="width:${o.tgt / mx * 100}%"></i></span><span class="pc">${pct(o.tgt / tot)}</span><span>${achHtml(o.ach)}</span><span>${lvChip(o.level)}</span></div>`).join('') || '<div class="sub">Chưa có target.</div>'}</div>
-    </div>
-    <div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By account</h3><span class="grow"></span><input type="search" id="b-q" placeholder="Tìm account / mã" value="${esc(VIEW.bvQ)}">
-      <select id="b-s">${[['short', 'Gap vs target lớn nhất'], ['risk', 'Rủi ro cao nhất'], ['tgt', 'Target lớn nhất'], ['pace', 'FC < TB 2Q nhiều nhất'], ['ly', 'Gr vs LYSP thấp nhất']].map(([k, l]) => `<option value="${k}" ${k === VIEW.bvSort ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div id="bv-tbl"></div></div>`;
-  drawMatrix($('#mx'), accs, n80 ? wT[n80 - 1].tgt : 0);
+  const all = segUnits(c.sel, 'type'); all.forEach(o => { const y = ytdAgg(o.rows); o.yG = y.g; o.noFc = o.sig.some(x => x.k === 'nofc') && !o.filled; });
+  const YL = ytdLbl(), wT = all.filter(o => o.tgt > 0).sort((x, y) => y.tgt - x.tgt), totT = wT.reduce((t, o) => t + o.tgt, 0);
+  let cum = 0, n80 = 0; for (const o of wT){ cum += o.tgt; n80++; if (cum >= .8 * totT) break; }
+  if (!SEGV.type.keys.concat(['']).includes(VIEW.bvSeg)) VIEW.bvSeg = '';
+  if (!BV_SORT[VIEW.bvSort]) VIEW.bvSort = 'tgt';
+  const segs = SEGV.type.keys.filter(k => all.some(o => o.seg === k)), totF = all.reduce((t, o) => t + o.fcv, 0);
+  const inSeg = all.filter(o => !VIEW.bvSeg || o.seg === VIEW.bvSeg);
+  const F = {all: () => true, under: o => o.tgt > 0 && o.filled && o.fcv < o.tgt, nofc: o => o.noFc, hi: o => o.level === 'hi'};
+  const cnt = k => inSeg.filter(F[k]).length, under = inSeg.filter(F.under), gapU = under.reduce((t, o) => t + (o.tgt - o.fcv), 0);
+  const tile = (k, l, v, d, cls) => `<button class="bvf${VIEW.bvF === k ? ' on' : ''} ${cls || ''}" data-bvf="${k}"><span class="l">${l}</span><span class="v">${v}</span><span class="d">${d}</span></button>`;
+  c.el.innerHTML = `<div class="card bvcard">
+      <div class="bar" style="margin-bottom:10px"><h3 style="margin:0">Account</h3><span class="story" style="margin:0"><b>${n80}/${wT.length}</b> account chiếm 80% target</span><span class="grow"></span>
+        <span class="sgv">${[['', 'Tất cả']].concat(segs.map(k => [k, sgName('type', k)])).map(([k, l]) => `<button class="fchip ${VIEW.bvSeg === k ? 'on' : ''}" data-bvseg="${k}">${esc(l)}${k && totF ? ` <span class="sub">${pct(all.filter(o => o.seg === k).reduce((t, o) => t + o.fcv, 0) / totF)}</span>` : ''}</button>`).join('')}</span></div>
+      <div class="bvfs">${tile('all', 'Tất cả', inSeg.length, 'account')}${tile('under', 'Dưới target', under.length, `gap ${trc(gapU)} tr`, under.length ? 'warn' : '')}${tile('nofc', 'Chưa nhập FC', cnt('nofc'), 'account', cnt('nofc') ? 'warn' : '')}${tile('hi', 'Rủi ro cao', cnt('hi'), 'account', cnt('hi') ? 'bad' : '')}</div>
+      <div class="bar" style="margin:12px 0 8px"><input type="search" id="b-q" placeholder="Tìm account / mã" value="${esc(VIEW.bvQ)}"><span class="grow"></span>
+        <select id="b-s">${Object.entries(BV_SORT).map(([k, [l]]) => `<option value="${k}" ${k === VIEW.bvSort ? 'selected' : ''}>${l.replace('năm trước', YL.ly)}</option>`).join('')}</select></div>
+      <div id="bv-tbl"></div>
+      <details class="howto bvmx"><summary>Ma trận target × %Ach FC</summary><div class="legend"><span><i style="background:var(--bad);border-radius:50%"></i>Rủi ro cao</span><span><i style="background:var(--mid);border-radius:50%"></i>Trung bình</span><span><i style="background:#7d8ba1;border-radius:50%"></i>Theo dõi</span><span><i style="background:var(--ok);border-radius:50%"></i>Ổn</span></div><div id="mx"></div><div class="sub" style="margin-top:6px">Ngang: target quý · Dọc: %Ach FC · vùng đỏ: top accounts dưới target. Bấm chấm để xem chi tiết.</div></details></div>`;
+  const mxd = $('.bvmx', c.el); mxd.ontoggle = () => { if (mxd.open) drawMatrix($('#mx'), inSeg, n80 ? wT[n80 - 1].tgt : 0); };
+  const m0 = '<span class="muted">–</span>';
   const draw = () => {
-    let l = accs.filter(o => !VIEW.bvQ || lc(o.name + ' ' + o.code).includes(lc(VIEW.bvQ)));
-    const S = {short: (x, y) => y.short - x.short || y.tgt - x.tgt, risk: byRisk, tgt: (x, y) => y.tgt - x.tgt, pace: (x, y) => (x.vsPace ?? 9) - (y.vsPace ?? 9), ly: (x, y) => (x.gLy ?? 9) - (y.gLy ?? 9)}[VIEW.bvSort] || byRisk;
-    l.sort(S); const shown = l.slice(0, VIEW.bvN);
-    $('#bv-tbl').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l stick">Account</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach">Gap vs target</th><th>QTD</th><th data-tip="TB sales quý của ${P[2].label}, ${P[3].label}">TB 2Q</th><th data-tip="FC so với TB 2Q">FC vs TB 2Q</th><th class="h-gr" data-tip="FC vs ${P[0].label}">Gr vs LYSP</th><th class="l">Rủi ro</th><th data-tip="Số Note của MR">Note</th></tr></thead><tbody>
-      ${shown.map(o => `<tr class="clk" data-bv="${esc(o.code)}"><td class="l stick"><span data-tip="Mã KH ${esc([...o.codes].join(', '))}">${esc(bvName(o.name))}</span></td><td>${trc(o.tgt)}</td><td>${trc(o.fcv)}</td><td>${achHtml(o.ach)}</td><td>${gapHtml(o.gap)}</td><td>${trc(o.qtd)}</td><td>${trc(o.pace)}</td><td>${vsPaceHtml(o.vsPace)}</td><td>${grHtml(o.gLy)}</td><td class="l">${lvChip(o.level)}</td><td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : '<span class="muted">–</span>'}</td></tr>`).join('')}
-      ${l.length > 1 ? (() => { const g = agg(l.flatMap(o => o.rows)), pc = l.reduce((t, o) => t + num(o.pace), 0); return `<tr class="tot sfix"><td class="l stick">Total · ${l.length} account</td><td>${trc(g.tgt)}</td><td>${trc(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${gapHtml(g.gap)}</td><td>${trc(g.act[4])}</td><td>${trc(pc)}</td><td>${vsPaceHtml(pc ? g.fcv / pc - 1 : null)}</td><td>${grHtml(g.gLy)}</td><td></td><td></td></tr>`; })() : ''}</tbody></table></div>
-      <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · đơn vị tr VND · bấm dòng để xem chi tiết</span>${l.length > shown.length ? '<button class="btn sm" id="b-more">Xem thêm</button>' : ''}</div>`;
+    const q = lc(VIEW.bvQ || '');
+    const l = inSeg.filter(F[VIEW.bvF] || F.all).filter(o => !q || lc(o.name + ' ' + [...o.codes].join(' ')).includes(q)).sort(BV_SORT[VIEW.bvSort][1]);
+    const shown = l.slice(0, VIEW.bvN), lvC = o => !o.noFc && (o.level === 'hi' || o.level === 'md') ? lvChip(o.level) : '';   // chưa nhập FC: đã có ô lọc riêng, không gắn nhãn
+    $('#bv-tbl').innerHTML = l.length ? `<div class="tw"><table class="t bvt"><thead><tr><th class="bvi">#</th><th class="l stick">Account</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach">Gap</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="${esc(YL.tip)}">${YL.gr}</th><th data-tip="Note của MR (rê chuột để đọc)">Note</th></tr></thead><tbody>
+      ${shown.map((o, i) => `<tr class="clk" data-bv="${esc(o.code)}"><td class="sub bvi">${i + 1}</td><td class="l stick"><span data-tip="Mã KH ${esc([...o.codes].join(', '))}">${esc(bvName(o.name))}</span>${lvC(o) ? `<span class="bvm">${lvC(o)}</span>` : ''}</td>
+        <td>${o.tgt ? trc(o.tgt) : m0}</td><td>${o.filled ? trc(o.fcv) : '<span class="muted">chưa nhập</span>'}</td><td>${o.tgt ? achHtml(o.ach) : m0}</td><td>${o.filled && o.tgt ? gapHtml(o.gap) : m0}</td><td>${grHtml(o.gLy)}</td><td>${grHtml(o.yG)}</td>
+        <td>${o.notes.length ? `<span class="tp" data-tip="${esc(notesPlain(o))}">${o.notes.length}</span>` : m0}</td></tr>`).join('')}
+      ${l.length > 1 ? (() => { const g = agg(l.flatMap(o => o.rows)), y = ytdAgg(l.flatMap(o => o.rows)); return `<tr class="tot sfix"><td class="bvi"></td><td class="l stick">Total · ${l.length} account</td><td>${trc(g.tgt)}</td><td>${trc(g.fcv)}</td><td>${achHtml(g.ach)}</td><td>${gapHtml(g.gap)}</td><td>${grHtml(g.gLy)}</td><td>${grHtml(y.g)}</td><td></td></tr>`; })() : ''}</tbody></table></div>
+      <div class="bar" style="margin:8px 0 0"><span class="sub">${shown.length}/${l.length} account · tr VND · bấm dòng xem chi tiết BV</span>${l.length > shown.length ? '<button class="btn sm" id="b-more">Xem thêm</button>' : ''}</div>`
+      : `<div class="note good">Không có account nào${VIEW.bvF === 'under' ? ' dưới target' : VIEW.bvF === 'nofc' ? ' chưa nhập FC' : VIEW.bvF === 'hi' ? ' rủi ro cao' : ''}${VIEW.bvQ ? ' khớp tìm kiếm' : ''}.</div>`;
     $('#b-more') && ($('#b-more').onclick = () => { VIEW.bvN += 30; draw(); });
   };
   draw();
+  $$('[data-bvf]', c.el).forEach(b => b.onclick = () => { VIEW.bvF = b.dataset.bvf; VIEW.bvN = 30; if (VIEW.bvF === 'under' && VIEW.bvSort === 'tgt') VIEW.bvSort = 'gap'; viewDashTeam(); });
+  $$('[data-bvseg]', c.el).forEach(b => b.onclick = () => { VIEW.bvSeg = b.dataset.bvseg; VIEW.bvN = 30; viewDashTeam(); });
   let tq; $('#b-q').oninput = e => { clearTimeout(tq); tq = setTimeout(() => { VIEW.bvQ = e.target.value; VIEW.bvN = 30; draw(); }, 250); };
   $('#b-s').onchange = e => { VIEW.bvSort = e.target.value; VIEW.bvN = 30; draw(); };
 }

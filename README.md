@@ -2,6 +2,12 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.28 — thẻ Account (gộp By account + Top account)
+- Dashboard admin / RFFM: bỏ thẻ Top account, By account đổi thành **Account**: 1 bảng duy nhất, mặc định account lớn (target) lên đầu.
+- Đầu thẻ: "N account chiếm 80% target", lọc Type BV (BV công / BV tư / Clinic, kèm % FC) và 4 ô bấm để lọc: Tất cả · Dưới target (gap tổng) · Chưa nhập FC · Rủi ro cao.
+- Cột: Account · Target · FC · %Ach FC · Gap · Gr vs LYSP · Gr vs FY25 (Q1–Q3: YTD) · Note. Bỏ QTD, TB 2Q, FC vs TB 2Q, Q3, %Contri, danh sách top 10 riêng (xem trong chi tiết BV). Nhãn rủi ro chỉ hiện khi Cao / Trung bình; dòng chưa nhập FC ghi "chưa nhập".
+- Ma trận target × %Ach thu gọn ở cuối thẻ, bấm để mở.
+
 ## Bản 4.27.3 — FC FY / YTD ở By channel, By type BV, chi tiết BV
 - Bảng By channel, By type BV (Overview admin, Dashboard MR) thêm cột FC FY26 / Gr vs FY25 (Q1–Q3: YTD) cho từng kênh / type, brand bên dưới và Total.
 - Chi tiết BV: thêm thẻ FC FY26 (Gr vs FY25) cạnh LYSP; bảng Chi tiết theo brand thêm 2 cột cho từng brand, từng kênh BHYT / Self-pay.
