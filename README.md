@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.29.1 — Roll-back và Kết quả SFE đủ số nửa năm / cả năm
+- Bảng Roll-back: thêm %Ach Q4, Target H2, FC H2 (Act. Q3 + FC Q4), %Ach H2 cho từng brand và Tổng.
+- Kết quả SFE các quý: thêm dòng quý đang chạy (target + FC, %Ach từng brand), dòng Total FY có %Ach từng brand.
+- Áp cho mọi giao diện xem Thưởng (MR, RFFM, admin chọn MR).
+
 ## Bản 4.29 — Roll-back theo full performance
 - Thưởng từng quý vẫn tính theo brand. Roll-back nửa năm tính theo **full performance**: %Ach tổng nửa năm (Act. quý trước + FC quý này) / (target 2 quý), mọi brand cộng chung; định lượng tính lại = 2 × hạn mức × tỷ trọng định lượng × hệ số theo %Ach tổng; roll-back = phần này − định lượng đã trả 2 quý, chỉ khi tổng ≥ 100%.
 - Thẻ Roll-back: 3 ô %Ach tổng · Hệ số · Định lượng tính lại; bảng brand chỉ còn số đầu vào (target / act. / FC) và phần đã trả từng quý.
