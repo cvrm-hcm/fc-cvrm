@@ -910,7 +910,7 @@ function ytdAgg(rows){
     for (let q = 1; q < Q; q++) fy += (SQ.get(k + Y + '|' + q) || [0])[0] * rt;
     for (let q = 1; q <= Q; q++) ly += (SQ.get(k + (Y - 1) + '|' + q) || [0])[0] * rt;
     fy += r.fcv || 0; if (r.filled) filled++; }
-  return filled ? {fy, ly, g: ly ? fy / ly - 1 : null} : {fy: null, ly, g: null};
+  return {fy, ly, filled: filled > 0, g: filled && ly ? fy / ly - 1 : null};   // tổng: cộng cả dòng chưa nhập FC (giống Gr vs LYSP)
 }
 function kpiBlocks(a, o){
   const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay';   // ngày dữ liệu của team đang xem (Cả 2 team: ngày sớm hơn)
@@ -923,7 +923,7 @@ function kpiBlocks(a, o){
     <div class="kgroup"><div class="kcap g">${IC.gr}Growth ${P[4].label} (FC)</div><div class="kgrid ${o.ytd ? 'c4 kytd' : 'c3'}">
       ${grCard(`Gr vs LYSP · ${P[0].label}`, a.gLy, `${big(a.act[0])} → ${big(a.fcv)}`)}
       ${grCard(`Gr vs ${P[3].label}`, a.gQ, `${big(a.act[3])} → ${big(a.fcv)}`)}
-      ${o.ytd ? (L => `<div data-tip="${esc(L.tip)}">${grCard(`${L.gr}`, o.ytd.g, `${L.ly} ${big(o.ytd.ly)} → ${L.fc} ${o.ytd.fy === null ? '–' : big(o.ytd.fy)}`)}</div>`)(ytdLbl()) : ''}
+      ${o.ytd ? (L => `<div data-tip="${esc(L.tip)}">${grCard(`${L.gr}`, o.ytd.g, `${L.ly} ${big(o.ytd.ly)} → ${L.fc} ${o.ytd.filled ? big(o.ytd.fy) : '–'}`)}</div>`)(ytdLbl()) : ''}
       ${o.third || ''}
     </div></div>`;
 }
@@ -1812,7 +1812,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.27';
+const APP_VER = '4.27.1';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -4119,7 +4119,9 @@ function wkText(B, di, rows){
    Cột: MR · Brand · Target · QTD · %Ach QTD · FC · %Ach FC · Gr vs LYSP · Gr vs quý trước
    list: [{rep, repHtml?, wkHtml?, at?, cells: Map brand → G, tot: G}], G = {fcv, tgt, qtd, ly, lq, filled} */
 const mbG = a => ({fcv: a.fcv, tgt: a.tgt, qtd: a.act[4], ly: a.act[0], lq: a.act[3], filled: a.filled > 0});
-const mbSum = gs => gs.reduce((o, g) => ({fcv: o.fcv + g.fcv, tgt: o.tgt + g.tgt, qtd: o.qtd + (g.qtd || 0), ly: o.ly + g.ly, lq: o.lq + g.lq, filled: o.filled || g.filled}), {fcv: 0, tgt: 0, qtd: 0, ly: 0, lq: 0, filled: false});
+// 4.27.1: thêm FC YTD / FY + cùng kỳ năm trước (ytd, yly) cho bảng MR × brand
+const mbGY = rs => { const y = ytdAgg(rs); return {...mbG(agg(rs)), ytd: y.fy, yly: y.ly}; };
+const mbSum = gs => gs.reduce((o, g) => ({fcv: o.fcv + g.fcv, tgt: o.tgt + g.tgt, qtd: o.qtd + (g.qtd || 0), ly: o.ly + g.ly, lq: o.lq + g.lq, ytd: o.ytd + (g.ytd || 0), yly: o.yly + (g.yly || 0), filled: o.filled || g.filled}), {fcv: 0, tgt: 0, qtd: 0, ly: 0, lq: 0, ytd: 0, yly: 0, filled: false});
 const mbHas = g => g && (g.tgt > 0 || g.fcv > 0 || g.qtd > 0);
 let MB_LAST = null;   // bảng vừa vẽ, dùng cho nút tải Excel
 function mbBrandOrder(list){
@@ -4130,7 +4132,8 @@ function mbCells(g){
   const f = g.filled, m = '<span class="muted">–</span>', v = x => x ? vnd(x) : m;
   return `<td>${v(g.tgt)}</td><td>${v(g.qtd)}</td><td class="c">${g.tgt > 0 && g.qtd ? achQHtml(g.qtd / g.tgt) : m}</td>`
     + `<td class="mbf">${f ? v(g.fcv) : m}</td><td class="c">${f && g.tgt > 0 ? achHtml(g.fcv / g.tgt) : m}</td>`
-    + `<td class="c">${f ? grHtml(growth(g.fcv, g.ly)) : m}</td><td class="c">${f ? grHtml(growth(g.fcv, g.lq)) : m}</td>`;
+    + `<td class="c">${f ? grHtml(growth(g.fcv, g.ly)) : m}</td><td class="c">${f ? grHtml(growth(g.fcv, g.lq)) : m}</td>`
+    + `<td>${f && g.ytd ? v(g.ytd) : m}</td><td class="c">${f && g.ytd && g.yly ? grHtml(growth(g.ytd, g.yly)) : m}</td>`;
 }
 function mbTableHtml(list, o = {}){
   const {bs, brands} = mbBrandOrder(list);
@@ -4142,13 +4145,13 @@ function mbTableHtml(list, o = {}){
   const group = (name, nameHtml, cells, tot, cls, fixed) => {
     const bl = [...cells].filter(([, g]) => mbHas(g)).sort((x, y) => bOrd(x[0]) - bOrd(y[0])), pc = fixed ? 'tot' : 'mbp', cc = fixed ? 'sfix mbc' : 'mbc';
     // Bản 4.23.2 (user): brand nằm ngay dưới tên MR, bỏ cột Brand riêng
-    if (!bl.length) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="7">chưa có số</td></tr>`;
+    if (!bl.length) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(name)}"><td class="l stick mbn">${nameHtml}</td><td class="l muted" colspan="9">chưa có số</td></tr>`;
     if (bl.length === 1) return `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · ${bl[0][0]}`)}"><td class="l stick mbn">${nameHtml}<span class="mb1">${esc(bl[0][0])}</span></td>${mbCells(bl[0][1])}</tr>`;
     const par = `<tr class="${pc} ${cls || ''}" data-lbl="${esc(`${name} · tổng`)}"><td class="l stick mbn">${nameHtml}</td>${mbCells(tot || mbSum(bl.map(x => x[1])))}</tr>`;
     const kids = bl.map(([b, g]) => `<tr class="${cc} ${cls || ''}" data-lbl="${esc(`${name} · ${b}`)}"><td class="l stick mbb">${fixed ? '<span class="muted">Team ·</span> ' : '↳ '}${esc(b)}</td>${mbCells(g)}</tr>`).join('');
     return fixed ? kids + par : par + kids;   // Tổng team: dòng brand trước, dòng Tổng team dính đáy bảng
   };
-  const head = `<tr><th class="l stick">MR · Brand</th><th>Target</th><th>Act. QTD</th><th>%Ach QTD</th><th>FC ${P[4].label}</th><th>%Ach FC</th><th>Gr vs LYSP</th><th>Gr vs ${P[3].label}</th></tr>`;
+  const head = `<tr><th class="l stick">MR · Brand</th><th>Target</th><th>Act. QTD</th><th>%Ach QTD</th><th>FC ${P[4].label}</th><th>%Ach FC</th><th>Gr vs LYSP</th><th>Gr vs ${P[3].label}</th>${(L => `<th data-tip="${esc(L.tip)}">${L.fc}</th><th data-tip="${esc(L.tip)}">${L.gr}</th>`)(ytdLbl())}</tr>`;
   const body = list.map(x => group(x.rep, `${x.repHtml || esc(x.rep)}${wk && x.wkHtml ? `<span class="mt mbwk">${x.wkHtml}</span>` : ''}`, x.cells, x.tot, VIEW.dRep && VIEW.dRep === x.rep ? 'hl' : '')).join('')
     + group('Tổng team', '<b>Tổng team</b>', bs, mbSum(list.map(x => x.tot).filter(Boolean)), 'mbt-tot', true);
   return `<div class="tw"><table class="t mbl"><thead>${head}</thead><tbody>${body}</tbody></table></div><div class="sub" style="margin-top:6px">Đơn vị: VND. Act. QTD tính đến ${esc(ASOF_DM || 'nay')}.</div>`;
@@ -4206,7 +4209,7 @@ async function mbExcel(title){
 function mbLive(byRep, base){
   const st = new Map(); if (canWk()) for (const t of TEAMS){ const B = wkBook(t), i = B.dues.indexOf(B.last); if (i >= 0) B.reps.forEach(x => st.set(x.rep, [x.w[i], t])); }
   return byRep.map(x => { const by = new Map(); x.rows.forEach(r => { if (!by.has(r.brand)) by.set(r.brand, []); by.get(r.brand).push(r); });
-    const s = st.get(x.rep); return {rep: x.rep, repHtml: `<a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a>`, wkHtml: s ? wkChip(s[0], s[1]) : '', cells: new Map([...by].map(([b, rs]) => [b, mbG(agg(rs))])), tot: mbG(agg(x.rows))}; });
+    const s = st.get(x.rep); return {rep: x.rep, repHtml: `<a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a>`, wkHtml: s ? wkChip(s[0], s[1]) : '', cells: new Map([...by].map(([b, rs]) => [b, mbGY(rs)])), tot: mbGY(x.rows)}; });
 }
 // Số FC theo brand của 1 MR từ dòng đang tính (ghi lúc Submit)
 function snapRows(rep){
@@ -4369,9 +4372,9 @@ function dashMR(c){
   // By MR × brand (bản 4.19): mỗi brand FC (tr) · %Ach · Gr LYSP · Gr quý trước + cột Nộp tuần (gộp bảng heatmap cũ)
   c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><button class="btn sm" id="d-remind">${ico('copy')} Copy nhắc submit FC</button></div>
       <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th class="l dt">Trạng thái</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach" data-tip="Màu so với phasing: % sales quý thường đạt tới ngày dữ liệu">%Ach QTD</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th><th data-tip="${esc(YL.tip)}">${YL.fc}</th><th class="h-gr" data-tip="${esc(YL.tip)}">${YL.gr}</th><th data-tip="Dòng đã nhập FC / tổng dòng · dòng lệch nhiều chưa có lý do">Nhập FC</th><th class="l">Duyệt</th></tr></thead>
-      <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a><span class="mt stm">${statusChip(x.rep)}</span></td><td class="l dt">${statusChip(x.rep)}</td><td>${big(x.tgt)}</td><td>${big(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${yR.get(x.rep).fy === null ? '–' : big(yR.get(x.rep).fy)}</td><td>${grHtml(yR.get(x.rep).g)}</td><td>${x.filled}/${x.n}${x.need ? ` · <span class="warn">${x.need} cần lý do</span>` : ''}</td>
+      <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a><span class="mt stm">${statusChip(x.rep)}</span></td><td class="l dt">${statusChip(x.rep)}</td><td>${big(x.tgt)}</td><td>${big(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${yR.get(x.rep).filled ? big(yR.get(x.rep).fy) : '–'}</td><td>${grHtml(yR.get(x.rep).g)}</td><td>${x.filled}/${x.n}${x.need ? ` · <span class="warn">${x.need} cần lý do</span>` : ''}</td>
         <td class="l">${x.st === 'submitted' ? `<button class="btn sm ok" data-rv="approved" data-rep="${esc(x.rep)}">Duyệt</button> <button class="btn sm danger" data-rv="returned" data-rep="${esc(x.rep)}">Trả lại</button>` : x.st === 'approved' ? `<button class="btn sm" data-rv="returned" data-rep="${esc(x.rep)}">Mở lại</button>` : ''}</td></tr>`).join('')}
-      <tr class="tot"><td class="l stick">Tổng team<span class="sub mt">${nSub}/${byRep.length} đã submit</span></td><td class="l dt">${nSub}/${byRep.length} đã submit</td><td>${big(t.tgt)}</td><td>${big(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${yT.fy === null ? '–' : big(yT.fy)}</td><td>${grHtml(yT.g)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
+      <tr class="tot"><td class="l stick">Tổng team<span class="sub mt">${nSub}/${byRep.length} đã submit</span></td><td class="l dt">${nSub}/${byRep.length} đã submit</td><td>${big(t.tgt)}</td><td>${big(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${yT.filled ? big(yT.fy) : '–'}</td><td>${grHtml(yT.g)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
       <div class="sub" style="margin-top:6px">Đơn vị: VND.</div></div>
     <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">By MR × brand</h3><span class="grow"></span>${canWk() ? '<a href="#" data-go="wk" class="sub">Nộp FC tuần →</a>' : ''}<button class="btn sm" id="mb-xl">${ico('download')} Tải Excel</button></div>
       ${mbTableHtml(mbLive(byRep, base), {wk: canWk(), wkHead: 'Nộp tuần'})}</div>`;
