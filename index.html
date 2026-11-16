@@ -771,6 +771,11 @@ tr.acc.nlnew td,.acc.nlnew{animation:nlflash 1.8s ease-out}
   .top .who .btn{flex:none;min-width:40px;justify-content:center}
   #asmr .lb,#chpw .lb,.top .btns:has(#asmr) #lookup .lb{display:none}
 }
+
+/* 4.27: nhóm Growth có thêm thẻ YTD / FY: 4 thẻ một hàng, điện thoại 2 × 2 */
+.kgrid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kytd>div[data-tip]{display:contents}
+@media (max-width:1240px){.kgrid.c4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -895,6 +900,18 @@ function grCard(label, g, d){ return `<div class="kpi k-gr"><div class="l">${IC.
 function paceText(a){ if (a === null || a === undefined || !PACE) return ''; const c = paceClass(a); const d = Math.round(a * 100) - Math.round(PACE * 100);
   if (c === 'good') return `<span class="gap pos">${d > 0 ? `+${d} điểm vs phasing` : 'đúng phasing'}</span>`;
   return `<span class="gap" style="color:${c === 'bad' ? 'var(--down)' : 'var(--mid-ink)'}">−${Math.max(1, -d)} điểm vs phasing</span>`; }
+// 4.27: FC YTD (Q1–Q3) / FC FY (Q4) = Act. các quý trước trong năm (raw × ratio, như bảng Forecast) + FC quý này; so cùng kỳ năm trước
+function ytdLbl(){ const Y = +D.settings.year, Q = +D.settings.quarter, yy = String(Y).slice(-2), ly = String(Y - 1).slice(-2), fy = Q === 4;
+  return {fc: fy ? `FC FY${yy}` : `FC YTD${yy}`, gr: fy ? `Gr vs FY${ly}` : `Gr vs YTD${ly}`, ly: fy ? `FY${ly}` : `YTD${ly}`,
+    tip: fy ? `FC FY${yy} = Act. Q1–Q3'${yy} + FC Q4'${yy}; so với Act. Q1–Q4'${ly}` : `FC YTD${yy} = ${Q > 1 ? `Act. Q1${Q > 2 ? '–Q' + (Q - 1) : ''}'${yy} + ` : ''}FC Q${Q}'${yy}; so với Act. Q1${Q > 1 ? '–Q' + Q : ''}'${ly}`}; }
+function ytdAgg(rows){
+  const Y = +D.settings.year, Q = +D.settings.quarter; let fy = 0, ly = 0, filled = 0;
+  for (const r of rows){ if (r.nl) continue; const k = `${r.cust_code}|${r.sku}|`, rt = num(r.ratio);
+    for (let q = 1; q < Q; q++) fy += (SQ.get(k + Y + '|' + q) || [0])[0] * rt;
+    for (let q = 1; q <= Q; q++) ly += (SQ.get(k + (Y - 1) + '|' + q) || [0])[0] * rt;
+    fy += r.fcv || 0; if (r.filled) filled++; }
+  return filled ? {fy, ly, g: ly ? fy / ly - 1 : null} : {fy: null, ly, g: null};
+}
 function kpiBlocks(a, o){
   const asof = vTeams().some(t => TC[t] && TC[t].raw) ? ASOF_DM : 'nay';   // ngày dữ liệu của team đang xem (Cả 2 team: ngày sớm hơn)
   const fcD = a.filled ? `Act. ${big(a.act[4])} + FC remain ${big(Math.max(0, a.fcv - a.act[4]))}<br>${gapText(a.gap)}${o.fcNote ? ' · ' + o.fcNote : ''}` : `chưa nhập FC${o.fcNote ? ' · ' + o.fcNote : ''}`;
@@ -903,9 +920,10 @@ function kpiBlocks(a, o){
       ${achCard(`FC ${P[4].label}`, big(a.fcv), a.ach, fcD, {tip: `FC ${P[4].label} = Act. tháng đã chốt + đơn đã lên đến ${ASOF_DM} + FC từ ${NEXT_DM} đến hết quý`})}
       ${achCard(`Act. QTD · đến ${asof}`, big(a.act[4]), a.achQ, `<span data-tip="${esc(paceTip())}">phasing ${pct(PACE)}</span> · ${paceText(a.achQ)}`, {cls: paceClass(a.achQ), marker: PACE, markerTip: paceTip(), tip: SEAS ? '%Ach QTD so với phasing (vạch đen): % sales quý thường đạt tới ngày dữ liệu, không so với 100%' : '%Ach QTD so với phasing theo thời gian (vạch đen), không so với 100%'})}
     </div></div>
-    <div class="kgroup"><div class="kcap g">${IC.gr}Growth ${P[4].label} (FC)</div><div class="kgrid c3">
+    <div class="kgroup"><div class="kcap g">${IC.gr}Growth ${P[4].label} (FC)</div><div class="kgrid ${o.ytd ? 'c4 kytd' : 'c3'}">
       ${grCard(`Gr vs LYSP · ${P[0].label}`, a.gLy, `${big(a.act[0])} → ${big(a.fcv)}`)}
       ${grCard(`Gr vs ${P[3].label}`, a.gQ, `${big(a.act[3])} → ${big(a.fcv)}`)}
+      ${o.ytd ? (L => `<div data-tip="${esc(L.tip)}">${grCard(`${L.gr}`, o.ytd.g, `${L.ly} ${big(o.ytd.ly)} → ${L.fc} ${o.ytd.fy === null ? '–' : big(o.ytd.fy)}`)}</div>`)(ytdLbl()) : ''}
       ${o.third || ''}
     </div></div>`;
 }
@@ -1794,7 +1812,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.26.2';
+const APP_VER = '4.27';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -4313,7 +4331,7 @@ function dashOV(c){
   const ups = accs.filter(o => o.tgt > 0 && o.fcv > o.tgt).sort((x, y) => (y.fcv - y.tgt) - (x.fcv - x.tgt)).slice(0, 3), downs = accs.filter(o => o.short > 0).sort((x, y) => y.short - x.short).slice(0, 3);
   const lnk = o => `<a href="#" data-bv="${esc(o.code)}">${esc(bvName(o.name))}</a>`;
   const story = br.tgt ? (a.fcv >= a.tgt ? `FC đạt ${pct1(a.ach)} target. <b>${br.nU} account</b> còn gap tổng <b class="gap neg">${big(br.under)}</b>, bù bởi ${br.nO} account vượt target (+${big(br.over)})${br.noT ? ` và ${br.nN} account không có target (+${big(br.noT)})` : ''}.` : `FC còn gap <b class="gap neg">${big(a.tgt - a.fcv)}</b> vs target: ${br.nU} account gap ${big(br.under)}, ${br.nO} account vượt ${big(br.over)}${br.noT ? `, ${br.nN} account không có target +${big(br.noT)}` : ''}.`) : 'Chưa có target cho phạm vi đang lọc.';
-  c.el.innerHTML = `${kpiBlocks(a, {tgtNote: VIEW.dRep ? esc(VIEW.dRep) : (open ? `<span data-tip="Target trong file có REP nhưng chưa có dòng FC (vd MR trống/Vacant). Xem Admin → Account thiếu.">+ ${big(open)} chưa giao MR</span>` : 'Cả team'), third})}
+  c.el.innerHTML = `${kpiBlocks(a, {ytd: ytdAgg(c.sel), tgtNote: VIEW.dRep ? esc(VIEW.dRep) : (open ? `<span data-tip="Target trong file có REP nhưng chưa có dòng FC (vd MR trống/Vacant). Xem Admin → Account thiếu.">+ ${big(open)} chưa giao MR</span>` : 'Cả team'), third})}
     <div class="att">
       <div class="kpi k-risk"><div class="l">Account rủi ro cao</div><div class="v">${hi.length} <span class="u">account</span></div><div class="d">gap vs target ${big(hi.reduce((t, o) => t + o.short, 0))} · thêm ${hm.length - hi.length} account mức trung bình</div>
         <ol>${hi.slice(0, 3).map(o => `<li>${lnk(o)}<span class="${o.short >= RISK.mat ? 'gap neg' : 'muted'}">${esc(whyText(o))}</span></li>`).join('') || '<li class="muted">Không có</li>'}</ol><a class="more" href="#" data-go="risk" data-lv="hi" data-sig="">Xem danh sách →</a></div>
@@ -4347,13 +4365,13 @@ function dashOV(c){
 }
 function dashMR(c){
   const {byRep, base} = c, cnt = k => byRep.filter(x => x.st === k).length, nSub = cnt('submitted') + cnt('approved');
-  const t = agg(base);
+  const t = agg(base), YL = ytdLbl(), yT = ytdAgg(base), yR = new Map(byRep.map(x => [x.rep, ytdAgg(base.filter(r => r.rep_name === x.rep))]));
   // By MR × brand (bản 4.19): mỗi brand FC (tr) · %Ach · Gr LYSP · Gr quý trước + cột Nộp tuần (gộp bảng heatmap cũ)
   c.el.innerHTML = `<div class="card"><div class="bar" style="margin-bottom:8px"><h3 style="margin:0">By MR</h3><span class="grow"></span><button class="btn sm" id="d-remind">${ico('copy')} Copy nhắc submit FC</button></div>
-      <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th class="l dt">Trạng thái</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach" data-tip="Màu so với phasing: % sales quý thường đạt tới ngày dữ liệu">%Ach QTD</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th><th data-tip="Dòng đã nhập FC / tổng dòng · dòng lệch nhiều chưa có lý do">Nhập FC</th><th class="l">Duyệt</th></tr></thead>
-      <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a><span class="mt stm">${statusChip(x.rep)}</span></td><td class="l dt">${statusChip(x.rep)}</td><td>${big(x.tgt)}</td><td>${big(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${x.filled}/${x.n}${x.need ? ` · <span class="warn">${x.need} cần lý do</span>` : ''}</td>
+      <div class="tw"><table class="t"><thead><tr><th class="l stick">MR</th><th class="l dt">Trạng thái</th><th>Target</th><th>FC</th><th class="h-ach">%Ach FC</th><th class="h-ach" data-tip="Màu so với phasing: % sales quý thường đạt tới ngày dữ liệu">%Ach QTD</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th><th data-tip="${esc(YL.tip)}">${YL.fc}</th><th class="h-gr" data-tip="${esc(YL.tip)}">${YL.gr}</th><th data-tip="Dòng đã nhập FC / tổng dòng · dòng lệch nhiều chưa có lý do">Nhập FC</th><th class="l">Duyệt</th></tr></thead>
+      <tbody>${byRep.map(x => `<tr ${VIEW.dRep === x.rep ? 'class="hl"' : ''}><td class="l stick"><a href="#" data-open="${esc(x.rep)}" data-tip="Mở FC của ${esc(x.rep)}">${esc(x.rep)}</a><span class="mt stm">${statusChip(x.rep)}</span></td><td class="l dt">${statusChip(x.rep)}</td><td>${big(x.tgt)}</td><td>${big(x.fcv)}</td><td>${achHtml(x.ach)}</td><td>${achQHtml(x.achQ)}</td><td>${grHtml(x.gLy)}</td><td>${grHtml(x.gQ)}</td><td>${yR.get(x.rep).fy === null ? '–' : big(yR.get(x.rep).fy)}</td><td>${grHtml(yR.get(x.rep).g)}</td><td>${x.filled}/${x.n}${x.need ? ` · <span class="warn">${x.need} cần lý do</span>` : ''}</td>
         <td class="l">${x.st === 'submitted' ? `<button class="btn sm ok" data-rv="approved" data-rep="${esc(x.rep)}">Duyệt</button> <button class="btn sm danger" data-rv="returned" data-rep="${esc(x.rep)}">Trả lại</button>` : x.st === 'approved' ? `<button class="btn sm" data-rv="returned" data-rep="${esc(x.rep)}">Mở lại</button>` : ''}</td></tr>`).join('')}
-      <tr class="tot"><td class="l stick">Tổng team<span class="sub mt">${nSub}/${byRep.length} đã submit</span></td><td class="l dt">${nSub}/${byRep.length} đã submit</td><td>${big(t.tgt)}</td><td>${big(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
+      <tr class="tot"><td class="l stick">Tổng team<span class="sub mt">${nSub}/${byRep.length} đã submit</span></td><td class="l dt">${nSub}/${byRep.length} đã submit</td><td>${big(t.tgt)}</td><td>${big(t.fcv)}</td><td>${achHtml(t.ach)}</td><td>${achQHtml(t.achQ)}</td><td>${grHtml(t.gLy)}</td><td>${grHtml(t.gQ)}</td><td>${yT.fy === null ? '–' : big(yT.fy)}</td><td>${grHtml(yT.g)}</td><td>${t.filled}/${t.n}</td><td></td></tr></tbody></table></div>
       <div class="sub" style="margin-top:6px">Đơn vị: VND.</div></div>
     <div class="card"><div class="bar" style="margin-bottom:4px"><h3 style="margin:0">By MR × brand</h3><span class="grow"></span>${canWk() ? '<a href="#" data-go="wk" class="sub">Nộp FC tuần →</a>' : ''}<button class="btn sm" id="mb-xl">${ico('download')} Tải Excel</button></div>
       ${mbTableHtml(mbLive(byRep, base), {wk: canWk(), wkHead: 'Nộp tuần'})}</div>`;
@@ -4763,7 +4781,7 @@ function viewDash(){
   if (canWk()) MT.splice(1, 0, ['wk', 'FC tuần']);   // bản 4.19: CFO theo dõi nộp FC tuần của team
   const nWkM = canWk() ? wkBadgeN(true) : 0;
   const T = MT.some(x => x[0] === VIEW.mTab) ? VIEW.mTab : 'ov';
-  const body = T === 'ov' ? `${kpiBlocks(a, {tgtNote: `${accs.length} account · ${a.n} dòng account × SKU`, third: mine})}
+  const body = T === 'ov' ? `${kpiBlocks(a, {ytd: ytdAgg(sel), tgtNote: `${accs.length} account · ${a.n} dòng account × SKU`, third: mine})}
     <div class="att mra">
       ${todo('k-risk', 'Account dưới target', under, 'account', `gap tổng ${big(under.reduce((t, o) => t + o.short, 0))}`, o => `<span class="gap neg">−${big(o.short)}</span>`, 'Không có')}
       ${todo('', 'FC cao hơn TB 2Q', opt, 'account', `cao hơn ${big(opt.reduce((t, o) => t + o.over, 0))}`, o => `+${big(o.over)}`, 'Không có')}

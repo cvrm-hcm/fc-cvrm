@@ -2,6 +2,11 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.27 — FC YTD / FY và growth vs cùng kỳ năm trước
+- Quý 1–3: FC YTD = Act. các quý trước trong năm + FC quý này, so Act. YTD năm trước (cùng số quý). Quý 4: FC FY = Act. Q1–Q3 + FC Q4, so Act. FY năm trước. Act. tính raw × ratio hiện tại, khớp bảng Forecast.
+- Dashboard → By MR (admin / RFFM): thêm cột FC FY26 và Gr vs FY25 (Q4), dòng Tổng team.
+- Overview admin và Dashboard của MR: nhóm Growth thêm thẻ Gr vs FY25 (FY25 → FC FY26).
+
 ## Bản 4.26.2 — sửa hiển thị điện thoại
 - Header điện thoại: nút Giao diện MR, Tra cứu, Đổi mật khẩu thu về icon, hàng nút không còn tràn qua nút Đăng xuất; màn hình rất hẹp thì vuốt ngang được.
 - Top accounts (Dashboard → By account): cột %Ach và mức rủi ro đủ rộng, không đè nhau (cả máy tính và điện thoại); điện thoại ẩn thanh nhỏ trong ô %Ach.
