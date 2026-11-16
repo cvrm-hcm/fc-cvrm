@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.27.3 — FC FY / YTD ở By channel, By type BV, chi tiết BV
+- Bảng By channel, By type BV (Overview admin, Dashboard MR) thêm cột FC FY26 / Gr vs FY25 (Q1–Q3: YTD) cho từng kênh / type, brand bên dưới và Total.
+- Chi tiết BV: thêm thẻ FC FY26 (Gr vs FY25) cạnh LYSP; bảng Chi tiết theo brand thêm 2 cột cho từng brand, từng kênh BHYT / Self-pay.
+
 ## Bản 4.27.2 — FC FY / YTD ở Dashboard MR → By brand
 - Bảng By brand (Dashboard của MR, admin ở Giao diện MR) thêm cột FC FY26 và Gr vs FY25 (Q1–Q3: FC YTD / Gr vs YTD) cho từng brand và Total.
 

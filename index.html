@@ -469,7 +469,7 @@ a.nolk{text-decoration:none}
 .modal h4{font-size:var(--fs2);margin:14px 0 8px;color:var(--ink)}
 .bvd-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .bvd-h .acts{gap:8px;align-items:center}
-.bvd-k{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0 8px}
+.bvd-k{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:14px 0 8px}
 .bvd-k .kpi .v{font-size:var(--fs5)}
 .bvd-s{margin:4px 0 2px}
 @media (max-width:1240px){.att{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -1812,7 +1812,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.27.2';
+const APP_VER = '4.27.3';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3913,7 +3913,7 @@ function dimTableHtml(dim, sel){
   const sorter = dim === 'channel' ? chSort : dim === 'atype' ? typeSort : undefined, withT = dim !== 'channel', subB = dim !== 'brand';
   const keys = [...new Set(sel.map(keyOf))].sort(sorter).map(k => [k, sel.filter(r => keyOf(r) === k)]).map(([k, rs]) => [k, agg(rs), rs]).filter(([k, g]) => g.tgt || g.fcv || g.act.some(x => x));
   const tot = agg(sel), share = g => tot.fcv ? `<td class="sub">${pct(g.fcv / tot.fcv)}</td>` : '<td></td>';
-  const yt = dim === 'brand', YL = ytdLbl(), m0 = '<span class="muted">–</span>';   // 4.27.2: By brand thêm FC FY / YTD + Gr vs cùng kỳ năm trước
+  const yt = true, YL = ytdLbl(), m0 = '<span class="muted">–</span>';   // 4.27.2–4.27.3: By brand / channel / type BV thêm FC FY / YTD + Gr vs cùng kỳ năm trước
   const ycells = rs => { if (!yt) return ''; const y = ytdAgg(rs); return `<td>${y.filled ? trc(y.fy) : m0}</td><td>${grHtml(y.g)}</td>`; };
   const cells = (g, rs) => `${g.act.slice(0, 4).map(x => `<td>${trc(x)}</td>`).join('')}<td>${trc(g.act[4])}</td>${withT ? `<td>${trc(g.tgt)}</td>` : ''}<td>${trc(g.fcv)}</td>${withT ? `<td>${achHtml(g.ach)}</td>` : share(g)}<td>${grHtml(g.gLy)}</td><td>${grHtml(g.gQ)}</td>${ycells(rs)}`;
   const subRows = rs => { const bs = [...new Set(rs.map(r => r.brand))].sort(); return bs.map(b => { const rb = rs.filter(r => r.brand === b), g = agg(rb); return g.tgt || g.fcv || g.act.some(x => x) ? `<tr class="dsub"><td class="l stick">↳ ${esc(b)}</td>${cells(g, rb)}</tr>` : ''; }).join(''); };
@@ -4736,10 +4736,10 @@ function dashSeg(c){
 const bvCh = c => c === 'Tender' ? 'BHYT' : c === 'Self-pay' ? 'Self-pay' : c || 'Chưa gán';
 function bvBrandRows(rows){
   // Chi tiết BV theo brand (bản 4.13): cộng mọi MR của account (đã nhân ratio), BV có 2 kênh thì tách BHYT / Self-pay bên dưới
-  const sum = rs => { const g = {tgt: 0, fcv: 0, qtd: 0, base: 0, ly: 0, q: 0, m: [0, 0, 0], filled: false}; rs.forEach(r => { g.tgt += r.tgt; g.fcv += r.fcv; g.qtd += r.act[4]; g.base += r.baseV; g.ly += r.act[0]; g.q += r.act[3]; r.fcvM.forEach((v, i) => g.m[i] += v); if (r.filled) g.filled = true; }); return g; };
+  const sum = rs => { const g = {tgt: 0, fcv: 0, qtd: 0, base: 0, ly: 0, q: 0, m: [0, 0, 0], filled: false, rows: rs}; rs.forEach(r => { g.tgt += r.tgt; g.fcv += r.fcv; g.qtd += r.act[4]; g.base += r.baseV; g.ly += r.act[0]; g.q += r.act[3]; r.fcvM.forEach((v, i) => g.m[i] += v); if (r.filled) g.filled = true; }); return g; };
   const notes = rs => { const n = [...new Set(rs.map(r => norm(r.f.note)).filter(Boolean))], rz = [...new Set(rs.map(r => r.f.reason).filter(Boolean))]; return esc(n.join(' · ')) + (rz.length ? ` <span class="muted">(${esc(rz.join(', '))})</span>` : ''); };
   const gr = (g, ref) => g.filled ? grHtml(growth(g.fcv, ref)) : '<span class="muted">–</span>';
-  const line = (lb, ch, g, rs, cls, withTgt) => `<tr class="${cls}"><td class="l stick">${lb}</td><td class="l">${ch}</td><td>${withTgt ? trc(g.tgt) : '<span class="muted">·</span>'}</td>${g.m.map((v, i) => `<td class="${MST[i] === 'closed' ? 'act' : ''}">${g.filled || MST[i] === 'closed' ? trc(v) : '<span class="muted">chưa nhập</span>'}</td>`).join('')}<td>${trc(g.fcv)}</td><td>${!withTgt ? '<span class="muted">·</span>' : g.tgt ? achHtml(g.filled ? g.fcv / g.tgt : null) : '<span class="muted">–</span>'}</td><td>${trc(g.qtd)}</td><td>${trc(g.base)}</td><td>${gr(g, g.ly)}</td><td>${gr(g, g.q)}</td><td class="l nt">${notes(rs)}</td></tr>`;
+  const line = (lb, ch, g, rs, cls, withTgt) => `<tr class="${cls}"><td class="l stick">${lb}</td><td class="l">${ch}</td><td>${withTgt ? trc(g.tgt) : '<span class="muted">·</span>'}</td>${g.m.map((v, i) => `<td class="${MST[i] === 'closed' ? 'act' : ''}">${g.filled || MST[i] === 'closed' ? trc(v) : '<span class="muted">chưa nhập</span>'}</td>`).join('')}<td>${trc(g.fcv)}</td><td>${!withTgt ? '<span class="muted">·</span>' : g.tgt ? achHtml(g.filled ? g.fcv / g.tgt : null) : '<span class="muted">–</span>'}</td><td>${trc(g.qtd)}</td><td>${trc(g.base)}</td><td>${gr(g, g.ly)}</td><td>${gr(g, g.q)}</td>${(y => `<td>${y.filled ? trc(y.fy) : '<span class="muted">–</span>'}</td><td>${grHtml(y.g)}</td>`)(ytdAgg(g.rows))}<td class="l nt">${notes(rs)}</td></tr>`;
   const by = new Map(); rows.forEach(r => { if (!by.has(r.brand)) by.set(r.brand, []); by.get(r.brand).push(r); });
   const chOrd = c => ['BHYT', 'Self-pay'].indexOf(c) < 0 ? 9 : ['BHYT', 'Self-pay'].indexOf(c);
   return [...by.values()].map(rs => ({rs, b: rs[0].brand, g: sum(rs)})).sort((x, y) => y.g.tgt - x.g.tgt || y.g.fcv - x.g.fcv || x.b.localeCompare(y.b)).map(x => {
@@ -4753,11 +4753,11 @@ function bvDetail(code){
   const rows = ROWS.filter(r => (r.mc || r.cust_code) === code && fil(r)); const o = accAnalysis(rows)[0]; if (!o) return; const multi = o.codes.size > 1;
   const mini = (l, v, d) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d || '&nbsp;'}</div></div>`;
   const bg = modal(`<div class="bvd-h"><div><h3 style="margin:0" data-tip="Mã KH ${esc([...o.codes].join(', '))}">${esc(bvName(o.name))}</h3><div class="sub">${esc(typeLabel(accType(o)))} · ${esc([...o.chs].sort(chSort).map(chLabel).join(', ') || 'chưa gán kênh')} · MR: ${esc([...o.reps].join(', '))}${VIEW.dBrand || VIEW.dCh ? ` · đang lọc ${esc([VIEW.dBrand, VIEW.dCh].filter(Boolean).join(', '))}` : ''}</div></div><div class="acts" style="margin:0">${lvChip(o.level)}<button class="btn sm" data-a="close">Đóng</button></div></div>
-    <div class="bvd-k">${mini(`Target ${P[4].label}`, big(o.tgt))}${mini(`FC ${P[4].label}`, big(o.fcv), o.tgt ? achHtml(o.ach) : 'không có target')}${mini('Act. QTD', big(o.qtd), `đến ${ASOF_DM}`)}${mini('TB 2Q', big(o.pace), o.vsPace !== null ? `FC ${o.vsPace >= 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(o.vsPace))}` : o.base < RISK.mat ? 'ít sales 2Q gần nhất' : '')}${mini(`LYSP · ${P[0].label}`, big(o.ly), `Gr ${grHtml(o.gLy)}`)}</div>
+    <div class="bvd-k">${mini(`Target ${P[4].label}`, big(o.tgt))}${mini(`FC ${P[4].label}`, big(o.fcv), o.tgt ? achHtml(o.ach) : 'không có target')}${mini('Act. QTD', big(o.qtd), `đến ${ASOF_DM}`)}${mini('TB 2Q', big(o.pace), o.vsPace !== null ? `FC ${o.vsPace >= 0 ? 'cao' : 'thấp'} hơn TB 2Q ${pct(Math.abs(o.vsPace))}` : o.base < RISK.mat ? 'ít sales 2Q gần nhất' : '')}${mini(`LYSP · ${P[0].label}`, big(o.ly), `Gr ${grHtml(o.gLy)}`)}${((L, y) => mini(L.fc, y.filled ? big(y.fy) : '–', `${L.gr} ${grHtml(y.g)}`))(ytdLbl(), ytdAgg(o.rows))}</div>
     ${o.sig.length ? `<div class="bvd-s">${sigHtml(o)}${topicHtml(o)}</div>` : ''}
     <div class="grid2"><div><h4>Sales by quarter</h4><div class="legend"><span><i style="background:var(--s1)"></i>Act.</span><span><i style="background:var(--s2)"></i>FC remain</span><span><i class="tick"></i>Target</span></div>${qChartHtml(o, 170)}</div>
       <div><h4>Note MR</h4>${o.notes.length ? `<div class="nt full">${notesHtml(o, 99)}</div>` : '<div class="sub">MR chưa có Note cho account này.</div>'}</div></div>
-    <h4>Chi tiết theo brand <span class="sub">· tr VND</span></h4><div class="tw" style="max-height:none"><table class="t bvb"><thead><tr><th class="l stick">Brand</th><th class="l">Kênh</th><th>Target</th>${MS.map((m, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mlabel(D.settings.year, m)}<div class="hs">${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th>FC ${P[4].label}</th><th class="h-ach">%Ach</th><th>QTD</th><th data-tip="TB sales quý của 2 quý gần nhất">TB 2Q</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th><th class="l">Note / lý do</th></tr></thead><tbody>
+    <h4>Chi tiết theo brand <span class="sub">· tr VND</span></h4><div class="tw" style="max-height:none"><table class="t bvb"><thead><tr><th class="l stick">Brand</th><th class="l">Kênh</th><th>Target</th>${MS.map((m, i) => `<th class="${MST[i] === 'closed' ? 'closed' : ''}">${mlabel(D.settings.year, m)}<div class="hs">${MST[i] === 'closed' ? 'Act.' : MST[i] === 'current' ? 'Act. + FC' : 'FC'}</div></th>`).join('')}<th>FC ${P[4].label}</th><th class="h-ach">%Ach</th><th>QTD</th><th data-tip="TB sales quý của 2 quý gần nhất">TB 2Q</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[0].label}">Gr vs LYSP</th><th class="h-gr" data-tip="FC ${P[4].label} vs sales ${P[3].label}">Gr vs ${P[3].label}</th>${(L => `<th data-tip="${esc(L.tip)}">${L.fc}</th><th class="h-gr" data-tip="${esc(L.tip)}">${L.gr}</th>`)(ytdLbl())}<th class="l">Note / lý do</th></tr></thead><tbody>
       ${bvBrandRows(o.rows)}</tbody></table></div>`);
   bg.querySelector('.modal').classList.add('wide');
   bg.addEventListener('click', e => { if (e.target === bg || e.target.dataset.a === 'close') bg.remove(); });
