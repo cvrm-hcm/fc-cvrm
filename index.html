@@ -1842,7 +1842,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.30.1';
+const APP_VER = '4.31';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3001,7 +3001,7 @@ const incCfg = () => (D && D.inc_cfg && D.inc_cfg.teams) ? D.inc_cfg : null;
 // Scheme mẫu cho bản demo (số giả, không phải scheme thật)
 const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate: 0.85, bonus2Q: 0.1,
   curve: Array.from({length: 31}, (_, i) => [90 + i, 90 + i]), band: [[90, 50], [100, 100], [110, 150]], qualGate: {mccp: 90, clm: 90},
-  teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay']},
+  teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic'], spExcl: ['Pharmacy', 'Wholesales']},
           WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
   tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
 const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay (kênh Self-pay)', ac: 'Active Clinic', test: 'Điểm test'};
@@ -3058,9 +3058,10 @@ function incModel(rep, scen, I, tp){
   const Q = +D.settings.quarter, tk = (C.tests || {})[Q] || 'pk';
   const qual = (TC.qual || []).map(q => { let ach = null, pay = 0, src = '', lvl = null;
     if (q.k === 'ef'){ const ov = pnum(I.efo); if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (tp && tp.tgt){ ach = tp.fcv / tp.tgt; src = `FC team ${team} (${tp.n_rep} MR)`; } pay = incBand(C, ach); }
-    else if (q.k === 'sp'){ const ch = TC.spChannels || ['Self-pay'], tg = spTgtOf(rep), tS = Object.values(tg).reduce((a, v) => a + v, 0);
-      const rs = rows.filter(r => ch.includes(r.channel)), fc = rs.reduce((s, r) => { const o = B.get(r.brand); return s + (o && o.g.fcv ? r.fcv * o.fc / o.g.fcv : r.fcv); }, 0), qtd = rs.reduce((s, r) => s + num(r.act[4]), 0), ov = pnum(I.spo);
-      if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (tS){ ach = fc / tS; src = `kênh ${ch.join(' + ')}: FC ${vnd(fc)} (Act. QTD ${vnd(qtd)}) / chỉ tiêu ${vnd(tS)}`; } else src = 'chưa có chỉ tiêu Self-pay'; pay = incBand(C, ach); }
+    else if (q.k === 'sp'){ const ch = TC.spChannels || ['Self-pay', 'Clinic'], ex = TC.spExcl || ['Pharmacy', 'Wholesales'], tg = spTgtOf(rep), tS = Object.values(tg).reduce((a, v) => a + v, 0);
+      // 4.31: khớp cách Commex tính Self-paid (đối chiếu Power BI Q4'26 đến 16/11): mọi kênh trừ Tender (Khoa Dược BV công) — gồm NTBV, Khoa Dược BV tư, Clinic (Sub-dis clinics); không tính mã có Channel_name Pharmacy / Wholesales trong raw
+      const rs = rows.filter(r => ch.includes(r.channel) && !ex.includes((CUST.get(r.cust_code) || {}).channel)), fc = rs.reduce((s, r) => { const o = B.get(r.brand); return s + (o && o.g.fcv ? r.fcv * o.fc / o.g.fcv : r.fcv); }, 0), qtd = rs.reduce((s, r) => s + num(r.act[4]), 0), ov = pnum(I.spo);
+      if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } else if (tS){ ach = fc / tS; src = `kênh ${ch.join(' + ')}${ex.length ? ` (trừ ${ex.join(' / ')})` : ''}: FC ${vnd(fc)} (Act. QTD ${vnd(qtd)}) / chỉ tiêu ${vnd(tS)}`; } else src = 'chưa có chỉ tiêu Self-pay'; pay = incBand(C, ach); }
     else if (q.k === 'ac'){ const ov = pnum(I.ac); if (ov !== null){ ach = ov / 100; src = 'nhập tay'; } pay = incBand(C, ach); }
     else if (q.k === 'test'){ lvl = I['t_' + tk] || ''; pay = {'1': 50, '2': 100, '3': 150}[lvl] || 0; src = INC_TEST[tk].label; }
     return {k: q.k, w: num(q.w), ach, pay, lvl, src, amt: qgOk ? pool * num(q.w) * pay / 100 : 0}; });
