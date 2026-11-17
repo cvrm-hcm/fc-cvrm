@@ -806,6 +806,9 @@ html:has(.modal-bg),body:has(.modal-bg){overflow:hidden}
 /* 4.30.1: dòng tổng / tổng nhóm (Total, Subtotal, tổng MR, tổng brand, tổng account, merge code…) — mọi chỉ số in đậm cho dễ theo dõi */
 :is(tr.tot,tr.stot,tr.mbp,tr.mbt-tot:not(.mbc),tr.dgrp,tr.bvt,tr.fysub,tr.acc:not(.mcode),tr.mg) > td,
 :is(tr.tot,tr.stot,tr.mbp,tr.mbt-tot:not(.mbc),tr.dgrp,tr.bvt,tr.fysub,tr.acc:not(.mcode),tr.mg) > td :not(input):not(select):not(.sub):not(.muted){font-weight:700}
+
+/* 4.33: rà soát raw */
+.dupban{margin-bottom:10px}.dupt .dup-st{min-width:170px}.dupt .dup-nt{margin-top:4px;width:100%;min-width:170px}
 </style>
 </head>
 <body>
@@ -989,6 +992,56 @@ function kpiBlocks(a, o){
     </div></div>`;
 }
 function toast(msg, ms = 2800){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
+/* 4.33: Rà soát raw sales — 1 đơn nhảy 2 lần sales. Raw chia dòng theo MR (địa bàn chung: mỗi MR 1 dòng phần của mình) nên chỉ so trong cùng MR.
+   - dup: dòng lặp y hệt (cùng MR, số đơn, lô, SL, tiền, ngày) hoặc 2 số đơn cùng số hoá đơn (Government Invoice Number)
+   - sus: cùng MR × khách × SKU × SL × tiền, ≥ 2 số đơn khác nhau cùng ngày hoặc hôm sau, không có dòng trả hàng (SL âm) bù lại
+   Bỏ qua phần tính dư < 1 triệu. Lưu bảng sales_dups (DB bản 19): MR thấy của mình, RFFM / admin thấy cả team. */
+const dupOn = () => MODE === 'demo' || (!!D && D.dbv >= 19);
+const DUP_MIN = 1e6, DUP_DAYS = 1;   // cùng ngày hoặc hôm sau (raw Q3–Q4'26: 3 ngày → 53 cảnh báo, phần lớn đơn lặp thật; 1 ngày → 21)
+const DUP_KIND = {dup: 'Trùng dòng', sus: 'Nghi trùng đơn'}, DUP_ST = {open: 'Chưa kiểm tra', real: '2 đơn thật, không trùng', fixed: 'Đã báo sửa raw'};
+function findDups(lines, team){
+  const out = [], mk = (kind, l, n, ords, govs) => { const orders = [...new Set(ords.map(String))].join(', '), gov = [...new Set(govs.filter(Boolean).map(String))].join(', ');
+    return {sig: [team, l.rep, l.code, l.sku, isoDate(l.dt), l.qty, Math.round(l.v), orders].join('|'), team, rep_name: l.rep, cust_code: l.code, cust_name: l.name, sku: l.sku, kind, inv_date: isoDate(l.dt), qty: l.qty, value: l.v, n, extra_value: l.v * (n - 1), orders, gov}; };
+  const ex = new Map();
+  for (const l of lines){ if (!l.ord || !(l.qty > 0)) continue; const k = [l.rep, l.code, l.sku, l.ord, l.batch, l.qty, l.v, isoDate(l.dt)].join('|'); const o = ex.get(k) || {l, n: 0}; o.n++; ex.set(k, o); }
+  const exDup = new Set();
+  for (const {l, n} of ex.values()) if (n > 1){ exDup.add([l.rep, l.code, l.sku, l.ord].join('|')); if (l.v * (n - 1) >= DUP_MIN) out.push(mk('dup', l, n, [l.ord], [l.gov])); }
+  const g = new Map(), neg = new Map();
+  for (const l of lines){
+    if (l.qty < 0){ const nk = [l.rep, l.code, l.sku, Math.round(-l.qty * 1000)].join('|'); neg.set(nk, (neg.get(nk) || 0) + 1); continue; }
+    if (!(l.qty > 0) || !l.ord) continue; const k = [l.rep, l.code, l.sku, l.qty, Math.round(l.v)].join('|'); if (!g.has(k)) g.set(k, []); g.get(k).push(l); }
+  for (const ls of g.values()){
+    const by = new Map(); ls.forEach(l => { if (!by.has(l.ord)) by.set(l.ord, l); });   // mỗi số đơn 1 dòng đại diện (dòng lặp y hệt đã báo ở trên)
+    const arr = [...by.values()].sort((a, b) => a.dt - b.dt); let i = 0;
+    while (i < arr.length){ let j = i; while (j + 1 < arr.length && arr[j + 1].dt - arr[i].dt <= DUP_DAYS * 864e5) j++;
+      const cl = arr.slice(i, j + 1);
+      if (cl.length > 1){ const l = cl[0], ret = neg.get([l.rep, l.code, l.sku, Math.round(l.qty * 1000)].join('|')) || 0, n = cl.length - Math.min(ret, cl.length - 1);
+        if (n > 1 && l.v * (n - 1) >= DUP_MIN){ const govs = cl.map(x => x.gov).filter(Boolean), sameGov = govs.length > 1 && new Set(govs).size < govs.length;
+          out.push(mk(sameGov ? 'dup' : 'sus', l, n, cl.map(x => x.ord), govs)); } }
+      i = j + 1; } }
+  return out.sort((a, b) => b.extra_value - a.extra_value);
+}
+// cảnh báo người đang xem được thấy: MR của mình, RFFM / admin theo team đang chọn
+function dupScope(){ const l = (D && D.dups) || [], ts = vTeams(); return (isReviewer() ? l.filter(x => ts.includes(x.team || TEAMS[0])) : l.filter(x => x.rep_name === ME.rep_name)); }
+function dupBannerHtml(){ if (!D || !dupOn()) return ''; const l = dupScope().filter(x => x.status === 'open'); if (!l.length) return '';
+  const v = l.reduce((t, x) => t + x.extra_value, 0), nr = new Set(l.map(x => x.rep_name)).size, who = isReviewer();
+  return `<div class="note warn dupban">${ico('alert')} <b>Rà soát raw: ${l.length} đơn nghi bị tính 2 lần</b>${who ? ` (${nr} MR)` : ''}, có thể dư <b>${vnd(v)}</b> sales. ${who ? 'Nhắc MR kiểm tra với KAM / admin.' : 'Kiểm tra lại với KAM / admin, rồi đánh dấu kết quả.'} <a href="#" id="dup-open">Xem danh sách</a></div>`; }
+function dupBind(){ const a = $('#dup-open'); if (a) a.onclick = e => { e.preventDefault(); dupDialog(); }; }
+function dupDialog(){
+  const who = isReviewer(), l = dupScope(), canCk = x => isAdmin() || isReviewer() || x.rep_name === ME.rep_name;
+  const bg = modal(`<div class="bvd-h"><h3 style="margin:0">Rà soát raw · đơn trùng</h3><span class="grow"></span><button class="btn sm" data-a="close">Đóng</button></div>
+    <p class="sub" style="margin:8px 0">Raw đã nạp (quý FC + quý trước). <b>Trùng dòng</b>: cùng số đơn / số hoá đơn xuất hiện 2 lần. <b>Nghi trùng đơn</b>: cùng khách, SKU, số lượng, giá trị, ≥ 2 số đơn cùng ngày hoặc hôm sau, chưa có dòng trả hàng bù lại. Cột "Có thể dư" = phần sales bị tính thêm nếu đúng là trùng.</p>
+    ${l.length ? `<div class="tw" style="max-height:none"><table class="t dupt"><thead><tr>${who ? '<th class="l">MR</th>' : ''}<th class="l stick">Account · SKU</th><th>Ngày HĐ</th><th>SL</th><th>Giá trị / đơn</th><th>Lần</th><th class="h-ach">Có thể dư</th><th class="l">Số đơn · số HĐ</th><th class="l">Kết quả kiểm tra</th></tr></thead><tbody>
+    ${l.map(x => `<tr data-sig="${esc(x.sig)}">${who ? `<td class="l">${esc(x.rep_name)}</td>` : ''}<td class="l stick"><b>${esc(bvName(x.cust_name || x.cust_code))}</b><div class="sub">${esc(skuShort(x.sku))} · <span class="chip ${x.kind === 'dup' ? 'no' : 'sb'}">${DUP_KIND[x.kind]}</span></div></td>
+      <td>${esc(dmy(new Date(x.inv_date)))}</td><td>${nf0.format(x.qty)}</td><td>${vnd(x.value)}</td><td>${x.n}</td><td><b>${vnd(x.extra_value)}</b></td><td class="l sub">${esc(x.orders)}${x.gov ? `<br>HĐ ${esc(x.gov)}` : ''}</td>
+      <td class="l"><select class="inp dup-st" ${canCk(x) ? '' : 'disabled'}>${Object.entries(DUP_ST).map(([k, t]) => `<option value="${k}" ${x.status === k ? 'selected' : ''}>${t}</option>`).join('')}</select><input class="inp dup-nt" placeholder="Note (KAM xác nhận…)" value="${esc(x.note || '')}" ${canCk(x) ? '' : 'disabled'}>${x.checked_at ? `<div class="sub">${esc(fmtTime(x.checked_at))}</div>` : ''}</td></tr>`).join('')}
+    ${l.length > 1 ? `<tr class="tot"><td class="l stick" colspan="${who ? 6 : 5}">Tổng · ${l.length} cảnh báo</td><td>${vnd(l.reduce((t, x) => t + x.extra_value, 0))}</td><td colspan="2"></td></tr>` : ''}</tbody></table></div>` : '<div class="note good">Không có đơn trùng trong raw đã nạp.</div>'}`);
+  $('.modal', bg).classList.add('wide'); const close = () => { bg.remove(); const b = $('#dupban'); if (b){ b.innerHTML = dupBannerHtml(); dupBind(); } };
+  $('[data-a="close"]', bg).onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+  $$('tr[data-sig]', bg).forEach(tr => { const x = l.find(d => d.sig === tr.dataset.sig), st = $('.dup-st', tr), nt = $('.dup-nt', tr);
+    const save = async () => { try { await STORE.checkDup(x.sig, st.value, nt.value.trim()); x.status = st.value; x.note = nt.value.trim(); x.checked_at = nowIso(); toast('Đã lưu kết quả kiểm tra'); } catch(e){ toast('Lỗi lưu: ' + e.message); } };
+    st.onchange = save; nt.onchange = save; });
+}
 function modal(html){ const bg = document.createElement('div'); bg.className = 'modal-bg'; bg.innerHTML = `<div class="modal">${html}</div>`; document.body.appendChild(bg); return bg; }
 function confirmBox(msg){ return new Promise(res => { const bg = modal(`<div>${msg}</div><div class="acts"><button class="btn" data-a="0">Hủy</button><button class="btn pri" data-a="1">Đồng ý</button></div>`); bg.addEventListener('click', e => { const a = e.target.dataset.a; if (a !== undefined){ bg.remove(); res(a === '1'); } }); }); }
 function promptBox(title, placeholder, initial = ''){ return new Promise(res => { const bg = modal(`<h3>${title}</h3><textarea class="inp" rows="4" placeholder="${esc(placeholder)}">${esc(initial)}</textarea><div class="msg err"></div><div class="acts"><button class="btn" data-a="0">Hủy</button><button class="btn pri" data-a="1">Gửi</button></div>`); const ta = $('textarea', bg); ta.focus();
@@ -1238,7 +1291,7 @@ class DemoStore {
     const d = this.db; const pk = pkey(d.settings.year, d.settings.quarter);
     return {settings: {...d.settings}, members: d.members, prices: d.prices, mapping: d.mapping, sales: d.sales, seen: d.seen, archive: d.archive || [],
       targets: d.targets[pk] || [], tgtFY: d.targets[d.settings.year + 'FY'] || [], fc: d.fc[pk] || {}, subs: d.subs[pk] || {}, teams: d.teams || TEAM_DEF.slice(0, 1).map(t => ({...t, data_as_of: d.settings.data_as_of})), customers: d.customers || [], merges: d.merges || [], tenders: d.tenders || [], tupc: d.tupc || [],
-      wlog: (d.wlog || []).map(e => ({...e})), snaps: (d.snaps || []).filter(s => s.period === pk).map(s => ({...s})), notes: ((d.notes || {})[pk] || []).map(n => ({...n})), poa: Object.values((d.poa || {})[pk] || {}).map(x => ({...x, data: JSON.parse(JSON.stringify(x.data || {}))})),
+      wlog: (d.wlog || []).map(e => ({...e})), snaps: (d.snaps || []).filter(s => s.period === pk).map(s => ({...s})), notes: ((d.notes || {})[pk] || []).map(n => ({...n})), dups: (d.dups || []).map(x => ({...x})), poa: Object.values((d.poa || {})[pk] || {}).map(x => ({...x, data: JSON.parse(JSON.stringify(x.data || {}))})),
       inc_cfg: d.incCfg || INC_DEMO, incIn: Object.values((d.incIn || {})[pk] || {}).map(x => ({...x, data: JSON.parse(JSON.stringify(x.data || {}))})), spTgt: ((d.spTgt || {})[pk] || []).map(x => ({...x})), qTgt: (d.qTgt || []).map(x => ({...x})),
       wkp: (() => { const lead = new Set(d.members.filter(m => m.role !== 'MR').map(m => m.rep_name)), o = d.members.filter(m => m.role === 'MR').map(m => ({team: m.team || 'CVRM', rep_name: m.rep_name}));
         d.mapping.forEach(m => { if (lead.has(m.rep_name) && (m.status || 'active') === 'active' && !o.some(x => x.team === (m.team || 'CVRM') && x.rep_name === m.rep_name)) o.push({team: m.team || 'CVRM', rep_name: m.rep_name}); }); return o; })(), promos: (d.promos || []).map(x => ({...x, channels: x.channels === undefined ? ['Clinic'] : x.channels})), dbv: 16};
@@ -1259,6 +1312,9 @@ class DemoStore {
   async review(period, rep, status, note){ const t = (this.db.subs[period] ||= {}); t[rep] = {...(t[rep] || {}), status, review_note: note || null, reviewed_by: this.user, reviewed_at: nowIso()}; this.logWk(period, rep, status); this.persist(); }
   async saveSettings(s){ const was = !!this.db.settings.locked; this.db.settings = {...this.db.settings, ...s}; if (s.locked !== undefined && !!s.locked !== was) this.logWk(pkey(this.db.settings.year, this.db.settings.quarter), '', s.locked ? 'locked' : 'unlocked'); this.persist(); }
   // Nạp theo team: chỉ thay dữ liệu của team đó
+  // 4.33: rà soát raw — đơn trùng / nghi trùng (giữ trạng thái kiểm tra theo sig)
+  async saveDups(team, list){ const old = new Map((this.db.dups || []).map(x => [x.sig, x])); this.db.dups = (this.db.dups || []).filter(x => x.team !== team).concat(list.map(x => ({...x, status: 'open', note: '', ...(old.has(x.sig) ? {status: old.get(x.sig).status, note: old.get(x.sig).note, by_email: old.get(x.sig).by_email, checked_at: old.get(x.sig).checked_at} : {}), found_at: nowIso()}))); this.persist(); }
+  async checkDup(sig, status, note){ const x = (this.db.dups || []).find(d => d.sig === sig); if (x){ x.status = status; x.note = note; x.by_email = this.user; x.checked_at = nowIso(); this.persist(); } }
   async replaceSales(team, rows, seen){ const T = x => (x.team || 'CVRM') !== team; this.db.sales = this.db.sales.filter(T).concat(rows.map(r => ({...r, team}))); this.db.seen = (this.db.seen || []).filter(T).concat(seen.map(r => ({...r, team}))); this.persist(); }
   async replaceTargets(period, rows, team){ const cur = this.db.targets[period] || []; this.db.targets[period] = cur.filter(t => team && (t.team || 'CVRM') !== team).concat(rows.map(r => ({...r, team: r.team || team || 'CVRM'}))); this.persist(); }
   async replaceArchive(periods, rows, team){ this.db.archive = (this.db.archive || []).filter(a => !periods.includes(a.period) || (team && (a.team || 'CVRM') !== team)).concat(rows.map(r => ({...r, created_at: nowIso()}))); this.persist(); }
@@ -1340,7 +1396,7 @@ class CloudStore {
     await this.checkSchema();
     const st = await this.all('settings'); const settings = st[0] || {year: new Date().getFullYear(), quarter: Math.floor(new Date().getMonth() / 3) + 1, locked: false, team_filter: 'CVRM', exclude_keywords: 'Vacant,New MR,Uncovered'};
     const pk = pkey(settings.year, settings.quarter);
-    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows, dbv, teams, customers, merges, tgtFY, tenders, tupc, wlog, snaps, wkp, notes, promos, poa, incC, incIn, spTgt, qTgt] = await Promise.all([
+    const [members, prices, mapping, sales, seen, archive, targets, fcRows, subRows, dbv, teams, customers, merges, tgtFY, tenders, tupc, wlog, snaps, wkp, notes, promos, poa, incC, incIn, spTgt, qTgt, dups] = await Promise.all([
       this.all('team_members'), this.all('prices'), this.all('mapping', '*', q => q.order('id')), this.all('sales_agg'), this.all('accounts_seen'), this.all('fc_archive'),
       this.all('targets', '*', q => q.eq('period', pk)), this.all('fc_entries', '*', q => q.eq('period', pk)), this.all('submissions', '*', q => q.eq('period', pk)), this.dbVersion(), this.all('teams'),
       this.all('customers').catch(() => []), this.all('cust_merge').catch(() => []), this.all('targets', '*', q => q.eq('period', settings.year + 'FY')).catch(() => []),
@@ -1348,9 +1404,9 @@ class CloudStore {
       this.all('submit_log', '*', q => q.gte('at', new Date(Date.now() - 16 * 7 * 864e5).toISOString())).catch(() => []), this.all('fc_snap', '*', q => q.eq('period', pk)).catch(() => []),   // nộp FC tuần + CFO: DB bản 13
       this.sb.rpc('wk_people').then(({data, error}) => error ? null : data).catch(() => null), this.all('fc_notes', '*', q => q.eq('period', pk)).catch(() => []),   // người nộp FC tuần, ghi chú cả team: DB bản 14
       this.all('promos', '*', q => q.order('id')).catch(() => []), this.all('poa_inputs', '*', q => q.eq('period', pk)).catch(() => []),
-      this.all('incentive_cfg').catch(() => []), this.all('incentive_inputs', '*', q => q.eq('period', pk)).catch(() => []), this.all('targets', '*', q => q.eq('period', pk + '-SP')).catch(() => []), this.all('targets', '*', q => q.like('period', '%-RB')).catch(() => [])]);   // ước tính thưởng: DB bản 18   // chương trình trade: DB bản 15 · FC POA: DB bản 17
+      this.all('incentive_cfg').catch(() => []), this.all('incentive_inputs', '*', q => q.eq('period', pk)).catch(() => []), this.all('targets', '*', q => q.eq('period', pk + '-SP')).catch(() => []), this.all('targets', '*', q => q.like('period', '%-RB')).catch(() => []), this.all('sales_dups', '*', q => q.order('extra_value', {ascending: false})).catch(() => [])]);   // ước tính thưởng: DB bản 18   // chương trình trade: DB bản 15 · FC POA: DB bản 17
     const fc = {}; fcRows.forEach(r => fc[r.mapping_id] = r); const subs = {}; subRows.forEach(r => subs[r.rep_name] = r);
-    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, promos: dbv >= 15 ? promos : [], poa: dbv >= 17 ? poa : [], inc_cfg: dbv >= 18 && incC[0] ? incC[0].data : null, incIn: dbv >= 18 ? incIn : [], spTgt: spTgt.map(x => ({rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team})), qTgt: qTgt.map(x => ({period: x.period, rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team}))};   // promos.channels từ DB bản 16
+    return {settings, members, prices, mapping, sales, seen, archive, targets, tgtFY, fc, subs, dbv, teams, customers, merges, tenders, tupc, wlog, snaps, wkp: Array.isArray(wkp) && wkp.length ? wkp : null, notes, dups: dbv >= 19 ? dups : [], promos: dbv >= 15 ? promos : [], poa: dbv >= 17 ? poa : [], inc_cfg: dbv >= 18 && incC[0] ? incC[0].data : null, incIn: dbv >= 18 ? incIn : [], spTgt: spTgt.map(x => ({rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team})), qTgt: qTgt.map(x => ({period: x.period, rep_name: x.rep_name, sku: x.sku, value: num(x.value), team: x.team}))};   // promos.channels từ DB bản 16
   }
   // Bản 4 (migration_v4.sql): MR chỉ đọc được số của mình. Bản 5 (migration_v5.sql): tự trừ sales mới vào FC. 0 = database chưa nâng cấp.
   async dbVersion(){ const {data, error} = await this.sb.rpc('app_db_version'); return error ? 0 : num(data); }
@@ -1365,6 +1421,11 @@ class CloudStore {
   async saveSettings(s){ const {error} = (s.year && s.quarter) ? await this.sb.from('settings').upsert({id: 1, ...s}) : await this.sb.from('settings').update(s).eq('id', 1); if (error) throw error; }
   async wipe(table, col){ const {error} = await this.sb.from(table).delete().not(col, 'is', null); if (error) throw error; }
   // Nạp theo team: chỉ xoá / thay dữ liệu của team đó
+  async saveDups(team, list){
+    for (let i = 0; i < list.length; i += 300){ const {error} = await this.sb.from('sales_dups').upsert(list.slice(i, i + 300).map(x => ({...x, found_at: nowIso()})), {onConflict: 'sig'}); if (error) throw error; }
+    const keep = new Set(list.map(x => x.sig)), cur = await this.all('sales_dups', 'sig', q => q.eq('team', team)), del = cur.map(x => x.sig).filter(x => !keep.has(x));   // raw đã sửa → bỏ cảnh báo cũ
+    for (let i = 0; i < del.length; i += 200){ const {error} = await this.sb.from('sales_dups').delete().in('sig', del.slice(i, i + 200)); if (error) throw error; } }
+  async checkDup(sig, status, note){ const {error} = await this.sb.from('sales_dups').update({status, note}).eq('sig', sig); if (error) throw error; }
   async replaceSales(team, rows, seen){
     for (const t of ['sales_agg', 'accounts_seen']){ const {error} = await this.sb.from(t).delete().eq('team', team); if (error) throw error; }
     const v15 = D && D.dbv >= 15, v17 = D && D.dbv >= 17; await this.chunked('sales_agg', rows.map(({qty_promo, value_promo, last_date, ...r}) => ({...r, team, ...(v15 ? {qty_promo: qty_promo || 0, value_promo: value_promo || 0} : {}), ...(v17 ? {last_date: last_date || null} : {})}))); await this.chunked('accounts_seen', seen.map(r => ({...r, team}))); }
@@ -1411,7 +1472,7 @@ class CloudStore {
   async findAccount(q){ const {data, error} = await this.sb.rpc('find_account', {q}); if (error) throw error; return (data || []).map(x => ({...x, reps: x.reps || []})); }
   async changeSig(){ const one = (t, c) => this.sb.from(t).select(c).order(c, {ascending: false, nullsFirst: false}).limit(1).then(r => r.error ? '' : ((r.data || [])[0] || {})[c] || '');
     const cnt = t => this.sb.from(t).select('*', {count: 'exact', head: true}).then(r => r.error ? '' : String(r.count));
-    const v = await Promise.all([one('fc_entries', 'updated_at'), one('submissions', 'submitted_at'), one('submissions', 'reviewed_at'), one('fc_notes', 'at'), one('poa_inputs', 'at'), one('incentive_inputs', 'at'), one('tender_upcoming', 'updated_at'), one('fc_snap', 'at'), one('submit_log', 'at'), cnt('mapping'), cnt('fc_entries')]); return v.join('|'); }
+    const v = await Promise.all([one('fc_entries', 'updated_at'), one('submissions', 'submitted_at'), one('submissions', 'reviewed_at'), one('fc_notes', 'at'), one('poa_inputs', 'at'), one('incentive_inputs', 'at'), one('tender_upcoming', 'updated_at'), one('fc_snap', 'at'), one('submit_log', 'at'), one('sales_dups', 'checked_at'), cnt('mapping'), cnt('fc_entries')]); return v.join('|'); }
   async savePoa(period, rep, data){ const {error} = await this.sb.from('poa_inputs').upsert({period, rep_name: rep, data, at: nowIso()}); if (error) throw error; }
   async recentOrders(code){ const {data, error} = await this.sb.rpc('recent_orders', {code}); if (error) throw error; return data || []; }
   async saveIncInputs(period, rep, data){ const {error} = await this.sb.from('incentive_inputs').upsert({period, rep_name: rep, data, at: nowIso()}); if (error) throw error; }
@@ -1873,7 +1934,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.32';
+const APP_VER = '4.33';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -1976,9 +2037,9 @@ function render(){
     <div class="chips"><span class="period ${s.locked ? 'lock' : ''}"${wkOn() ? ` data-tip="${esc(wkDlTip())}"` : ''}><span class="dt">FC </span>${qlabel(s.year, s.quarter)}${dl}${s.locked ? ' · ĐÃ KHOÁ' : ''}</span>${teamSelHtml()}${asofChipHtml()}</div>
     <nav class="tabs">${tabs.map(([k, l]) => `<button class="tab ${VIEW.tab === k ? 'on' : ''}" data-tab="${k}">${ico(TAB_IC[k])}<span class="tl">${tabLbl(k, l)}</span></button>`).join('')}</nav>
     <div class="who"><span class="me"><b>${esc(ME.rep_name)}</b> <span class="pill">${ME.role}${isCFO() ? ' · CFO' : ''}</span></span><span class="btns">${canAsMR() ? `<button class="btn ghost sm" id="asmr" data-tip="${asMR() ? 'Về giao diện admin (xem cả team, Admin)' : 'Xem và nhập FC của bạn giống MR: chỉ dòng của bạn, Dashboard của tôi, hạn nộp FC tuần'}">${asMR() ? ico('back') + ' <span class="lb">Giao diện </span>Admin' : ico('user') + ' <span class="lb">Giao diện </span>MR'}</button>` : ''}${selfOn() ? `<button class="btn ghost sm" id="lookup" data-tip="Tra cứu địa bàn: mã KH / SĐT / tên PK, BV → đã có ai phụ trách chưa">${ico('search')}<span class="lb"> Tra cứu</span></button>` : ''}<button class="btn ghost sm rf" id="refresh" data-tip="Tải số mới nhất: FC các MR vừa nhập, trạng thái submit / duyệt.&#10;App cũng tự làm mới khi bạn quay lại sau ≥ 1 phút."><span class="ic">${ico('refresh')}</span><span class="lb"> Làm mới</span><span class="t">${hhmm(LOADED_AT)}</span></button>${MODE === 'cloud' ? '<button class="btn ghost sm" id="chpw" aria-label="Đổi mật khẩu" data-tip="Đổi mật khẩu">' + ico('key') + '<span class="lb"> Đổi mật khẩu</span></button>' : ''}<button class="btn ghost sm" id="logout">Đăng xuất</button></span></div></header>
-    <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin / CFO) bằng Đăng xuất.</div>` : ''}${dbOldNote()}<div id="wkban">${wkBannerHtml()}</div><div id="view"></div></main>`;
+    <main>${MODE === 'demo' ? `<div class="demo-banner">Bản DEMO: dữ liệu giả lập, lưu trong trình duyệt. Đổi vai trò (MR / RFFM / Admin / CFO) bằng Đăng xuất.</div>` : ''}${dbOldNote()}<div id="wkban">${wkBannerHtml()}</div><div id="dupban">${dupBannerHtml()}</div><div id="view"></div></main>`;
   $$('.tab').forEach(b => b.onclick = () => { VIEW.tab = b.dataset.tab; document.body.classList.remove('tbh'); render(); });
-  $('#wkban').onclick = onWkBanner; wkSchedule(); $('#asmr') && ($('#asmr').onclick = toggleAsMR);
+  $('#wkban').onclick = onWkBanner; wkSchedule(); dupBind(); $('#asmr') && ($('#asmr').onclick = toggleAsMR);
   $('#logout').onclick = async () => { await flushSaves(); await STORE.signOut(); renderLogin(); };
   $('#chpw') && ($('#chpw').onclick = () => passwordDialog(false));
   $('#refresh').onclick = () => refreshData(false); $('#lookup') && ($('#lookup').onclick = () => lookupDialog());
@@ -4974,6 +5035,7 @@ async function importSales(file, log, team = TEAMS[0]){
   const wb = await readWorkbook(file); const f = findSheet(wb, [], ['Customer Code', 'Net Sales Value', 'Year']);
   if (!f) throw new Error('Không tìm thấy dòng tiêu đề có Customer Code, Net Sales Value, Year');
   const h = f.hdr; const c = {code: colIdx(h, ['Customer Code']), name: colIdx(h, ['Customer Name']), sku: colIdx(h, ['SKU_Name', 'SKU']), val: colIdx(h, ['Net Sales Value']), qty: colIdx(h, ['Commercial Quantity', 'Quantity']), y: colIdx(h, ['Year']), m: colIdx(h, ['Month']), q: colIdx(h, ['Quarter']), date: colIdx(h, ['Invoice Confirmed Date', 'Invoice Date']), rep: colIdx(h, ['REP Name']), team: colIdx(h, ['REP Group']),
+    ord: colIdx(h, ['Order Number', 'Sales Order']), batch: colIdx(h, ['SAP Batch', 'Batch']), gov: colIdx(h, ['Government Invoice Number', 'Invoice Number']),
     ch: colIdx(h, ['Customer Local Group 1 Desc', 'Channel_name', 'Channel name']), g2: colIdx(h, ['Customer Local Group 2 Desc']), g3: colIdx(h, ['Customer Local Group 3 Desc'])};
   const AD = addrCols(h);   // địa chỉ khách hàng (bản 4.21) cho Tra cứu địa bàn
   if (c.sku < 0) throw new Error('Thiếu cột SKU_Name'); if (c.m < 0 && c.date < 0) throw new Error('Thiếu cột Month (hoặc Invoice Confirmed Date)');
@@ -4981,6 +5043,7 @@ async function importSales(file, log, team = TEAMS[0]){
   const skus = teamSkus(team); if (!skus.size) throw new Error(`Chưa có SKU nào của team ${teamName(team)}: chọn Team ${teamName(team)} ở header rồi nạp Bảng giá (bước 1) hoặc danh sách account (bước 2) trước.`);
   const kws = norm(D.settings.exclude_keywords).split(','); const tf = teamInfo(team).team_filter || (team === TEAMS[0] ? D.settings.team_filter : '') || team, tfl = lc(tf);
   const ag = new Map(); const seen = new Map(); const qt = new Map(); const cust = new Map(), trLog = new Map(); let n = 0, skip = 0, maxD = null;
+  const dupL = [], dupQk = +D.settings.year * 4 + +D.settings.quarter - 1;   // 4.33: dòng raw để rà đơn trùng (quý FC + quý trước)
   for (let i = f.hi + 1; i < f.rows.length; i++){
     const r = f.rows[i]; const y = num(r[c.y]); const dt = c.date >= 0 ? excelDate(r[c.date]) : null; const mo = c.m >= 0 && num(r[c.m]) ? num(r[c.m]) : (dt ? dt.getMonth() + 1 : 0);
     if (!r[c.code] || !y || !mo){ skip++; continue; } n++;
@@ -4992,17 +5055,22 @@ async function importSales(file, log, team = TEAMS[0]){
     const isTeam = c.team < 0 || lc(r[c.team]) === tfl; const qk = y * 4 + Math.floor((mo - 1) / 3) + 1;
     if (isTeam) qt.set(qk, (qt.get(qk) || 0) + v);
     const rep = c.rep >= 0 ? norm(r[c.rep]) : '';
+    if (isTeam && dt && qk >= dupQk && rep && isAssigned(rep, kws)) dupL.push({rep, code, name: norm(r[c.name]), sku, ord: c.ord >= 0 ? norm(r[c.ord]) : '', batch: c.batch >= 0 ? norm(r[c.batch]) : '', gov: c.gov >= 0 ? norm(r[c.gov]) : '', qty: qn, v, dt});
     if (isTeam && isAssigned(rep, kws)){ const sk = `${code}|${sku}`; const s = seen.get(sk) || {cust_code: code, sku, cust_name: norm(r[c.name]), rep_name: rep, value: 0, _t: 0}; s.value += v; const t = y * 12 + mo; if (t >= s._t){ s._t = t; s.rep_name = rep; s.cust_name = norm(r[c.name]) || s.cust_name; } seen.set(sk, s); }
   }
   const rows = [...ag].map(([k, [value, qty, value_promo, qty_promo, ld]]) => { const [cust_code, sku, year, month] = k.split('|'); return {cust_code, sku, year: +year, month: +month, value, qty, value_promo, qty_promo, last_date: ld ? isoDate(ld) : null}; });
   const seenRows = [...seen.values()].map(({_t, ...o}) => o);
   await STORE.replaceSales(team, rows, seenRows);
+  let dupTxt = '';
+  if (dupOn() && c.ord >= 0){ try { const dl = findDups(dupL, team); await STORE.saveDups(team, dl); const nd = dl.filter(x => x.kind === 'dup').length, ns = dl.length - nd;
+      dupTxt = `\nRà soát raw (${qlabel(Math.floor((dupQk - 1) / 4), (dupQk - 1) % 4 + 1)} → nay): ${dl.length ? `${nd} dòng trùng, ${ns} đơn nghi trùng, có thể tính dư ${nf0.format(Math.round(dl.reduce((t, x) => t + x.extra_value, 0)))} VND (${new Set(dl.map(x => x.rep_name)).size} MR). MR và RFFM đã thấy cảnh báo trên app.` : 'không thấy đơn trùng.'}`;
+    } catch(e){ dupTxt = '\nRà soát raw: lỗi, chưa lưu được cảnh báo (' + e.message + ').'; } }
   if (maxD){ await STORE.saveTeam(team, {data_as_of: isoDate(maxD)}); if (team === TEAMS[0]) await STORE.saveSettings({data_as_of: isoDate(maxD)}); }
   let custTxt = '';
   if (cust.size && (MODE === 'demo' || D.dbv >= 7)){ const list = [...cust.values()].map(o => ({...o, segment: segOf(o.channel, o.cust_group, o.sector)})); const cn = k => list.filter(o => o.segment === k).length, chn = k => list.filter(o => chOfRaw(o, o.segment) === k).length;
     try { await STORE.saveCustomers(list); const nAd = list.filter(o => o.address).length; custTxt = `\nDanh mục khách hàng: ${nf0.format(list.length)} mã. ${AD.cols.length ? `Địa chỉ (cột ${AD.cols.join(' + ')}): ${nf0.format(nAd)} mã.` : 'Raw không có cột địa chỉ (Customer Address / Địa chỉ…): Tra cứu chưa hiện địa chỉ.'} Type: BV công ${cn('gov')} · BV tư ${cn('priv')} · Clinic ${cn('clinic')}. Kênh: Tender ${chn('Tender')} · Self-pay ${chn('Self-pay')} · Clinic ${chn('Clinic')}.`; } catch(e){ custTxt = `\nChưa lưu được danh mục khách hàng: ${e.message}`; } }
   const trTxt = trLog.size ? `\nBán giá trade (đơn giá = giá chương trình ±2%): ${[...trLog].map(([k, q]) => `${k} ${nf0.format(q)} box`).join(' · ')}${MODE === 'cloud' && D.dbv < 15 ? ' · chưa lưu được (database cần bản 15)' : ''}.` : (D.promos || []).length ? '\nChưa thấy dòng nào bán giá trade.' : '';
-  log(`Đọc ${nf0.format(n)} dòng (bỏ ${skip} dòng Total/trống). Lưu ${nf0.format(rows.length)} dòng (khách × SKU × tháng).${maxD ? ` Sales đến ${dmy(maxD)}.` : ''}${trTxt}\nSales team ${tf}: ${[...qt].sort((x, y) => x[0] - y[0]).map(([k, val]) => `${qlabel(Math.floor((k - 1) / 4), (k - 1) % 4 + 1)} ${big(val)}`).join(' · ')}${custTxt}`);
+  log(`Đọc ${nf0.format(n)} dòng (bỏ ${skip} dòng Total/trống). Lưu ${nf0.format(rows.length)} dòng (khách × SKU × tháng).${maxD ? ` Sales đến ${dmy(maxD)}.` : ''}${trTxt}\nSales team ${tf}: ${[...qt].sort((x, y) => x[0] - y[0]).map(([k, val]) => `${qlabel(Math.floor((k - 1) / 4), (k - 1) % 4 + 1)} ${big(val)}`).join(' · ')}${custTxt}${dupTxt}`);
 }
 /* Tự trừ sales mới vào FC (giữ FC quý): chụp FC quý (box) từng dòng trước khi nạp raw sales; nạp xong, phần sales
    vượt / thấp hơn FC tháng tự dời sang tháng còn mở để FC quý từng dòng giữ nguyên.

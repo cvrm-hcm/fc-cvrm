@@ -2,6 +2,15 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.33 + DB 19 — Rà soát raw: đơn trùng / nghi trùng
+- Mỗi lần admin nạp raw sales, app rà các dòng của quý FC + quý trước, theo từng MR (raw chia dòng theo MR ở địa bàn chung nên không tính là trùng):
+  - **Trùng dòng**: cùng MR, số đơn (Order Number), lô (SAP Batch), số lượng, tiền, ngày xuất hiện ≥ 2 lần; hoặc 2 số đơn cùng số hoá đơn (Government Invoice Number).
+  - **Nghi trùng đơn**: cùng MR × khách × SKU × số lượng × tiền, ≥ 2 số đơn cùng ngày hoặc hôm sau, không có dòng trả hàng (SL âm) bù lại.
+  - Bỏ qua phần tính dư < 1 triệu.
+- Cảnh báo hiện ở đầu mọi tab: MR thấy đơn của mình, RFFM / admin thấy cả team (bảng `sales_dups`, RLS). Bấm "Xem danh sách": account, SKU, ngày HĐ, SL, giá trị, số lần, phần có thể dư, số đơn / số HĐ; ghi kết quả kiểm tra (Chưa kiểm tra · 2 đơn thật, không trùng · Đã báo sửa raw) + Note. Nạp lại raw giữ kết quả kiểm tra; raw đã sửa thì cảnh báo tự mất.
+- Log nạp raw ghi: số dòng trùng, số đơn nghi trùng, tổng có thể dư, số MR.
+- DB 19 (`migration_v19.sql`, đã chạy live 17/11): bảng `sales_dups`; MR / RFFM chỉ sửa được trạng thái + Note (trigger chặn sửa số), ghi người / giờ kiểm tra.
+
 ## Bản 4.32 — lý do FC theo chiều tăng / giảm
 - Ô lý do chỉ hiện danh sách khớp với cờ của dòng: **FC cao hơn TB 2Q** (9 lý do tăng), **FC thấp hơn TB 2Q / FC = 0** (9 lý do giảm), **FC vượt quota thầu** (3 lý do). Dòng có 2 cờ hiện cả 2 nhóm. Luôn có "Khác (ghi rõ ở Note)". Lý do đã chọn trước đây vẫn giữ.
 - Lý do mới: Stock up remaining quota trước hạn thầu · Hết gap thầu / bù đơn trễ quý trước · Gx / đối thủ out of quota, hết hàng → chuyển toa · Tăng BAL key HCPs sau SHKH / GM · Mở rộng PGMI / khoa mới · Tăng tốc self-pay (NTBV, PK theo yêu cầu) · Gói thầu mới đã ký, chưa cập nhật quota trên app · Thầu mới trễ / first order dời sang quý sau · Đơn dồn quý trước (stock up) → quý này giảm · Thiếu hàng / chậm giao từ NPP. Dashboard nhóm issue thêm "Self-pay", "Supply".
