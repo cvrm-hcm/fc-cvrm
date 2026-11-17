@@ -1842,7 +1842,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.31.1';
+const APP_VER = '4.31.2';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3003,7 +3003,7 @@ const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate
   curve: Array.from({length: 31}, (_, i) => [90 + i, 90 + i]), band: [[90, 50], [100, 100], [110, 150]], qualGate: {mccp: 90, clm: 90},
   teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic'], spExcl: ['Pharmacy', 'Wholesales']},
           WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
-  tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
+  tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'poa'}};   // 4.31.2: Q4 chấm POA (user chốt 17/11/2026, khác bản v2 ghi Q4 test kiến thức SP)
 const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay / private channel (CVRM)', ac: 'Active Clinic', test: 'Điểm test'};
 const INC_TEST = {pk: {label: 'Test kiến thức sản phẩm', lv: [['', '–'], ['1', '1 – Capable (90–<95%)'], ['2', '2 – Capable+ (95–<100%)'], ['3', '3 – Strong (100%)']]},
   poa: {label: 'Điểm POA', lv: [['', '–'], ['1', '1 – Developing'], ['2', '2 – Capable'], ['3', '3 – Strong']]},

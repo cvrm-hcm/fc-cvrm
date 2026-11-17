@@ -2,6 +2,9 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.31.2 — Q4 chấm POA
+- Điểm test định tính Q4'26 đổi từ Test kiến thức sản phẩm sang **Điểm POA** (Developing · Capable · Strong) theo user chốt 17/11/2026 (bản scheme v2 ghi Q1 & Q4 test kiến thức). Live đã đổi `tests.4 = poa`.
+
 ## Bản 4.31.1 — điểm test định tính theo quý
 - Dòng điểm test ghi rõ quý và lịch theo scheme (Q1, Q4: Test kiến thức sản phẩm · Q2: Điểm POA · Q3: Kỹ năng thuyết trình). Đổi lịch ở Admin → Thưởng → Scheme (khoá `tests`).
 - Nhãn KPI Self-pay: "Self-pay / private channel (CVRM)".
