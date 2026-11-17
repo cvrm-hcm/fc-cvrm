@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.32 — lý do FC theo chiều tăng / giảm
+- Ô lý do chỉ hiện danh sách khớp với cờ của dòng: **FC cao hơn TB 2Q** (9 lý do tăng), **FC thấp hơn TB 2Q / FC = 0** (9 lý do giảm), **FC vượt quota thầu** (3 lý do). Dòng có 2 cờ hiện cả 2 nhóm. Luôn có "Khác (ghi rõ ở Note)". Lý do đã chọn trước đây vẫn giữ.
+- Lý do mới: Stock up remaining quota trước hạn thầu · Hết gap thầu / bù đơn trễ quý trước · Gx / đối thủ out of quota, hết hàng → chuyển toa · Tăng BAL key HCPs sau SHKH / GM · Mở rộng PGMI / khoa mới · Tăng tốc self-pay (NTBV, PK theo yêu cầu) · Gói thầu mới đã ký, chưa cập nhật quota trên app · Thầu mới trễ / first order dời sang quý sau · Đơn dồn quý trước (stock up) → quý này giảm · Thiếu hàng / chậm giao từ NPP. Dashboard nhóm issue thêm "Self-pay", "Supply".
+
 ## Bản 4.31.2 — Q4 chấm POA
 - Điểm test định tính Q4'26 đổi từ Test kiến thức sản phẩm sang **Điểm POA** (Developing · Capable · Strong) theo user chốt 17/11/2026 (bản scheme v2 ghi Q1 & Q4 test kiến thức). Live đã đổi `tests.4 = poa`.
 

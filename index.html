@@ -860,9 +860,40 @@ const hm = d => `${two(d.getHours())}:${two(d.getMinutes())}`;
 const fmtTime = iso => { if (!iso) return ''; const d = new Date(iso); return `${hm(d)} ${two(d.getDate())}/${two(d.getMonth() + 1)}`; };
 const ddmm = iso => iso ? `${String(iso).slice(8, 10)}/${String(iso).slice(5, 7)}` : '';
 // Lý do điều chỉnh FC (thuật ngữ Bayer) · nhóm issue tương ứng trên dashboard RFFM / admin
-const REASON_DEF = [['Thầu mới / first order', 'Thầu / quota'], ['Out of quota / gap thầu', 'Thầu / quota'], ['MSBS 30% / stock up quota', 'Thầu / quota'], ['Tồn kho BV cao / sell-out chậm', 'Tồn kho'],
-  ['Vượt quỹ BHYT / khoá thuốc', 'Vượt quỹ BHYT / khoá thuốc'], ['Gx / đối thủ gain share', 'Gx / đối thủ'], ['Listing mới / BS mới kê toa', 'HCP / listing'], ['BS ngưng kê / BS nghỉ', 'HCP / listing'],
-  ['Thay đổi ratio / phân bổ account', 'Phân bổ account'], ['Khác (ghi rõ ở Note)', '']];
+// 4.32: lý do theo chiều lệch — FC cao hơn TB 2Q (up) · FC thấp hơn TB 2Q (down) · FC vượt quota thầu (quota). [nhãn, nhóm issue dashboard, chiều]
+// Nhãn theo thuật ngữ Bayer (skill bayer-pharma-writing): first order, MSBS, stock up, remaining quota, gap thầu, sell-out, khoá thuốc, Gx, BAL, PGMI, SHKH, NTBV
+const REASON_DEF = [
+  ['Thầu mới / first order', 'Thầu / quota', 'up quota'],
+  ['MSBS 30% / stock up quota', 'Thầu / quota', 'up quota'],
+  ['Stock up remaining quota trước hạn thầu', 'Thầu / quota', 'up'],
+  ['Hết gap thầu / bù đơn trễ quý trước', 'Thầu / quota', 'up'],
+  ['Gx / đối thủ out of quota, hết hàng → chuyển toa', 'Gx / đối thủ', 'up'],
+  ['Listing mới / BS mới kê toa', 'HCP / listing', 'up'],
+  ['Tăng BAL key HCPs sau SHKH / GM', 'HCP / listing', 'up'],
+  ['Mở rộng PGMI / khoa mới', 'HCP / listing', 'up'],
+  ['Tăng tốc self-pay (NTBV, PK theo yêu cầu)', 'Self-pay', 'up'],
+  ['Gói thầu mới đã ký, chưa cập nhật quota trên app', 'Thầu / quota', 'quota'],
+  ['Out of quota / gap thầu', 'Thầu / quota', 'down'],
+  ['Thầu mới trễ / first order dời sang quý sau', 'Thầu / quota', 'down'],
+  ['Tồn kho BV cao / sell-out chậm', 'Tồn kho', 'down'],
+  ['Đơn dồn quý trước (stock up) → quý này giảm', 'Tồn kho', 'down'],
+  ['Vượt quỹ BHYT / khoá thuốc', 'Vượt quỹ BHYT / khoá thuốc', 'down'],
+  ['Gx / đối thủ gain share', 'Gx / đối thủ', 'down'],
+  ['BS ngưng kê / BS nghỉ', 'HCP / listing', 'down'],
+  ['Thiếu hàng / chậm giao từ NPP', 'Supply', 'down'],
+  ['Thay đổi ratio / phân bổ account', 'Phân bổ account', 'up down'],
+  ['Khác (ghi rõ ở Note)', '', 'up down quota']];
+const REASON_GRP = {up: 'FC cao hơn TB 2Q', down: 'FC thấp hơn TB 2Q', quota: 'FC vượt quota thầu'};
+// chiều lệch của dòng: theo cờ (TB 2Q + quota); dòng không cờ → mọi lý do
+function reasonDirs(r){ const f = String(r.flag || ''), d = [];
+  if (/cao hơn TB 2Q|2Q gần nhất chưa có sales/.test(f)) d.push('up'); if (/thấp hơn TB 2Q|FC = 0/.test(f)) d.push('down'); if (r.qflag || /vượt quota/.test(f)) d.push('quota');
+  return d.length ? d : ['up', 'down', 'quota']; }
+function reasonOpts(r){ const ds = reasonDirs(r), cur = r.f.reason, seen = new Set(), OTH = REASON_DEF[REASON_DEF.length - 1][0];
+  let h = ds.map(d => { const l = REASON_DEF.filter(x => x[2].split(' ').includes(d) && x[0] !== OTH && !seen.has(x[0])); l.forEach(x => seen.add(x[0]));
+    return l.length ? `<optgroup label="${esc(REASON_GRP[d])}">${l.map(x => `<option ${x[0] === cur ? 'selected' : ''}>${esc(x[0])}</option>`).join('')}</optgroup>` : ''; }).join('');
+  h += `<option ${cur === OTH ? 'selected' : ''}>${esc(OTH)}</option>`;
+  if (cur && !seen.has(cur) && cur !== OTH) h = `<option selected>${esc(cur)}</option>` + h;   // lý do đã chọn trước đó (khác chiều / nhãn cũ) vẫn giữ
+  return h; }
 const REASONS = REASON_DEF.map(x => x[0]);
 // Nhãn lý do bản trước → nhãn mới (số cũ trong database, file Excel xuất trước đây)
 const REASON_OLD = {'Trúng thầu / thầu mới': 'Thầu mới / first order', 'Hết thầu / chờ kết quả thầu': 'Out of quota / gap thầu', 'Tồn kho tại BV cao': 'Tồn kho BV cao / sell-out chậm', 'Vượt quỹ BHYT / khóa thuốc': 'Vượt quỹ BHYT / khoá thuốc',
@@ -1842,7 +1873,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.31.2';
+const APP_VER = '4.32';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -1964,7 +1995,7 @@ addEventListener('resize', () => { if (ME && VIEW.tab === 'fc' && MOBILE() !== l
 function reasonCell(r, editable, mobile){
   const pr = r.flag ? peerRs(r) : [], pTxt = pr.length ? `<div class="prs" data-tip="Lý do MR cùng địa bàn đã nhập. Không cần chọn lại; cần bổ sung thì chọn lý do / ghi Note của bạn">${pr.map(x => `<b>${esc(x.rep_name)}</b>: ${esc(x.f.reason)}${norm(x.f.note) ? ' · ' + esc(norm(x.f.note)) : ''}`).join('<br>')}</div>` : '';
   if (!r.flag && !r.f.reason) return mobile ? '' : '<span class="muted">–</span>';
-  return `<select class="rs ${r.needReason ? 'need' : ''}" data-id="${r.id}" data-f="reason" ${editable ? '' : 'disabled'} data-tip="${esc(r.flag || 'Lý do điều chỉnh FC')}"><option value="">${r.flag ? (pr.length ? '– Dùng lý do chung' : '⚠ Chọn lý do') : '–'}</option>${REASONS.map(x => `<option ${x === r.f.reason ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>${pTxt}`;
+  return `<select class="rs ${r.needReason ? 'need' : ''}" data-id="${r.id}" data-f="reason" ${editable ? '' : 'disabled'} data-tip="${esc(r.flag || 'Lý do điều chỉnh FC')}"><option value="">${r.flag ? (pr.length ? '– Dùng lý do chung' : '⚠ Chọn lý do') : '–'}</option>${reasonOpts(r)}</select>${pTxt}`;
 }
 const TEAM = '*';   // ô MR ở tab FC Input: "Cả team" (RFFM / Admin)
 const TEAM_N = 50;   // Cả team: số account vẽ trước, phần còn lại bấm "Xem thêm"
