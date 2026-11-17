@@ -2,6 +2,10 @@
 
 App forecast doanh số theo quý cho team HCM (CVRM, WHC; kênh bệnh viện), thay cho file Excel dùng chung. Chạy trên GitHub Pages + Supabase.
 
+## Bản 4.31.1 — điểm test định tính theo quý
+- Dòng điểm test ghi rõ quý và lịch theo scheme (Q1, Q4: Test kiến thức sản phẩm · Q2: Điểm POA · Q3: Kỹ năng thuyết trình). Đổi lịch ở Admin → Thưởng → Scheme (khoá `tests`).
+- Nhãn KPI Self-pay: "Self-pay / private channel (CVRM)".
+
 ## Bản 4.31 — Quali Self-pay CVRM tính như Commex
 - Đối chiếu Power BI "Qualitative KPI _ CVRM Self-paid" Q4'26 (data đến 16/11) với raw trên app: Commex tính mọi kênh trừ Tender (Khoa Dược BV công) — gồm NTBV, Khoa Dược BV tư, chuỗi NT BV (Long Châu Hoàn Mỹ) và **Clinic (Sub-dis clinics)**; **không** tính mã có Channel_name Pharmacy / Wholesales. 14/15 MR khớp tới đồng; Vo Thi Thanh Thao lệch 7.7tr (1 đơn ở account chưa có trong danh sách phụ trách trên app).
 - App: KPI Self-pay đổi kênh từ Self-pay → Self-pay + Clinic, trừ mã Pharmacy / Wholesales (scheme `spChannels`, `spExcl`; live đã cập nhật).

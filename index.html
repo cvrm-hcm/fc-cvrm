@@ -1842,7 +1842,7 @@ async function refreshData(auto = false, quiet = false){
 }
 // 4.26: báo có bản mới. GitHub Pages giữ cache trang ~10 phút nên máy có thể chạy bản cũ: đọc ver.json (vài byte, không cache),
 // chỉ báo khi số bản trong ver.json MỚI HƠN bản đang chạy (ver.json cũ hoặc thiếu thì im lặng). Deploy: sửa APP_VER + ver.json cùng lúc.
-const APP_VER = '4.31';
+const APP_VER = '4.31.1';
 const verGt = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; } return false; };
 let NEW_VER = null, VER_AT = 0;
 async function verCheck(force){
@@ -3004,7 +3004,7 @@ const INC_DEMO = {name: 'Scheme mẫu (demo)', pool: 10000000, quantW: 0.7, gate
   teams: {CVRM: {quant: {XARELTO: 0.4, ADALAT: 0.3}, qual: [{k: 'ef', w: 0.1}, {k: 'sp', w: 0.1}, {k: 'test', w: 0.1}], spChannels: ['Self-pay', 'Clinic'], spExcl: ['Pharmacy', 'Wholesales']},
           WHC: {quant: {VISANNE: 0.25, MIRENA: 0.25, YAZ: 0.1, YASMIN: 0.1}, qual: [{k: 'ef', w: 0.1}, {k: 'ac', w: 0.1}, {k: 'test', w: 0.1}]}},
   tests: {1: 'pk', 2: 'poa', 3: 'pres', 4: 'pk'}};
-const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay (kênh Self-pay)', ac: 'Active Clinic', test: 'Điểm test'};
+const INC_QL = {ef: 'Enterprise factor (kết quả team)', sp: 'Self-pay / private channel (CVRM)', ac: 'Active Clinic', test: 'Điểm test'};
 const INC_TEST = {pk: {label: 'Test kiến thức sản phẩm', lv: [['', '–'], ['1', '1 – Capable (90–<95%)'], ['2', '2 – Capable+ (95–<100%)'], ['3', '3 – Strong (100%)']]},
   poa: {label: 'Điểm POA', lv: [['', '–'], ['1', '1 – Developing'], ['2', '2 – Capable'], ['3', '3 – Strong']]},
   pres: {label: 'Kỹ năng thuyết trình', lv: [['', '–'], ['1', '1 – Developing'], ['2', '2 – Capable'], ['3', '3 – Strong']]}};
@@ -3230,10 +3230,12 @@ function viewINC(){
   const qRows = M.quant.map(x => `<tr data-lbl="${esc(x.b)}"><td class="l stick"><b>${esc(x.b)}</b>${!x.tgt ? '<div class="sub">không phụ trách</div>' : ''}</td><td>${x.ach === null ? '–' : achHtml(x.ach)}</td><td><b>${x.pay}%</b>${x.ach === null ? '' : `<div class="sub">mốc ${pctInt(x.ach)}%</div>`}</td><td><b>${mm(x.amt)}</b></td>
       <td>${mm(x.tgt)}</td><td>${scen === 'cust' ? inp('cust:' + x.b, (I.cust || {})[x.b], x.ach === null ? '' : (Math.round(x.ach * 1000) / 10).toString(), 'w70') + '<span class="sub">%</span>' : mm(x.fc)}</td><td>${Math.round(x.w * 100)}%${x.w !== num(C.teams[M.team].quant[x.b]) ? ` <span class="sub">(gốc ${Math.round(num(C.teams[M.team].quant[x.b]) * 100)}%)</span>` : ''}</td><td class="l">${nxT(x)}</td></tr>`).join('');
   const gateNeed = M.tT ? Math.max(0, M.tT * M.gate - M.tF) : 0;
-  const qlRow = q => { const lab = q.k === 'test' ? `${INC_QL.test}: ${INC_TEST[M.tk].label}` : INC_QL[q.k];
+  const qlRow = q => { const lab = q.k === 'test' ? `${INC_QL.test} Q${D.settings.quarter}: ${INC_TEST[M.tk].label}` : INC_QL[q.k];
+    // 4.31.1: điểm test đổi theo quý (scheme Commex 2026: Q1 & Q4 test kiến thức SP, Q2 POA, Q3 thuyết trình; admin đổi ở Scheme → tests)
+    const tsub = q.k === 'test' ? (T => Object.entries(T).reduce((m, [k, v]) => ((m[v] ||= []).push('Q' + k), m), {}))(M.C.tests || {}) : null;
     const cell = q.k === 'test' ? `<select class="inp inc-i" data-f="t_${M.tk}" ${dis}>${INC_TEST[M.tk].lv.map(([v, l]) => `<option value="${v}" ${String(q.lvl || '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
       : `${q.ach === null ? '<span class="muted">–</span>' : achHtml(q.ach)} ${inp(q.k === 'ef' ? 'efo' : q.k === 'sp' ? 'spo' : 'ac', I[q.k === 'ef' ? 'efo' : q.k === 'sp' ? 'spo' : 'ac'], q.k === 'ac' ? '% đạt' : 'sửa %', 'w70')}`;
-    return `<tr data-lbl="${esc(lab)}"><td class="l stick">${esc(lab)}${q.src && q.k !== 'test' ? `<div class="sub">${esc(q.src)}</div>` : ''}</td><td class="l">${cell}</td><td><b>${q.pay}%</b></td><td><b>${mm(q.amt)}</b></td><td>${Math.round(q.w * 100)}%</td></tr>`; };
+    return `<tr data-lbl="${esc(lab)}"><td class="l stick">${esc(lab)}${q.src && q.k !== 'test' ? `<div class="sub">${esc(q.src)}</div>` : ''}${tsub ? `<div class="sub">${esc(Object.entries(tsub).map(([k, qs]) => `${qs.join(', ')}: ${(INC_TEST[k] || {label: k}).label}`).join(' · '))}</div>` : ''}</td><td class="l">${cell}</td><td><b>${q.pay}%</b></td><td><b>${mm(q.amt)}</b></td><td>${Math.round(q.w * 100)}%</td></tr>`; };
   const pct0 = v => M.pool ? Math.round(v / M.pool * 100) + '%' : '', RB = incRB(rep, M, I);
   V.innerHTML = `<div class="card" id="inc-detail"><div class="bar"><h3 style="margin:0">Ước tính thưởng ${Qd}</h3>${ME.role === 'MR' ? '' : `<select id="inc-rep" aria-label="MR">${reps.map(r => `<option ${r === rep ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>`}
       <span class="grow"></span><span id="inc-sv" class="save-ind"></span></div>
